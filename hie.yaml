@@ -1,0 +1,8 @@
+cradle:
+  stack:
+    - path: "./lib/"
+      component: NotesFormatter:lib
+    - path: "./src/"
+      component: NotesFormatter:exe:app
+    - path: "./test/"
+      component: NotesFormatter:test:app-test
