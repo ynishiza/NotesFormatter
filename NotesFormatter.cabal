@@ -171,6 +171,7 @@ test-suite app-test
   main-is: Main.hs
   other-modules:
       B.Lib
+      ParserGen
       ParserProperties
       RTF.Parser
       RTF.Type

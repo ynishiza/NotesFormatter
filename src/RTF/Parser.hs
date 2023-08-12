@@ -33,24 +33,44 @@ import TextShow
 import Prelude hiding (takeWhile)
 
 instance RTFEncoding RTFHeader where
-  encodeRTF (ColorTbl x) = toRTFBlock $ toRTFKeyword "colortbl" <> T.intercalate "" (encodeRTF <$> x)
-  encodeRTF (FontTbl _) = undefined
+  encodeRTF (ColorTbl defs) =
+    toRTFBlock $
+      toRTFKeyword "colortbl" <> T.intercalate "" (encodeRTF <$> defs)
+  encodeRTF (FontTbl infos) =
+    toRTFBlock $
+      toRTFKeyword "fonttbl" <> T.intercalate "" (encodeRTF <$> infos)
+
   decodeRTF = fontTbl <|> colorTbl
    where
     colorTbl = fromRTFBlock (fromRTFKeywordWith "colortbl" >> colorContent)
      where
-      colorContent = ColorTbl <$> many' (skipSpace *> decodeRTF @ColorDef <* skipSpace)
+      colorContent =
+        ColorTbl <$> many' (skipSpace *> decodeRTF @ColorDef <* skipSpace)
+          <?> "ColorTbl"
 
     fontTbl = fromRTFBlock (fromRTFKeywordWith "fonttbl" >> fontContent)
      where
-      fontContent = FontTbl . fromList <$> many' (skipSpace >> decodeRTF @FontInfo <* skipSpace)
+      fontContent =
+        FontTbl . fromList <$> many' (skipSpace >> decodeRTF @FontInfo <* skipSpace)
+          <?> "FontTbl"
 
 instance RTFEncoding FontInfo where
   encodeRTF :: FontInfo -> Text
-  encodeRTF (FontInfo x y z) = toRTFKeyword (showt x) <> encodeRTF y <> z <> charBlockEnd
+  encodeRTF (FontInfo num family charset name) =
+    toRTFKeyword ("f" <> showt num)
+      <> encodeRTF family
+      <> toOptionalKeywordWith ("fcharset" <>) (showt <$> charset)
+      <> " "
+      <> name
+      <> charBlockEnd
+
   decodeRTF :: Parser FontInfo
   decodeRTF =
-    FontInfo <$> (fromRTFKeywordWith "f" >> decimal) <*> decodeRTF <*> fontName
+    FontInfo
+      <$> (fromRTFKeywordWith "f" >> decimal <?> "fontNum")
+      <*> decodeRTF
+      <*> optional (fromRTFKeywordWith "fcharset" >> decimal <?> "fontCharset")
+      <*> (char ' ' >> fontName <?> "fontName")
       <?> "FontInfo"
    where
     fontName =
@@ -59,7 +79,11 @@ instance RTFEncoding FontInfo where
 
 instance RTFEncoding ColorDef where
   encodeRTF :: ColorDef -> Text
-  encodeRTF (ColorDef x y z) = toOptionalKeyword x <> toOptionalKeyword y <> toOptionalKeyword z <> charBlockEnd
+  encodeRTF (ColorDef r g b) =
+    toOptionalKeywordWith ("red" <>) r
+      <> toOptionalKeywordWith ("green" <>) g
+      <> toOptionalKeywordWith ("blue" <>) b
+      <> charBlockEnd
   decodeRTF :: Parser ColorDef
   decodeRTF =
     ColorDef <$> c "red" <*> c "green" <*> c "blue" <* fromCharBlockend
@@ -67,24 +91,21 @@ instance RTFEncoding ColorDef where
    where
     c :: Text -> Parser (Maybe Word8)
     c s =
-      optional (fromRTFKeywordWith s >> word8)
+      optional (fromRTFKeywordWith s >> decimal)
         <?> "color"
 
 instance RTFEncoding FontFamily where
   encodeRTF :: FontFamily -> Text
   encodeRTF = toRTFKeyword . fontFamilyText
   decodeRTF :: Parser FontFamily
-  decodeRTF = foldr1 (<|>) $ f <$> [FNil .. FBidi]
+  decodeRTF =
+    foldr1 (<|>) (f <$> [FNil .. FBidi])
+      <?> "FontFamily"
    where
     f x = fromRTFKeywordWith (fontFamilyText x) *> return x
 
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
-
-word8 :: Parser Word8
-word8 =
-  decimal
-    <?> "Word8"
 
 fromRTFBlock :: Parser a -> Parser a
 fromRTFBlock p = char '{' >> p <* (char '}' >> whitespaces)
@@ -112,8 +133,14 @@ fromCharBlockend = void $ char ';'
 charBlockEnd :: Text
 charBlockEnd = ";"
 
-toOptionalKeyword :: TextShow a => Maybe a -> Text
-toOptionalKeyword = maybe "" (("\\" <>) . showt)
+toOptionalKeyword :: TextShow a => (Text -> Text) -> Maybe a -> Text
+toOptionalKeyword f = toOptionalKeywordWith f . (showt <$>)
+
+toOptionalKeyword_ :: TextShow a => Maybe a -> Text
+toOptionalKeyword_ = toOptionalKeyword id
+
+toOptionalKeywordWith :: TextShow a => (Text -> Text) -> Maybe a -> Text
+toOptionalKeywordWith f = maybe "" (("\\" <>) . f . showt)
 
 whitespaces :: Parser ()
 whitespaces = skipWhile (\x -> isSpace x || PT.isEndOfLine x)

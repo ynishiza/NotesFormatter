@@ -1,19 +1,18 @@
 module RTF.Type (
-  Word8,
   RTFHeader (..),
   ColorDef (..),
   RTFEncoding (..),
   FontFamily (..),
   FontInfo (..),
+  Word8,
 ) where
 
 import Data.Attoparsec.ByteString.Char8
-import Data.List.NonEmpty
 import Data.Text (Text)
 import Data.Word
 
 data RTFHeader
-  = FontTbl (NonEmpty FontInfo)
+  = FontTbl [FontInfo]
   | ColorTbl [ColorDef]
   deriving stock (Eq, Show)
 
@@ -23,6 +22,7 @@ data ColorDef = ColorDef {red :: Maybe Word8, green :: Maybe Word8, blue :: Mayb
 data FontInfo = FontInfo
   { fontNum :: Int
   , fontFamily :: FontFamily
+  , fontCharset :: Maybe Int
   , fontName :: Text
   }
   deriving stock (Eq, Show)
