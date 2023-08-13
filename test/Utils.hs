@@ -1,1 +1,1 @@
-module Utils () where
+../lib/Utils.hs

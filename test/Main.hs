@@ -1,11 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-} 
-
 module Main (main) where
 
-import qualified B.Lib
-import Test.Hspec
+import Test.Tasty.Hedgehog
+import Test.Tasty
+import ParserProperties
 
 main :: IO ()
-main = hspec $ describe "App" $ do
-  it "Hello" $ do
-    B.Lib.message `shouldBe` "Hello"
+main = defaultMain $ fromGroup group

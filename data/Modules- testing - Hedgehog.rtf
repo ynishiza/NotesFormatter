@@ -1,0 +1,1023 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fnil\fcharset0 Monaco;\f2\fnil\fcharset0 HelveticaNeue-Bold;
+\f3\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue233;\red38\green38\blue38;
+\red226\green226\blue226;\red226\green226\blue226;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c0\c0\c93333;\cssrgb\c20000\c20000\c20000;
+\cssrgb\c90980\c90980\c90980;\csgenericrgb\c88766\c88766\c88766;\csgray\c100000;}
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs28 \cf2 \expnd0\expndtw0\kerning0
+\
+hedgehog\
+Home:\'a0{\field{\*\fldinst{HYPERLINK "https://hedgehog.qa/"}}{\fldrslt \cf3 \ul \ulc3 https://hedgehog.qa/}}\
+Hackage:\'a0{\field{\*\fldinst{HYPERLINK "https://hackage.haskell.org/package/hedgehog"}}{\fldrslt \cf3 \ul \ulc3 https://hackage.haskell.org/package/hedgehog}}\
+\
+PropEr Testing:\'a0{\field{\*\fldinst{HYPERLINK "https://propertesting.com/toc.html"}}{\fldrslt \cf3 \ul \ulc3 https://propertesting.com/toc.html}}\
+5 tips for better hedgehog testing:\'a0{\field{\*\fldinst{HYPERLINK "https://jacobstanley.io/5-tips-for-better-hedgehog-tests/"}}{\fldrslt \cf3 \ul \ulc3 https://jacobstanley.io/5-tips-for-better-hedgehog-tests/}}\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+-- Hedgehog\
+data Group = Group \{ groupName :: !GroupName, groupProperties :: ![(PropertyName, Property)] \}\
+data GroupName\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0\'a0 \'a0\'a0\'a0 \'a0-- instance IsString e.g. "TestGroup" :: GroupName\
+data PropertyName\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0-- instance IsString e.g.\'a0"TestProp" :: PropertyName\
+\
+check :: MonadIO m => Property -> m Bool\
+recheck :: MonadIO m => Size -> Seed -> Property -> m ()\
+recheckAt :: MonadIO m => Seed -> Skip -> Property -> m ()\
+discover :: TExpQ Group\
+discoverPrefix :: String -> TExpQ Group\
+checkParallel :: MonadIO m => Group -> m Bool\
+checkSequential :: MonadIO m => Group -> m Bool\
+\
+data Confidence\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0-- instance Num e.g. 1 :: Confidence			default 10^9\
+data TestLimit\'a0\'a0\'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0-- instance Num e.g. 1 :: TestLimit				default 200\
+data DiscardLimit\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0-- instance Num e.g. 1 :: DiscardLimit			default 10000	\
+data ShrinkLimit \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 -- instance Num e.g. 1 :: ShrinkLimit			default 1000\
+data ShrinkRetries \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 -- instance Num e.g. 1 :: ShrinkRetries			default 0\
+data Skip\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 \'a0 \'a0 \'a0\'a0-- instance Num e.g. 1 :: Skip\
+verifiedTermination :: Property -> Property\
+withConfidence :: Confidence -> Property -> Property					\
+withTests :: TestLimit -> Property -> Property							\
+withDiscards :: DiscardLimit -> Property -> Property\
+withShrinks :: ShrinkLimit -> Property -> Property\
+withRetries :: ShrinkRetries -> Property -> Property\
+withSkip :: Skip -> Property -> Property\
+newtype Size = Size \{ unSize :: Int \}\
+data Seed = Seed \{ seedValue :: !Word64, seedGamma :: !Word64 \}\
+\
+\
+-- Properties\
+data Property\
+data PropertyT m a\
+instance Monad m => MonadTest PropertyT m\
+\
+property :: HasCallStack => PropertyT IO () -> Property\
+test :: Monad m => TestT m a -> PropertyT m a\
+forAll :: (Monad m, Show a, HasCallStack) => Gen a -> PropertyT m a\
+forAllWith :: (Monad m, HasCallStack) => (a -> String) -> Gen a -> PropertyT m a\
+discard :: Monad m => PropertyT m a\
+\
+\
+-- Tests i.e. assertions\
+type Test = TestT Identity\
+data TestT m a\
+instance Monad m => MonadTest (TestT m)\
+\
+class Monad m => MonadTest m where\
+\'a0 liftTest :: Test a -> m a\
+\
+annotate :: (MonadTest m, HasCallStack) => String -> m ()\
+annotateShow :: (MonadTest m, Show a, HasCallStack) => a -> m ()\
+footnote :: MonadTest m => String -> m ()\
+footnoteShow :: (MonadTest m, Show a) => a -> m ()\
+success :: MonadTest m => m ()\
+failure :: (MonadTest m, HasCallStack) => m a\
+assert :: (MonadTest m, HasCallStack) => Bool -> m ()\
+diff :: (MonadTest m, Show a, Show b, HasCallStack) => a -> (a -> b -> Bool) -> b -> m ()\
+(===) :: (MonadTest m, Eq a, Show a, HasCallStack) => a -> a -> m ()\
+(/==) :: (MonadTest m, Eq a, Show a, HasCallStack) => a -> a -> m ()\
+tripping :: (MonadTest m, Applicative f, Show b, Show (f a), Eq (f a), HasCallStack) => a -> (a -> b) -> (b -> f a) -> m ()\
+eval :: (MonadTest m, HasCallStack) => a -> m a\
+evalNF :: (MonadTest m, NFData a, HasCallStack) => a -> m a\
+evalM :: (MonadTest m, MonadCatch m, HasCallStack) => m a -> m a\
+evalIO :: (MonadTest m, MonadIO m, HasCallStack) => IO a -> m a\
+evalEither :: (MonadTest m, Show x, HasCallStack) => Either x a -> m a\
+evalEitherM :: (MonadTest m, Show x, MonadCatch m, HasCallStack) => m (Either x a) -> m a\
+evalExceptT :: (MonadTest m, Show x, HasCallStack) => ExceptT x m a -> m a\
+evalMaybe :: (MonadTest m, Show a, HasCallStack) => Maybe a -> m a\
+evalMaybeM :: (MonadTest m, Show a, MonadCatch m, HasCallStack) => m (Maybe a) -> m a\
+\
+\
+-- Coverage\
+data LabelName							 	-- instance IsString  e.g. "x" :: LabelName\
+\
+classify :: (MonadTest m, HasCallStack) => LabelName -> Bool -> m ()\
+cover :: (MonadTest m, HasCallStack) => CoverPercentage -> LabelName -> Bool -> m ()\
+label :: (MonadTest m, HasCallStack) => LabelName -> m ()\
+collect :: (MonadTest m, Show a, HasCallStack) => a -> m ()\
+\
+\
+\'85 etc \'85\'a0\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+Hedgehog.Gen\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+type Gen = GentT Identity\
+data GenT m a\
+instance Monad m => MonadGen (GenT m)\
+\
+class (Monad m, Monad (GenBase m)) => MonadGen m where \
+\'a0\'a0type GenBase m :: Type -> Type\
+\'a0\'a0toGenT :: m a -> GenT (GenBase m) a\
+\'a0\'a0fromGenT :: GenT (GenBase m) a -> m a\
+\
+-- Sampling\
+sample :: MonadIO m => Gen a -> m a\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0-- size 30\
+print :: (MonadIO m, Show a) => Gen a -> m ()\
+printTree :: (MonadIO m, Show a) => Gen a -> m ()\
+printWith :: (MonadIO m, Show a) => Size -> Seed -> Gen a -> m ()\
+printTreeWith :: (MonadIO m, Show a) => Size -> Seed -> Gen a -> m ()\
+\
+\
+-- Shrink\
+shrink :: MonadGen m => (a -> [a]) -> m a -> m a\
+prune :: MonadGen m => m a -> m a\
+\
+-- Resizing\
+small :: MonadGen m => m a -> m a\
+scale :: MonadGen m => (Size -> Size) -> m a -> m a\
+resize :: MonadGen m => Size -> m a -> m a\
+sized :: MonadGen m => (Size -> m a) -> m a\
+\
+\
+-- Generators\
+integral :: forall m a. (MonadGen m, Integral a) => Range a -> m a\
+integral_ :: (MonadGen m, Integral a) => Range a -> m a\
+int :: MonadGen m => Range Int -> m Int\
+int8 :: MonadGen m => Range Int8 -> m Int8\
+int16 :: MonadGen m => Range Int16 -> m Int16\
+int32 :: MonadGen m => Range Int32 -> m Int32\
+int64 :: MonadGen m => Range Int64 -> m Int64\
+word :: MonadGen m => Range Word -> m Word\
+word8 :: MonadGen m => Range Word8 -> m Word8\
+word16 :: MonadGen m => Range Word16 -> m Word16\
+word32 :: MonadGen m => Range Word32 -> m Word32\
+word64 :: MonadGen m => Range Word64 -> m Word64\
+realFloat :: (MonadGen m, RealFloat a) => Range a -> m a\
+realFrac_ :: (MonadGen m, RealFrac a) => Range a -> m a\
+float :: MonadGen m => Range Float -> m Float\
+double :: MonadGen m => Range Double -> m Double\
+enum :: (MonadGen m, Enum a) => a -> a -> m a\
+enumBounded :: (MonadGen m, Enum a, Bounded a) => m a\
+bool :: MonadGen m => m Bool\
+bool_ :: MonadGen m => m Bool\
+binit :: MonadGen m => m Char\
+octit :: MonadGen m => m Char\
+digit :: MonadGen m => m Char\
+hexit :: MonadGen m => m Char\
+lower :: MonadGen m => m Char\
+upper :: MonadGen m => m Char\
+alpha :: MonadGen m => m Char\
+alphaNum :: MonadGen m => m Char\
+ascii :: MonadGen m => m Char\
+latin1 :: MonadGen m => m Char\
+unicode :: MonadGen m => m Char\
+unicodeAll :: MonadGen m => m Char\
+string :: MonadGen m => Range Int -> m Char -> m String\
+text :: MonadGen m => Range Int -> m Char -> m Text\
+utf8 :: MonadGen m => Range Int -> m Char -> m ByteString\
+bytes :: MonadGen m => Range Int -> m ByteString\
+\
+-- Transforms\
+constant :: MonadGen m => a -> m a\
+element :: (Foldable f, MonadGen m) => f a -> m a\
+element_ :: MonadGen m => [a] -> m a\
+choice :: MonadGen m => [m a] -> m a\
+frequency :: MonadGen m => [(Int, m a)] -> m a\
+recursive :: MonadGen m => ([m a] -> m a) -> [m a] -> [m a] -> m a\
+discard :: MonadGen m => m a\
+ensure :: MonadGen m => (a -> Bool) -> m a -> m a\
+filter :: (MonadGen m, GenBase m ~ Identity) => (a -> Bool) -> m a -> m a\
+mapMaybe :: (MonadGen m, GenBase m ~ Identity) => (a -> Maybe b) -> m a -> m b\
+filterT :: MonadGen m => (a -> Bool) -> m a -> m a\
+mapMaybeT :: MonadGen m => (a -> Maybe b) -> m a -> m b\
+just :: (MonadGen m, GenBase m ~ Identity) => m (Maybe a) -> m a\
+justT :: MonadGen m => m (Maybe a) -> m a\
+maybe :: MonadGen m => m a -> m (Maybe a)\
+either :: MonadGen m => m a -> m b -> m (Either a b)\
+either_ :: MonadGen m => m a -> m b -> m (Either a b)\
+list :: MonadGen m => Range Int -> m a -> m [a]\
+seq :: MonadGen m => Range Int -> m a -> m (Seq a)\
+nonEmpty :: MonadGen m => Range Int -> m a -> m (NonEmpty a)\
+set :: (MonadGen m, Ord a) => Range Int -> m a -> m (Set a)\
+map :: (MonadGen m, Ord k) => Range Int -> m (k, v) -> m (Map k v)\
+freeze :: MonadGen m => m a -> m (a, m a)\
+subterm :: MonadGen m => m a -> (a -> a) -> m a\
+subtermM :: MonadGen m => m a -> (a -> m a) -> m a\
+subterm2 :: MonadGen m => m a -> m a -> (a -> a -> a) -> m a\
+subtermM2 :: MonadGen m => m a -> m a -> (a -> a -> m a) -> m a\
+subterm3 :: MonadGen m => m a -> m a -> m a -> (a -> a -> a -> a) -> m a\
+subtermM3 :: MonadGen m => m a -> m a -> m a -> (a -> a -> a -> m a) -> m a\
+subsequence :: MonadGen m => [a] -> m [a]\
+subset :: MonadGen m => Set a -> m (Set a)\
+shuffle :: MonadGen m => [a] -> m [a]\
+shuffleSeq :: MonadGen m => Seq a -> m (Seq a)\
+\
+\'85\'a0\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+Hedgehog.Range\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+newtype Size = Size \{ unSize::Int \}\
+data Range a\
+origin :: Range a -> a\
+bounds :: Size -> Range a -> (a,a)\
+lowerBound :: Ord a => Size -> Range a -> a\
+upperBound :: Ord a => Size -> Range a -> a\
+\
+singleton :: a -> Range a\
+constant :: a -> a -> Range a\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 \'a0-- constantFrom x x y\
+constantFrom :: a -> a -> a -> Range a\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0\'a0\'a0 \'a0\'a0-- constantFrom <origin> <lower> <upper>\'a0\
+constantBounded :: (Bounded a, Num a) => Range a\
+linear :: Integral a => a -> a -> Range a\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 \'a0-- linearFrom x x y\
+linearFrom :: Integral a => a -> a -> a -> Range a\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0-- linearFrom <origin> <lower> <upper>\
+linearFrac :: (Fractional a, Ord a) => a -> a -> Range a\
+linearFracFrom :: (Fractional a, Ord a) => a -> a -> a -> Range a\
+exponential :: Integral a => a -> a -> Range a\
+exponentialFrom :: Integral a => a -> a -> a -> Range a\
+exponentialFrac :: (Fractional a, Ord a) => a -> a -> Range a\
+exponentialFracFrom :: (Fractional a, Ord a) => a -> a -> a -> Range a\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf2 Property
+\f0\b0 \
+A property to be tested.\
+Properties may be 
+\f2\b grouped
+\f0\b0  together.\
+\
+
+\f2\b Generator
+\f0\b0 \
+Generates a random value chosen from a 
+\f2\b range
+\f0\b0  of values.\
+Random value is generated from a 
+\f2\b seed
+\f0\b0 .\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+import Hedgehog.Gen\
+import Hedgehog.Range\
+import Hedgehog.Internal.Seed\
+\
+gen = int (linear 1 100)\
+printWith 99 (Seed 1 1) gen\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 \'a0-- fixed seed\
+random >>= \\s -> printWith 99 s gen\'a0 \'a0 \'a0-- random seed\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+3 types of ranges:\
+- 
+\f2\b constant
+\f0\b0  range: all 
+\f2\b equal
+\f0\b0  distribution\
+- 
+\f2\b linear
+\f0\b0  range: linear scale \
+- 
+\f2\b exponential
+\f0\b0  range: exponential scale\
+\
+A range is associated with:\
+- 
+\f2\b lower/upper
+\f0\b0  bound\
+- 
+\f2\b origin 
+\f0\b0 (linear, exponential only): center of distribution\
+\'a0 \'a0close to origin\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 
+\f2\b high
+\f0\b0  distribution\
+\'a0 \'a0far from origin\'a0\'a0 \'a0\'a0 \'a0 \'a0 \'a0 
+\f2\b low
+\f0\b0  distribution\
+- 
+\f2\b size (0~99)
+\f0\b0 : scale of the bounds\
+\'a0 \'a0scale 0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 min scale \'a0i.e. lower == upper bound\
+\'a0 \'a0scale 99\'a0\'a0\'a0 \'a0\'a0 \'a0 \'a0max scale \'a0i.e. any value in [lower,upper]\
+\
+e.g. range [0, 100] with different range types\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \cb6 \
+-- constant range [0,100] \cf2 \
+[0,10]   11% \uc0\u9608 \u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[10,20]  11% \uc0\u9608 \u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[20,30]   8% \uc0\u9608 
+\f3 \uc0\u9612 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[30,40]   9% \uc0\u9608 
+\f3 \uc0\u9610 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[40,50]  11% \uc0\u9608 \u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[50,60]  10% \uc0\u9608 \u9608 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[60,70]  14% \uc0\u9608 \u9608 
+\f3 \uc0\u9610 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[70,80]   6% \uc0\u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[80,90]  12% \uc0\u9608 \u9608 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[90,100]  8% \uc0\u9608 
+\f3 \uc0\u9612 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\
+\cf4 -- linear range [0,100] with origin 0\
+[0,10]\'a0\'a0\'a036% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[10,20]\'a0\'a022% \uc0\u9608 \u9608 \u9608 \u9608 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[20,30]\'a0\'a016% \uc0\u9608 \u9608 \u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[30,40]\'a0\'a011% \uc0\u9608 \u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[40,50]\'a0\'a0\'a06% \uc0\u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[50,60]\'a0\'a0\'a06% \uc0\u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[60,70]\'a0\'a0\'a02% 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[70,80]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[80,90]\'a0\'a0\'a01% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[90,100]\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\
+-- exponential range [0,100] with origin 0\cf2 \
+[0,10]   68% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \uc0\u9612 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\
+[10,20]  12% \uc0\u9608 \u9608 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[20,30]   6% \uc0\u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[30,40]   3% 
+\f3 \uc0\u9612 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[40,50]   5% \uc0\u9608 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[50,60]   0% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[60,70]   3% 
+\f3 \uc0\u9612 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[70,80]   2% 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[80,90]   0% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[90,100]  1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\cf4 \
+\
+\cb7 \
+
+\f0 e.g. different origin/size
+\f1 \
+\cb5 \
+-- linear range [0, 100] with origin=0 size=99\
+-- i.e. range = linear 0 100\
+[0,10]\'a0\'a0\'a036% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[10,20]\'a0\'a022% \uc0\u9608 \u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9613 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[20,30]\'a0\'a016% \uc0\u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[30,40]\'a0\'a011% \uc0\u9608 \u9608 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[40,50]\'a0\'a0\'a06% \uc0\u9608 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[50,60]\'a0\'a0\'a06% \uc0\u9608 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[60,70]\'a0\'a0\'a02% 
+\f3 \cb5 \uc0\u9613 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[70,80]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[80,90]\'a0\'a0\'a01% 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[90,100]\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\
+-- linear range [0,100] with origin=50 size=99\
+-- i.e. range = linear 50 0 100\
+[0,10]\'a0\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[10,20]\'a0\'a0\'a07% \uc0\u9608 
+\f3 \cb5 \uc0\u9613 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[20,30]\'a0\'a0\'a09% \uc0\u9608 
+\f3 \cb5 \uc0\u9610 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[30,40]\'a0\'a019% \uc0\u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9610 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[40,50]\'a0\'a030% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[50,60]\'a0\'a019% \uc0\u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9610 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[60,70]\'a0\'a011% \uc0\u9608 \u9608 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[70,80]\'a0\'a0\'a04% 
+\f3 \cb5 \uc0\u9610 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[80,90]\'a0\'a0\'a01% 
+\f3 \cb5 \uc0\u9615 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[90,100]\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\
+-- linear range [0,100] with origin=0 size=30\
+-- i.e. range = resize 30 $ linear 0 100\
+[0,10]\'a0\'a0\'a033% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9612 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[10,20]\'a0\'a033% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9612 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[20,30]\'a0\'a030% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[30,40]\'a0\'a0\'a04% 
+\f3 \cb5 \uc0\u9610 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[40,50]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[50,60]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[60,70]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[70,80]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[80,90]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[90,100]\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\
+-- linear range [0,100] with origin=50 size=30\
+-- i.e. range = resize 30 $ linearFrom 50 0 100\
+[0,10]\'a0\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[10,20]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[20,30]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[30,40]\'a0\'a018% \uc0\u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9612 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[40,50]\'a0\'a032% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9613 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[50,60]\'a0\'a033% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9612 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[60,70]\'a0\'a017% \uc0\u9608 \u9608 \u9608 
+\f3 \cb5 \uc0\u9613 
+\f1 \cb5 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[70,80]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[80,90]\'a0\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+[90,100]\'a0\'a00% \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+Code for above\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+import Data.Foldable\
+import GHC.Exts (fromString)\
+import Hedgehog\
+import Hedgehog.Gen\
+import Hedgehog.Range\
+\
+testCoverage :: Gen Int -> Property\
+testCoverage\'a0gen = property $ forAll gen >>=\'a0printCoverages\
+\
+printCoverages\'a0:: MonadTest m => Int -> m ()\
+printCoverages\'a0x = traverse_ coverIn $ enumFromThenTo 0 step 90\
+\'a0\'a0where\
+\'a0\'a0\'a0\'a0step = 10\
+\'a0 \'a0 coverIn\'a0lb = let ub = lb + step in classify ("[" <> fromString (show lb) <> "," <> fromString (show ub) <> "]") $ x > lb && x <= ub\
+\
+-- e.g. coverage of varying origin/size\
+testCoverage\'a0$ int $ linear 0 100\
+testCoverage\'a0$ int (linearFrom 50 0 100)\
+testCoverage\'a0$ resize 30 $ int $ linear 0 100\
+testCoverage\'a0$ resize 30 $ int $ linearFrom 50 0 100\
+-- range types\
+testCoverage\'a0$ int $ constant 0 100\
+testCoverage\'a0$ int $ exponential 0 100\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf2 Shrink
+\f0\b0 \
+A mechanism to try to specify the 
+\f2\b boundary case 
+\f0\b0 when a test fails.\
+When a test fails at some\'a0value
+\f2\b ,
+\f0\b0  it 
+\f2\b shrinks
+\f0\b0 \'a0(i.e. 
+\f2\b reduces
+\f0\b0 ) the test value from the failure point until it reaches the 
+\f2\b success/fail boundary
+\f0\b0 \
+\'a0\
+\'a0 \'a0\'a0failure point\'a0\'a0==shrink==>\
+\'a0\'a0\'a0\'a0 \'a0\'a0 \'a0 x\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0Boundary \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 \'a0\'a0\'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 0\
+\'a0 \'a0 \'a0 \'a0 \'a0 \uc0\u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 |\u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \u9473 \
+\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0 fail <== | ==> success\
+\'a0 \'a0 \'a0 \'a0 \'a0\
+\
+e.g. determine first integer failing x <= 200\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+prop_shrinktest :: Property\
+prop_shrinktest = property $ do\
+\'a0\'a0x <- forAll $ int $ linear 0 1000\
+\'a0\'a0(x <= 200) === True\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+Finds boundary at 201 via shrinking\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+\'a0\'a0
+\f3 \cb5 \uc0\u10007 
+\f1 \cb5  prop_shrinktest failed at /Users/yuinishizawa/Projects/playground/haskell/haskellInDepthGHC9/src/scratch/hedgehog.hs:56:14\
+\'a0\'a0\'a0\'a0after 26 tests and 4 shrinks.\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \cb5 \uc0\u9487 \u9473 \u9473 
+\f1 \cb5  src/scratch/hedgehog.hs 
+\f3 \cb5 \uc0\u9473 \u9473 \u9473 
+\f1 \cb5 \
+\'a0\'a0\'a0\'a053 
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5  prop_shrinktest :: Property\
+\'a0\'a0\'a0\'a054 
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5  prop_shrinktest = property $ do\
+\'a0\'a0\'a0\'a055 
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5 \'a0\'a0\'a0x <- forAll $ int $ linear 0 1000\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5 \'a0\'a0\'a0\uc0\u9474  201\
+\'a0\'a0\'a0\'a056 
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5 \'a0\'a0\'a0(x <= 200) === True\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5 \'a0\'a0\'a0^^^^^^^^^^^^^^^^^^^\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5 \'a0\'a0\'a0\uc0\u9474  
+\f3 \cb5 \uc0\u9473 \u9473 \u9473 
+\f1 \cb5  Failed (- lhs) (+ rhs) 
+\f3 \cb5 \uc0\u9473 \u9473 \u9473 
+\f1 \cb5 \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5 \'a0\'a0\'a0\uc0\u9474  - False\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \cb5 \uc0\u9475 
+\f1 \cb5 \'a0\'a0\'a0\uc0\u9474  + True\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 \ul \ulc2 Usages\ulnone \
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf2 Example
+\f0\b0 : Basic usage\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+\{# LANGUAGE OverloadedStrings #\}\
+\
+import HedgeHog\
+import qualified HedgeHog.Gen as H\
+import qualified HedgeHog.Range as H\
+import Control.Exception\
+import Control.Monad\
+\
+genNum :: Gen Int\
+genNum = H.int (H.linear 0 100)\
+\
+runGroup :: IO ()\
+runGroup = do\
+\'a0 success <- checkSequential group\
+\'a0 unless success $ throw $ userError "FAIL!"\
+\
+group :: Group\
+group = Group\
+\'a0 "Test"\
+\'a0 [\
+\'a0 \'a0 ("reflexivity", property $ do\
+\'a0 \'a0 \'a0 x <- forAll genNum\
+\'a0 \'a0 \'a0 y <- forAll genNum\
+\'a0\'a0 \'a0 \'a0x === x\
+\'a0 \'a0 \'a0 x /== y\'a0\
+\'a0 \'a0 )\
+\'a0 ]\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf2 GOTCHA
+\f0\b0 : 
+\f2\b sample
+\f0\b0  function only generates small values\
+
+\f2\b sample
+\f0\b0  uses default 
+\f2\b size
+\f0\b0  
+\f2\b 30
+\f0\b0  (see source code\'a0{\field{\*\fldinst{HYPERLINK "https://hackage.haskell.org/package/hedgehog-1.2/docs/src/Hedgehog.Internal.Gen.html#sample"}}{\fldrslt \cf3 \ul \ulc3 https://hackage.haskell.org/package/hedgehog-1.2/docs/src/Hedgehog.Internal.Gen.html#sample}})\
+\'a0 e.g. if range is 0 ~ 100, size 30 reduces the range to (0 ~ 30)\
+Need to use 
+\f2\b printWith
+\f0\b0  to specify a size\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+ghci> import Hedgehog\
+ghci> import Hedgehog.Gen\
+ghci> import Hedgehog.Range\
+ghci> import Hedgehog.Internal.Seed\
+ghci> gen = int (linear 1 100)\
+\
+-- sample: uses size 30 i.e. range (1 ~ 30)\
+ghci> sample gen\
+11\
+ghci> sample gen\
+20\
+\
+-- printWith: specify seed + size\
+ghci> printWith 99 (Seed 13 100) ge\
+=== Outcome ===\
+17\
+=== Shrinks ===\
+\'85\'a0\
+\
+ghci> printWith 99 (Seed 13 100) gen\'a0 \'a0\'a0\'a0\'a0 \'a0\'a0 \'a0\'a0-- same seed, same outcome\
+=== Outcome ===\
+17\
+=== Shrinks ===\
+\'85 \
+\
+ghci> printWith 99 (Seed 130 10) gen\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0\'a0-- different seed\
+=== Outcome ===\
+55\
+=== Shrinks ===\
+\'85 \
+\
+ghci> import Hedgehog.Internal.Seed\
+ghci> seed <- random\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0\'a0-- random seed\
+ghci> printWith 99 seed gen\
+=== Outcome ===\
+60\
+=== Shrinks ===\
+1\
+\'85\'a0\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+Sample many with 
+\f2\b replicateM
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+-- Many with sample\
+ghci> replicateM 10 $ sample gen\
+[20,19,19,3,13,30,25,22,16,24]\
+\
+-- Many with printWith\
+ghci> import Data.Foldable\'a0\'a0\'a0\'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0\'a0-- traverse_\
+ghci> seeds = replicateM 10 random\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0\'a0-- random seeds\
+ghci> join $ (traverse_ (\\s -> printWith 99 s gen)) <$> seeds\
+=== Outcome ===\
+6\
+=== Shrinks ===\
+1\
+3\
+5\
+=== Outcome ===\
+56\
+=== Shrinks ===\
+1\
+28\
+\'85.\'a0\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf2 Usage
+\f0\b0 : print values used in tests\
+use 
+\f2\b label/collect
+\f0\b0  to print all used values\
+e.g.\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+prop_shrinktest :: Property\
+prop_shrinktest = property $ do\
+\'a0\'a0x <- forAll $ int $ linear 0 1000\
+\'a0\'a0collect x\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+All values of x used\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+\'a0\'a0
+\f3 \uc0\u10003 
+\f1  prop_shrinktest passed 100 tests.\
+\'a0\'a0\'a0\'a00\'a0\'a0\'a01% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0107 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0110 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0117 2% 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0119 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a012\'a0\'a01% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0121 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0130 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0136 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0138 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0139 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'a0\'a0\'a0\'a0143 1% 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\
+\'85\'a0\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf2 Usage
+\f0\b0 : test coverage of generated numbers\
+Use 
+\f2\b cover
+\f0\b0  function\
+e.g.\'a0\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+import Hedgehog\
+import Hedgehog.Gen\
+import Hedgehog.Range\
+\
+prop_testcoverage :: Property \
+prop_testcoverage = property $ do\
+\'a0\'a0x <- forAll $ int $ linearFrom 50 0 100\
+\'a0\'a0cover 1 "[0,20)" $ 0 <= x && x < 20\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0-- at least 1% in [0,20]\
+\'a0\'a0cover 20 "[20,40)" $ 20 <= x && x < 40\'a0\'a0 \'a0\'a0 \'a0\'a0-- at least 20% in [20,40)\
+\'a0\'a0cover 40 "[40,60)" $ 40 <= x && x < 60\
+\'a0\'a0cover 20 "[60,80)" $ 60 <= x && x < 80\
+\'a0\'a0cover 1 "[80,100)" $ 80 <= x && x < 100\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+output\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+-- e.g. success coverage\
+\'a0\'a0\'a0
+\f3 \uc0\u10003 
+\f1  prop_testcoverage passed 100 tests.\
+\'a0\'a0\'a0\'a0[0,20)\'a0\'a0\'a0\'a06% \uc0\u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  1%\
+\'a0\'a0\'a0\'a0[20,40)\'a0\'a026% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \uc0\u9615 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  20%\
+\'a0\'a0\'a0\'a0[40,60)\'a0\'a044% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 
+\f3 \uc0\u9610 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  40%\
+\'a0\'a0\'a0\'a0[60,80)\'a0\'a022% \uc0\u9608 \u9608 \u9608 \u9608 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  20%\
+\'a0\'a0\'a0\'a0[80,100)\'a0\'a02% 
+\f3 \uc0\u9613 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  1%\
+\
+-- e.g. failed coverage\
+\'a0\'a0
+\f3 \uc0\u10007 
+\f1  prop_testcoverage failed\
+\'a0\'a0\'a0\'a0after 100 tests.\
+\'a0\'a0\'a0\'a0[0,20)\'a0\'a0\'a0\'a05% \uc0\u9608 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  1%\
+\'a0\'a0
+\f3 \uc0\u9888 
+\f1  [20,40)\'a0\'a019% \uc0\u9608 \u9608 \u9608 
+\f3 \uc0\u9610 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10007 
+\f1  20%\
+\'a0\'a0\'a0\'a0[40,60)\'a0\'a050% \uc0\u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \u9608 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  40%\
+\'a0\'a0
+\f3 \uc0\u9888 
+\f1  [60,80)\'a0\'a018% \uc0\u9608 \u9608 \u9608 
+\f3 \uc0\u9612 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10007 
+\f1  20%\
+\'a0\'a0\'a0\'a0[80,100)\'a0\'a08% \uc0\u9608 
+\f3 \uc0\u9612 
+\f1 \'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7\'b7 
+\f3 \uc0\u10003 
+\f1  1%\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+\
+\ul Basic\ulnone \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 -- Assertions
+\f0 \cf2 \
+
+\f1 \cf4 --\'a0
+\f0 \cf2 \
+
+\f1 \cf4 1 === 1
+\f0 \cf2 \
+
+\f1 \cf4 1 /== 1
+\f0 \cf2 \
+\
+
+\f1 \cf4 -- tripping: test 1-1 conversions
+\f0 \cf2 \
+
+\f1 \cf4 -- Shows better error message
+\f0 \cf2 \
+
+\f1 \cf4 tripping :: (MonadTest m, Applicative f, Show b, Show (f a), Eq (f a), HasCallStack) =>\'a0
+\f0 \cf2 \
+
+\f1 \cf4 \'a0 a -> (a -> b) -> (b -> f a) -> m ()
+\f0 \cf2 \
+
+\f1 \cf4 let readMaybe :: String -> Either String Int
+\f0 \cf2 \
+
+\f1 \cf4 \'a0 \'a0 readMaybe s = case reads s of [(a, "")] -> Right (a + 1); _ -> Left "ERROR"
+\f0 \cf2 \
+
+\f1 \cf4 tripping 10 show readMaybe\'a0\'a0 \'a0\'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0 \'a0
+\f0 \cf2 \
+
+\f1 \cf4 readMaybe (show 10) === pure 10\'a0\'a0 \'a0\'a0\'a0 \'a0\'a0 \'a0\'a0-- analogous with ===
+\f0 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf4 \cb5  \
+# Error with tripping\
+\'a0\'a0\'a0\'a0114 
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0tripping 10 show readMaybe\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  
+\f3 \uc0\u9473 \u9473 \u9473 
+\f1  Intermediate 
+\f3 \uc0\u9473 \u9473 \u9473 
+\f1 \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  "1"\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  
+\f3 \uc0\u9473 \u9473 \u9473 
+\f1  - Original) (+ Roundtrip 
+\f3 \uc0\u9473 \u9473 \u9473 
+\f1 \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  - Right 10\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  + Right 11\
+\
+\
+# Error without tripping\
+\'a0\'a0\'a0\'a0114 
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0readMaybe (show 10) === pure 10\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  
+\f3 \uc0\u9473 \u9473 \u9473 
+\f1  Failed (- lhs) (+ rhs) 
+\f3 \uc0\u9473 \u9473 \u9473 
+\f1 \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  - Right 11\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f3 \uc0\u9475 
+\f1 \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\uc0\u9474  + Right 10\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \
+\
+}

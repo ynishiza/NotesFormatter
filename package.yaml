@@ -133,14 +133,14 @@ library:
   source-dirs: ./lib
 
 executables:
-  app:
+  main:
     main:               Main.hs
     source-dirs:        ./src
     dependencies: 
       - NotesFormatter
 
 tests:
-  app-test: 
+  main-test: 
     main:               Main.hs
     source-dirs:      ./test
     dependencies: 

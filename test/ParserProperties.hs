@@ -1,15 +1,17 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-
 module ParserProperties (group) where
 
+import Control.Lens
 import Data.Attoparsec.ByteString
 import Data.Foldable
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text.Encoding qualified as T
 import GHC.Exts (fromString)
 import Hedgehog
 import ParserGen
-import RTF.Parser
+import RTF.Encoding
+
+testCount :: TestLimit
+testCount = 400
 
 group :: Group
 group = $$discover
@@ -18,7 +20,7 @@ labelName :: Show a => a -> LabelName
 labelName = fromString . show
 
 property_ :: PropertyT IO () -> Property
-property_ = withTests 300 . property
+property_ = withTests testCount . property
 
 prop_fontFamily :: Property
 prop_fontFamily = property_ $ do
@@ -28,7 +30,7 @@ prop_fontFamily = property_ $ do
 
 prop_colorDef :: Property
 prop_colorDef = property_ $ do
-  x@(ColorDef r g b) <- forAll genColorDef
+  x@(RTFColor r g b) <- forAll genRTFColor
   cover 10 "small red" $ maybe False (< 100) r
   cover 10 "large red" $ maybe False (> 200) r
   cover 1 "default red" $ isNothing r
@@ -38,8 +40,44 @@ prop_colorDef = property_ $ do
   cover 10 "small blue" $ maybe False (< 100) b
   cover 10 "large blue" $ maybe False (> 200) b
   cover 1 "default blue" $ isNothing b
-  cover 0.01 "all default" $ isNothing r && isNothing g && isNothing b
-  cover 0.01 "all non-default" $ isJust r && isJust g && isJust b
+  cover 1 "all default" $ isNothing r && isNothing g && isNothing b
+  cover 1 "all non-default" $ isJust r && isJust g && isJust b
+  testRTFEncoding x
+
+prop_fontInfo :: Property
+prop_fontInfo = property_ $ do
+  x@(FontInfo fnum fontFamily _ fname) <- forAll genFontInfo
+  coverEnum fontFamily
+  testRTFEncoding x
+
+prop_colorSpace :: Property
+prop_colorSpace = property_ $ do
+  x <- forAll genColorSpace
+  let checkCoverage (name, lns) = do
+        cover 1 (name <> " == 0") $ fromMaybe False $ previews lns (== 0) x
+        cover 1 (name <> " == max") $ fromMaybe False $ previews lns (== csValueMax) x
+        cover 1 (name <> " in between") $ fromMaybe False $ previews lns (\v -> v > 0 && v < csValueMax) x
+
+  traverse_
+    checkCoverage
+    [ ("CSGray", _CSGray)
+    , ("CSSRGB R", _CSSRGB . _1)
+    , ("CSSRGB G", _CSSRGB . _2)
+    , ("CSSRGB B", _CSSRGB . _3)
+    , ("CSGenericRGB R", _CSGenericRGB . _1)
+    , ("CSGenericRGB G", _CSGenericRGB . _2)
+    , ("CSGenericRGB B", _CSGenericRGB . _3)
+    ]
+
+  testRTFEncoding x
+
+prop_rtfHeader :: Property
+prop_rtfHeader = property_ $ do
+  x@(RTFHeader _ _ _ colors) <- forAll genRTFHeader
+  cover 1 "Default color " $ any (\(RTFColor{..}, _) -> isNothing red && isNothing green && isNothing green) colors
+  cover 10 "Non-default color " $ any (\(RTFColor{..}, _) -> isJust red || isJust green || isJust green) colors
+  cover 1 "Default color space" $ any (isNothing . snd) colors
+  cover 10 "Non-default color space" $ any (isJust . snd) colors
   testRTFEncoding x
 
 testRTFEncoding :: (Show a, Eq a, RTFEncoding a, Monad m) => a -> PropertyT m ()

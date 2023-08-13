@@ -25,7 +25,9 @@ source-repository head
 
 library
   exposed-modules:
-      B.Lib
+      RTF.Encoding
+      RTF.ExtensionTypes
+      RTF.Types
       Utils
   other-modules:
       Paths_NotesFormatter
@@ -94,11 +96,9 @@ library
     , unix-compat >=0.5 && <1
   default-language: Haskell2010
 
-executable app
+executable main
   main-is: Main.hs
   other-modules:
-      RTF.Parser
-      RTF.Type
       Paths_NotesFormatter
   hs-source-dirs:
       ./src
@@ -166,15 +166,15 @@ executable app
     , unix-compat >=0.5 && <1
   default-language: Haskell2010
 
-test-suite app-test
+test-suite main-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      B.Lib
       ParserGen
       ParserProperties
-      RTF.Parser
-      RTF.Type
+      RTF.Encoding
+      RTF.ExtensionTypes
+      RTF.Types
       Utils
       Paths_NotesFormatter
   hs-source-dirs:
