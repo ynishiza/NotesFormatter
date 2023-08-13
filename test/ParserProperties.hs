@@ -4,9 +4,12 @@ import Control.Lens
 import Data.Attoparsec.ByteString
 import Data.Foldable
 import Data.Maybe (fromMaybe, isJust, isNothing)
+import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
 import GHC.Exts (fromString)
 import Hedgehog
+import Hedgehog.Gen qualified as G
+import Hedgehog.Range qualified as R
 import ParserGen
 import RTF.Encoding
 
@@ -79,6 +82,29 @@ prop_rtfHeader = property_ $ do
   cover 1 "Default color space" $ any (isNothing . snd) colors
   cover 10 "Non-default color space" $ any (isJust . snd) colors
   testRTFEncoding x
+
+prop_rtfContentOther :: Property
+prop_rtfContentOther = property_ $ do
+  x <- forAll $ G.list (R.linearFrom 5 0 100) genRTFNonTextContent
+  -- TODO: plaintext
+  -- collect $ T.intercalate "a" $ encodeRTF <$> x
+  tripping x (T.intercalate "" . (encodeRTF <$>)) (parseOnly (many' decodeRTF) . T.encodeUtf8)
+
+prop_rtfContent :: Property
+prop_rtfContent = property_ $ do
+  -- x <- forAll genRTFContents
+  x <- forAll genRTFContents2
+
+  cover 20 "Newline" $ has (traverse . _RTFNewLine) x
+  cover 20 "Literal \\" $ has (traverse . _RTFLiteralSlash) x
+  cover 20 "Literal {" $ has (traverse . _RTFLiteralOpenBrace) x
+  cover 20 "Tag with trailing space" $ has (traverse . _RTFTag . _2 . _TrailingSpace) x
+  cover 20 "Tag with trailing symbol" $ has (traverse . _RTFTag . _2 . _TrailingSymbol) x
+  cover 20 "Tag with parameter" $ has (traverse . _RTFTag . _2 . _TagParameter) x
+  cover 20 "Large text" $ anyOf (traverse . _RTFText) (\t -> T.length t > 100) x
+  tripping x (T.intercalate "" . (encodeRTF <$>)) (parseOnly (many' decodeRTF) . T.encodeUtf8)
+
+-- undefined
 
 testRTFEncoding :: (Show a, Eq a, RTFEncoding a, Monad m) => a -> PropertyT m ()
 testRTFEncoding x = tripping x encodeRTF (parseOnly decodeRTF . T.encodeUtf8)

@@ -6,9 +6,12 @@ module RTF.Types (
   FontFamily (..),
   FontInfo (..),
   Charset (..),
+  RTFDoc (..),
+  RTFContent (..),
   Word8,
   Text,
   Parser,
+  RTFTagEnd (..),
   -- Lens
   _rtfCharset,
   _rtfCocoaControls,
@@ -20,12 +23,43 @@ module RTF.Types (
   _fontName,
   _FNil,
   _FRoman,
+  _rtfDocContent,
+  _rtfDocHeader,
+  _RTFText,
+  _RTFLiteralSlash,
+  _RTFLiteralOpenBrace,
+  _RTFLiteralCloseBrace,
+  _RTFNewLine,
+  _RTFTag,
+  _RTFBlock,
+  _TrailingSymbol,
+  _TagParameter,
+  _TrailingSpace,
 ) where
 
 import Data.Attoparsec.ByteString.Char8
 import Data.Word
 import RTF.ExtensionTypes
 import Utils
+
+data RTFDoc = RTFDoc
+  { rtfDocHeader :: RTFHeader
+  , rtfDocContent :: [RTFContent]
+  }
+  deriving stock (Eq, Show)
+
+data RTFContent
+  = RTFLiteralSlash
+  | RTFLiteralOpenBrace
+  | RTFLiteralCloseBrace
+  | RTFNewLine
+  | RTFTag Text RTFTagEnd
+  | RTFBlock Text
+  | RTFText Text
+  deriving stock (Eq, Show)
+
+data RTFTagEnd = TagParameter Word8 | TrailingSpace | TrailingSymbol
+  deriving stock (Eq, Show)
 
 -- \rtf <charset> \deff? <fonttbl> <filetbl>? <colortbl>? <stylesheet>? <listtables>? <revtbl>?
 data RTFHeader = RTFHeader
@@ -61,4 +95,7 @@ newtype Charset = Ansi Int
 
 $(makeLensesWith dataLensRules ''FontInfo)
 $(makeLensesWith dataLensRules ''RTFHeader)
+$(makeLensesWith dataLensRules ''RTFDoc)
 $(makePrisms ''FontFamily)
+$(makePrisms ''RTFContent)
+$(makePrisms ''RTFTagEnd)

@@ -4,8 +4,12 @@ module ParserGen (
   genFontInfo,
   genColorSpace,
   genRTFHeader,
+  genRTFContents,
+  genRTFContents2,
+  genRTFNonTextContent,
 ) where
 
+import Data.Char (isPrint)
 import Hedgehog
 import Hedgehog.Gen as G
 import Hedgehog.Range as R
@@ -73,3 +77,54 @@ genRTFHeader =
  where
   charset = Ansi <$> int (linear 0 10)
   color = (,) <$> genRTFColor <*> G.maybe genColorSpace
+
+genRTFContents :: Gen [RTFContent]
+genRTFContents = do
+  texts <- list (linearFrom 10 0 100) plainText
+  let contents = clean . concat <$> traverse (\t -> (t :) <$> others) texts
+      contentsEndingWithText = clean <$> ((++) <$> contents <*> ((: []) <$> plainText))
+  choice
+    [ (:) <$> genRTFNonTextContent <*> contents
+    , (:) <$> genRTFNonTextContent <*> contentsEndingWithText
+    , contents
+    , contentsEndingWithText
+    ]
+ where
+  others = list (linear 1 20) genRTFNonTextContent
+  plainText = RTFText <$> G.text (R.constant 1 100) (G.filter isPlainChar unicodeAll)
+  isPlainChar c = (c `notElem` ("//{}" :: String)) && isPrint c
+
+  clean (RTFTag n TrailingSymbol : RTFText t : rest) = RTFTag n TrailingSymbol : RTFText ("!" <> t) : rest
+  clean (RTFTag n p@(TagParameter _) : RTFText t : rest) = RTFTag n p : RTFText ("a" <> t) : rest
+  clean (x : xs) = x : clean xs
+  clean [] = []
+
+genRTFContents2 :: Gen [RTFContent]
+genRTFContents2 =
+  list (linear 1 200) (choice [genRTFNonTextContent, plainText])
+    <&> clean
+ where
+  plainText = RTFText <$> G.text (R.constant 1 100) (G.filter isPlainChar unicodeAll)
+  isPlainChar c = (c `notElem` ("\\{}" :: String)) && isPrint c
+
+  clean (RTFText t1 : RTFText t2 : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
+  clean (RTFTag n TrailingSymbol : RTFText t : rest) = RTFTag n TrailingSymbol : clean (RTFText ("!" <> t) : rest)
+  clean (RTFTag n p@(TagParameter _) : RTFText t : rest) = RTFTag n p : clean (RTFText ("a" <> t) : rest)
+  clean (x : xs) = x : clean xs
+  clean [] = []
+
+genRTFNonTextContent :: Gen RTFContent
+genRTFNonTextContent =
+  choice
+    [ return RTFNewLine
+    , return RTFLiteralCloseBrace
+    , return RTFLiteralOpenBrace
+    , return RTFLiteralSlash
+    , RTFTag
+        <$> G.text (R.constant 1 20) alpha
+        <*> choice
+          [ TagParameter <$> word8 (linear 1 100)
+          , return TrailingSymbol
+          , return TrailingSpace
+          ]
+    ]

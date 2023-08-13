@@ -9,7 +9,6 @@
 -}
 
 module RTF.Encoding (
-  anyRtfControl,
   charBlockEnd,
   RTFEncoding (..),
   ByteString,
@@ -41,7 +40,60 @@ class RTFEncoding c => RTFItemEncoding c where
   encodeItem Nothing = charBlockEnd
 
   decodeItem :: Parser (Maybe c)
-  decodeItem =  (blockEnd >> return Nothing) <|> (Just <$> decodeRTF)
+  decodeItem = (blockEnd >> return Nothing) <|> (Just <$> decodeRTF)
+
+instance RTFEncoding RTFDoc where
+  encodeRTF RTFDoc {..} = "{" <> encodeRTF rtfDocHeader <> "\n" <> 
+      T.intercalate "" (encodeRTF <$> rtfDocContent) <> "}"
+
+instance RTFEncoding RTFContent where
+  encodeRTF RTFLiteralSlash = "\\\\\\"
+  encodeRTF RTFLiteralOpenBrace = "\\{"
+  encodeRTF RTFLiteralCloseBrace = "\\}"
+  encodeRTF RTFNewLine = "\\\n"
+  encodeRTF (RTFText t) = t
+  encodeRTF (RTFTag t trailing) = encodeRTFControl $ t <> s
+   where
+    s = case trailing of
+      TagParameter n -> showt n
+      TrailingSpace -> " "
+      TrailingSymbol -> ""
+  encodeRTF (RTFBlock t) = encodeRTFBlock t
+  decodeRTF =
+    choice
+      [ slash
+      , openBrace
+      , closeBrace
+      , tag
+      , block
+      , newline
+      , plainText
+      ]
+      -- (skipSpace >> slash <|> openBrace <|> closeBrace <|> newline <|> tag <|> block <|> plainText)
+      <?> "RTFContent"
+   where
+    slash =
+      string "\\\\\\" >> return RTFLiteralSlash
+        <?> "RTFLiteralSlash //"
+    openBrace =
+      string "\\{" >> return RTFLiteralOpenBrace
+        <?> "RTFLiteralOpenBrace {"
+    closeBrace =
+      string "\\}" >> return RTFLiteralCloseBrace
+        <?> "RTFLiteralCloseBrace }"
+    newline =
+      char '\\' >> satisfy isSpace >> return RTFNewLine
+        -- string "\\\n" >> return RTFNewLine
+        <?> "RTFNewLine"
+    tag =
+      uncurry RTFTag <$> parseTag
+        <?> "RTFTag"
+    block =
+      RTFBlock <$> rtfBlock' (nonEmpty "RTFBlock" $ toText $ takeWhile (/= '}'))
+        <?> "RTFBlock"
+    plainText =
+      RTFText <$> toNonEmptyText "RTFContent" (takeWhile (/= '\\'))
+        <?> "RTFText"
 
 instance RTFEncoding RTFHeader where
   encodeRTF (RTFHeader{..}) =
@@ -55,15 +107,16 @@ instance RTFEncoding RTFHeader where
     rtfControlWith "rtf1"
       *> ( RTFHeader
             <$> decodeRTF @Charset
-            <*> many (decodeRTF @CocoaControl)
+            <*> many' (decodeRTF @CocoaControl)
             <*> decodeRTF @FontTbl
             <*> colors
          )
-      where colors = do
-              ColorTbl cs <- decodeRTF @ColorTbl
-              ExpandedColorTbl ec <- decodeRTF
-              guard $ length cs == length ec
-              return $ zip cs ec
+   where
+    colors = do
+      ColorTbl cs <- decodeRTF @ColorTbl
+      ExpandedColorTbl ec <- decodeRTF
+      guard $ length cs == length ec
+      return $ zip cs ec
 
 instance RTFEncoding ExpandedColorTbl where
   encodeRTF (ExpandedColorTbl defs) =
@@ -179,9 +232,14 @@ encodeCSValue v = encodeRTFControl "c" <> showt v
 
 rtfBlock :: Parser a -> Parser a
 rtfBlock p =
-  (skipSpace *> char '{')
+  (skipSpace *> rtfBlock' p <* skipSpace)
+    <?> "{ }"
+
+rtfBlock' :: Parser a -> Parser a
+rtfBlock' p =
+  char '{'
     *> p
-    <* (skipSpace >> char '}' >> skipSpace)
+    <* (skipSpace >> char '}')
     <?> "{ }"
 
 debugPeek :: Parser ()
@@ -197,15 +255,16 @@ rtfControlWith s =
   rtfControl (string (T.encodeUtf8 s) *> return s)
     <?> ("\\" <> T.unpack s)
 
-anyRtfControl :: Parser Text
-anyRtfControl = rtfControl undefined
-
 encodeRTFControl :: Text -> Text
 encodeRTFControl = ("\\" <>)
 
 rtfControl :: Parser Text -> Parser Text
 rtfControl p =
-  skipSpace *> char '\\' >> p
+  skipSpace *> rtfControl' p
+    <?> "RTFControl"
+rtfControl' :: Parser Text -> Parser Text
+rtfControl' p =
+  char '\\' >> p
     <?> "RTFControl"
 
 blockEnd :: Parser ()
@@ -222,5 +281,53 @@ alphaNum =
   takeWhile (\c -> isAlpha_ascii c || isDigit c)
     & toText
 
+nonEmpty :: String -> Parser Text -> Parser Text
+nonEmpty name p = do
+  t <- p
+  when (T.null t) $ fail $ "[" <> name <> "] Empty text"
+  return t
+
 toText :: Parser ByteString -> Parser Text
 toText = (T.decodeUtf8 <$>)
+
+toNonEmptyText :: String -> Parser ByteString -> Parser Text
+toNonEmptyText name = nonEmpty name . toText
+
+{-
+  From RTF Spec: https://www.biblioscape.com/rtf15_spec.htm#Heading2
+
+  >>>
+     A control word is a specially formatted command that RTF uses to mark printer control codes and information that applications use to manage documents. A control word cannot be longer than 32 characters. A control word takes the following form:
+
+        \LetterSequence<Delimiter>
+
+    Note that a backslash begins each control word.
+
+    The LetterSequence is made up of lowercase alphabetic characters between "a" and "z" inclusive. RTF is case sensitive, and all RTF control words must be lowercase.
+
+    The delimiter marks the end of an RTF control word, and can be one of the following:
+
+    * A space. In this case, the space is part of the control word.
+
+    * A digit or a hyphen (-), which indicates that a numeric parameter follows. The subsequent digital sequence is then delimited by a space or any character other than a letter or a digit. The parameter can be a positive or a negative number. The range of the values for the number is generally -32767 through 32767. However, Word tends to restrict the range to -31680 through 31680. Word allows values in the range -2,147,483,648 to 2,147,483,648 for a small number of keywords (specifically \bin, \revdttm, and some picture properties). An RTF parser must handle an arbitrary string of digits as a legal value for a keyword. If a numeric parameter immediately follows the control word, this parameter becomes part of the control word. The control word is then delimited by a space or a nonalphabetic or nonnumeric character in the same manner as any other control word.
+
+    * Any character other than a letter or a digit. In this case, the delimiting character terminates the control word but is not actually part of the control word.
+
+    If a space delimits the control word, the space does not appear in the document. Any characters following the delimiter, including spaces, will appear in the document. For this reason, you should use spaces only where necessary; do not use spaces merely to break up RTF code.
+
+    A control symbol consists of a backslash followed by a single, nonalphabetic character. For example, \~ represents a nonbreaking space. Control symbols take no delimiters.
+  >>>
+-}
+parseTag :: Parser (Text, RTFTagEnd)
+parseTag =
+  char '\\'
+    *> choice
+      [ -- case: end with space. In this case space is part of the control
+        (,TrailingSpace) <$> tagName <* satisfy isSpace
+      , -- case: end with number
+        (,) <$> tagName <*> (TagParameter <$> tagNum)
+      , (,TrailingSymbol) <$> tagName
+      ]
+ where
+  tagName = T.pack <$> many1' letter_ascii
+  tagNum = decimal @Word8
