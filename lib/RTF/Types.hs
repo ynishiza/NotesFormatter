@@ -1,4 +1,11 @@
 module RTF.Types (
+  RTFGroup(..),
+  RTFControlWord(..),
+  RTFControlSymbol(..),
+  _TrailingSymbol,
+  _RTFControlParam,
+  _TrailingSpace,
+  --
   RTFHeader (..),
   ColorTbl (..),
   FontTbl (..),
@@ -11,7 +18,7 @@ module RTF.Types (
   Word8,
   Text,
   Parser,
-  RTFTagEnd (..),
+  RTFControlWordEnd (..),
   -- Lens
   _rtfCharset,
   _rtfCocoaControls,
@@ -25,22 +32,35 @@ module RTF.Types (
   _FRoman,
   _rtfDocContent,
   _rtfDocHeader,
-  _RTFText,
+  _RTFPlainText,
   _RTFLiteralSlash,
   _RTFLiteralOpenBrace,
   _RTFLiteralCloseBrace,
   _RTFNewLine,
   _RTFTag,
   _RTFBlock,
-  _TrailingSymbol,
-  _TagParameter,
-  _TrailingSpace,
+  --
 ) where
 
 import Data.Attoparsec.ByteString.Char8
 import Data.Word
 import RTF.ExtensionTypes
 import Utils
+
+data RTFControlWord = RTFControlWord Text RTFControlWordEnd
+  deriving stock (Eq, Show)
+
+data RTFControlWordEnd = RTFControlParam Word8 | TrailingSpace | TrailingSymbol
+  deriving stock (Eq, Show)
+
+newtype RTFControlSymbol = RTFControlSymbol Text
+  deriving stock (Eq, Show)
+
+newtype RTFGroup = RTFGroup [RTFContent]
+  deriving stock (Eq, Show)
+
+newtype RTFText = RTFText Text
+  deriving stock (Eq, Show)
 
 data RTFDoc = RTFDoc
   { rtfDocHeader :: RTFHeader
@@ -53,12 +73,9 @@ data RTFContent
   | RTFLiteralOpenBrace
   | RTFLiteralCloseBrace
   | RTFNewLine
-  | RTFTag Text RTFTagEnd
+  | RTFTag Text RTFControlWordEnd
   | RTFBlock Text
-  | RTFText Text
-  deriving stock (Eq, Show)
-
-data RTFTagEnd = TagParameter Word8 | TrailingSpace | TrailingSymbol
+  | RTFPlainText Text
   deriving stock (Eq, Show)
 
 -- \rtf <charset> \deff? <fonttbl> <filetbl>? <colortbl>? <stylesheet>? <listtables>? <revtbl>?
@@ -98,4 +115,4 @@ $(makeLensesWith dataLensRules ''RTFHeader)
 $(makeLensesWith dataLensRules ''RTFDoc)
 $(makePrisms ''FontFamily)
 $(makePrisms ''RTFContent)
-$(makePrisms ''RTFTagEnd)
+$(makePrisms ''RTFControlWordEnd)

@@ -43,19 +43,23 @@ class RTFEncoding c => RTFItemEncoding c where
   decodeItem = (blockEnd >> return Nothing) <|> (Just <$> decodeRTF)
 
 instance RTFEncoding RTFDoc where
-  encodeRTF RTFDoc {..} = "{" <> encodeRTF rtfDocHeader <> "\n" <> 
-      T.intercalate "" (encodeRTF <$> rtfDocContent) <> "}"
+  encodeRTF RTFDoc{..} =
+    "{"
+      <> encodeRTF rtfDocHeader
+      <> "\n"
+      <> T.intercalate "" (encodeRTF <$> rtfDocContent)
+      <> "}"
 
 instance RTFEncoding RTFContent where
   encodeRTF RTFLiteralSlash = "\\\\\\"
   encodeRTF RTFLiteralOpenBrace = "\\{"
   encodeRTF RTFLiteralCloseBrace = "\\}"
   encodeRTF RTFNewLine = "\\\n"
-  encodeRTF (RTFText t) = t
+  encodeRTF (RTFPlainText t) = t
   encodeRTF (RTFTag t trailing) = encodeRTFControl $ t <> s
    where
     s = case trailing of
-      TagParameter n -> showt n
+      RTFControlParam n -> showt n
       TrailingSpace -> " "
       TrailingSymbol -> ""
   encodeRTF (RTFBlock t) = encodeRTFBlock t
@@ -74,7 +78,7 @@ instance RTFEncoding RTFContent where
    where
     slash =
       string "\\\\\\" >> return RTFLiteralSlash
-        <?> "RTFLiteralSlash //"
+        <?> "RTFLiteralSlash \\"
     openBrace =
       string "\\{" >> return RTFLiteralOpenBrace
         <?> "RTFLiteralOpenBrace {"
@@ -92,7 +96,7 @@ instance RTFEncoding RTFContent where
       RTFBlock <$> rtfBlock' (nonEmpty "RTFBlock" $ toText $ takeWhile (/= '}'))
         <?> "RTFBlock"
     plainText =
-      RTFText <$> toNonEmptyText "RTFContent" (takeWhile (/= '\\'))
+      RTFPlainText <$> toNonEmptyText "RTFContent" (takeWhile (/= '\\'))
         <?> "RTFText"
 
 instance RTFEncoding RTFHeader where
@@ -104,49 +108,49 @@ instance RTFEncoding RTFHeader where
       <> encodeRTF (ColorTbl (fst <$> rtfColors))
       <> encodeRTF (ExpandedColorTbl (snd <$> rtfColors))
   decodeRTF =
-    rtfControlWith "rtf1"
+    rtfHeaderControl "rtf1"
       *> ( RTFHeader
-            <$> decodeRTF @Charset
-            <*> many' (decodeRTF @CocoaControl)
-            <*> decodeRTF @FontTbl
+            <$> removeSurroundSpace (decodeRTF @Charset)
+            <*> many' (removeSurroundSpace $ decodeRTF @CocoaControl)
+            <*> removeSurroundSpace (decodeRTF @FontTbl)
             <*> colors
          )
    where
     colors = do
-      ColorTbl cs <- decodeRTF @ColorTbl
-      ExpandedColorTbl ec <- decodeRTF
-      guard $ length cs == length ec
-      return $ zip cs ec
+      ColorTbl baseColors <- removeSurroundSpace decodeRTF
+      ExpandedColorTbl expandedColors <- removeSurroundSpace decodeRTF
+      unless (length baseColors == length expandedColors) $ fail $ "Non matching color and expanded color table" <> show (length baseColors) <> show (length expandedColors)
+      return $ zip baseColors expandedColors
 
 instance RTFEncoding ExpandedColorTbl where
   encodeRTF (ExpandedColorTbl defs) =
     encodeRTFBlock $
       encodeRTFControl "*\\expandedcolortbl" <> T.intercalate "" (encodeItem <$> defs)
 
-  decodeRTF = rtfBlock (rtfControlWith "*\\expandedcolortbl" >> colorContent)
+  decodeRTF = rtfBlock' (rtfHeaderControl "*\\expandedcolortbl" >> colorContent)
    where
     colorContent =
-      ExpandedColorTbl <$> many' (skipSpace *> decodeItem @ColorSpace <* skipSpace)
+      ExpandedColorTbl <$> many' (removeSurroundSpace $ decodeItem @ColorSpace)
         <?> "ExpandedColorTbl"
 
 instance RTFEncoding ColorTbl where
   encodeRTF (ColorTbl defs) =
     encodeRTFBlock $
       encodeRTFControl "colortbl" <> T.intercalate "" (encodeRTF <$> defs)
-  decodeRTF = rtfBlock (rtfControlWith "colortbl" >> colorContent)
+  decodeRTF = rtfBlock' (rtfHeaderControl "colortbl" >> colorContent)
    where
     colorContent =
-      ColorTbl <$> many' (skipSpace *> decodeRTF @RTFColor <* skipSpace)
+      ColorTbl <$> many' (removeSurroundSpace $ decodeRTF @RTFColor)
         <?> "ColorTbl"
 
 instance RTFEncoding FontTbl where
   encodeRTF (FontTbl infos) =
     encodeRTFBlock $
       encodeRTFControl "fonttbl" <> T.intercalate "" (encodeItem <$> infos)
-  decodeRTF = rtfBlock (rtfControlWith "fonttbl" >> fontContent)
+  decodeRTF = rtfBlock' (rtfHeaderControl "fonttbl" >> fontContent)
    where
     fontContent =
-      FontTbl . fromList <$> many' (skipSpace >> decodeItem @FontInfo <* skipSpace)
+      FontTbl . fromList <$> many' (removeSurroundSpace $ decodeItem @FontInfo)
         <?> "FontTbl"
 
 instance RTFEncoding FontInfo where
@@ -162,9 +166,9 @@ instance RTFEncoding FontInfo where
   decodeRTF :: Parser FontInfo
   decodeRTF =
     FontInfo
-      <$> (rtfControlWith "f" >> decimal <?> "fontNum")
+      <$> (rtfHeaderControl "f" >> decimal <?> "fontNum")
       <*> decodeRTF
-      <*> optional (rtfControlWith "fcharset" >> decimal <?> "fontCharset")
+      <*> optional (rtfHeaderControl "fcharset" >> decimal <?> "fontCharset")
       <*> (char ' ' >> fontName <?> "fontName")
       <* blockEnd
       <?> "FontInfo"
@@ -190,7 +194,7 @@ instance RTFEncoding RTFColor where
    where
     c :: Text -> Parser (Maybe Word8)
     c s =
-      optional (rtfControlWith s >> decimal)
+      optional (rtfHeaderControl s >> decimal)
         <?> "color"
 
 instance RTFEncoding FontFamily where
@@ -201,7 +205,7 @@ instance RTFEncoding FontFamily where
     foldr1 (<|>) (f <$> [FNil .. FBidi])
       <?> "FontFamily"
    where
-    f x = rtfControlWith (fontFamilyText x) *> return x
+    f x = rtfHeaderControl (fontFamilyText x) *> return x
 
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
@@ -209,12 +213,12 @@ fontFamilyText = T.toLower . T.pack . show
 instance RTFEncoding Charset where
   encodeRTF (Ansi n) = encodeRTFControl "ansi" <> encodeRTFControl ("ansicpg" <> showt n)
   decodeRTF =
-    rtfControlWith "ansi" *> (Ansi <$> (rtfControlWith "ansicpg" >> decimal))
+    rtfHeaderControl "ansi" *> (Ansi <$> (rtfHeaderControl "ansicpg" >> decimal))
       <?> "Ansi"
 
 instance RTFEncoding CocoaControl where
   encodeRTF (CocoaControl v) = encodeRTFControl "cocoa" <> v
-  decodeRTF = rtfControlWith "cocoa" *> (CocoaControl <$> alphaNum)
+  decodeRTF = rtfHeaderControl "cocoa" *> (CocoaControl <$> alphaNum)
 
 instance RTFEncoding ColorSpace where
   encodeRTF (CSGray v) = encodeRTFControl "csgray" <> encodeCSValue v <> charBlockEnd
@@ -222,18 +226,21 @@ instance RTFEncoding ColorSpace where
   encodeRTF (CSGenericRGB r g b) = encodeRTFControl "csgenericrgb" <> encodeCSValue r <> encodeCSValue g <> encodeCSValue b <> charBlockEnd
   decodeRTF = gray <|> srgb <|> genericrgb
    where
-    gray = rtfControlWith "csgray" >> CSGray <$> csvalue <* blockEnd
-    srgb = rtfControlWith "cssrgb" >> CSSRGB <$> csvalue <*> csvalue <*> csvalue <* blockEnd
-    genericrgb = rtfControlWith "csgenericrgb" >> CSGenericRGB <$> csvalue <*> csvalue <*> csvalue <* blockEnd
-    csvalue = rtfControlWith "c" >> decimal
+    gray = rtfHeaderControl "csgray" >> CSGray <$> csvalue <* blockEnd
+    srgb = rtfHeaderControl "cssrgb" >> CSSRGB <$> csvalue <*> csvalue <*> csvalue <* blockEnd
+    genericrgb = rtfHeaderControl "csgenericrgb" >> CSGenericRGB <$> csvalue <*> csvalue <*> csvalue <* blockEnd
+    csvalue = rtfHeaderControl "c" >> decimal
 
 encodeCSValue :: CSValue -> Text
 encodeCSValue v = encodeRTFControl "c" <> showt v
 
-rtfBlock :: Parser a -> Parser a
-rtfBlock p =
-  (skipSpace *> rtfBlock' p <* skipSpace)
-    <?> "{ }"
+removeSurroundSpace :: Parser a -> Parser a
+removeSurroundSpace p = skipSpace *> p <* skipSpace
+
+-- rtfBlock :: Parser a -> Parser a
+-- rtfBlock p =
+--   (skipSpace *> rtfBlock' p <* skipSpace)
+--     <?> "{ }"
 
 rtfBlock' :: Parser a -> Parser a
 rtfBlock' p =
@@ -250,22 +257,18 @@ debugPeek = do
 encodeRTFBlock :: Text -> Text
 encodeRTFBlock s = "{" <> s <> "}"
 
-rtfControlWith :: Text -> Parser Text
-rtfControlWith s =
-  rtfControl (string (T.encodeUtf8 s) *> return s)
+rtfHeaderControl :: Text -> Parser Text
+rtfHeaderControl s =
+  skipSpace *> rtfControlBase (string (T.encodeUtf8 s) *> return s)
     <?> ("\\" <> T.unpack s)
 
 encodeRTFControl :: Text -> Text
 encodeRTFControl = ("\\" <>)
 
-rtfControl :: Parser Text -> Parser Text
-rtfControl p =
-  skipSpace *> rtfControl' p
-    <?> "RTFControl"
-rtfControl' :: Parser Text -> Parser Text
-rtfControl' p =
+rtfControlBase :: Parser Text -> Parser Text
+rtfControlBase p =
   char '\\' >> p
-    <?> "RTFControl"
+    <?> "RTF Control"
 
 blockEnd :: Parser ()
 blockEnd = void $ char ';' >> skipSpace
@@ -318,14 +321,14 @@ toNonEmptyText name = nonEmpty name . toText
     A control symbol consists of a backslash followed by a single, nonalphabetic character. For example, \~ represents a nonbreaking space. Control symbols take no delimiters.
   >>>
 -}
-parseTag :: Parser (Text, RTFTagEnd)
+parseTag :: Parser (Text, RTFControlWordEnd)
 parseTag =
   char '\\'
     *> choice
       [ -- case: end with space. In this case space is part of the control
         (,TrailingSpace) <$> tagName <* satisfy isSpace
       , -- case: end with number
-        (,) <$> tagName <*> (TagParameter <$> tagNum)
+        (,) <$> tagName <*> (RTFControlParam <$> tagNum)
       , (,TrailingSymbol) <$> tagName
       ]
  where

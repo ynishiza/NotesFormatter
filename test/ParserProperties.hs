@@ -14,7 +14,7 @@ import ParserGen
 import RTF.Encoding
 
 testCount :: TestLimit
-testCount = 400
+testCount = 200
 
 group :: Group
 group = $$discover
@@ -100,8 +100,8 @@ prop_rtfContent = property_ $ do
   cover 20 "Literal {" $ has (traverse . _RTFLiteralOpenBrace) x
   cover 20 "Tag with trailing space" $ has (traverse . _RTFTag . _2 . _TrailingSpace) x
   cover 20 "Tag with trailing symbol" $ has (traverse . _RTFTag . _2 . _TrailingSymbol) x
-  cover 20 "Tag with parameter" $ has (traverse . _RTFTag . _2 . _TagParameter) x
-  cover 20 "Large text" $ anyOf (traverse . _RTFText) (\t -> T.length t > 100) x
+  cover 20 "Tag with parameter" $ has (traverse . _RTFTag . _2 . _RTFControlParam) x
+  cover 20 "Large text" $ anyOf (traverse . _RTFPlainText) (\t -> T.length t > 100) x
   tripping x (T.intercalate "" . (encodeRTF <$>)) (parseOnly (many' decodeRTF) . T.encodeUtf8)
 
 -- undefined

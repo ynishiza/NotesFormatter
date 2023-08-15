@@ -91,11 +91,11 @@ genRTFContents = do
     ]
  where
   others = list (linear 1 20) genRTFNonTextContent
-  plainText = RTFText <$> G.text (R.constant 1 100) (G.filter isPlainChar unicodeAll)
+  plainText = RTFPlainText <$> G.text (R.constant 1 100) (G.filter isPlainChar unicodeAll)
   isPlainChar c = (c `notElem` ("//{}" :: String)) && isPrint c
 
-  clean (RTFTag n TrailingSymbol : RTFText t : rest) = RTFTag n TrailingSymbol : RTFText ("!" <> t) : rest
-  clean (RTFTag n p@(TagParameter _) : RTFText t : rest) = RTFTag n p : RTFText ("a" <> t) : rest
+  clean (RTFTag n TrailingSymbol : RTFPlainText t : rest) = RTFTag n TrailingSymbol : RTFPlainText ("!" <> t) : rest
+  clean (RTFTag n p@(RTFControlParam _) : RTFPlainText t : rest) = RTFTag n p : RTFPlainText ("a" <> t) : rest
   clean (x : xs) = x : clean xs
   clean [] = []
 
@@ -104,12 +104,12 @@ genRTFContents2 =
   list (linear 1 200) (choice [genRTFNonTextContent, plainText])
     <&> clean
  where
-  plainText = RTFText <$> G.text (R.constant 1 100) (G.filter isPlainChar unicodeAll)
+  plainText = RTFPlainText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
   isPlainChar c = (c `notElem` ("\\{}" :: String)) && isPrint c
 
-  clean (RTFText t1 : RTFText t2 : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
-  clean (RTFTag n TrailingSymbol : RTFText t : rest) = RTFTag n TrailingSymbol : clean (RTFText ("!" <> t) : rest)
-  clean (RTFTag n p@(TagParameter _) : RTFText t : rest) = RTFTag n p : clean (RTFText ("a" <> t) : rest)
+  clean (RTFPlainText t1 : RTFPlainText t2 : rest) = clean $ RTFPlainText (t1 <> " " <> t2) : rest
+  clean (RTFTag n TrailingSymbol : RTFPlainText t : rest) = RTFTag n TrailingSymbol : clean (RTFPlainText ("!" <> t) : rest)
+  clean (RTFTag n p@(RTFControlParam _) : RTFPlainText t : rest) = RTFTag n p : clean (RTFPlainText ("a" <> t) : rest)
   clean (x : xs) = x : clean xs
   clean [] = []
 
@@ -123,7 +123,7 @@ genRTFNonTextContent =
     , RTFTag
         <$> G.text (R.constant 1 20) alpha
         <*> choice
-          [ TagParameter <$> word8 (linear 1 100)
+          [ RTFControlParam <$> word8 (linear 1 100)
           , return TrailingSymbol
           , return TrailingSpace
           ]
