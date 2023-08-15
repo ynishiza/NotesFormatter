@@ -21,6 +21,7 @@ import Control.Monad
 import Data.Attoparsec.ByteString.Char8 as P
 import Data.ByteString (ByteString)
 import Data.Functor
+import Data.List (elemIndex)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
 import Debug.Trace
@@ -42,6 +43,76 @@ class RTFEncoding c => RTFItemEncoding c where
   decodeItem :: Parser (Maybe c)
   decodeItem = (blockEnd >> return Nothing) <|> (Just <$> decodeRTF)
 
+-- class RTFEncodingWordType c where
+--   decodeType :: Parser c
+
+charControl :: Char
+charControl = '\\'
+charControlName :: [Char]
+charControlName = ['a' .. 'z']
+charNum :: [Char]
+charNum = ['0' .. '9']
+charAlphaNum :: [Char]
+charAlphaNum = charNum <> charControlName <> ['A' .. 'Z']
+controlWith :: Text -> Text
+controlWith = (T.pack [charControl] <>)
+
+instance RTFEncoding RTFControlSymbol where
+  encodeRTF (RTFControlSymbol s) = T.pack [charControl, s]
+  decodeRTF =
+    char charControl *> (RTFControlSymbol <$> satisfy (notInClass charControlName))
+      <?> "RTFControlSymbol"
+
+instance RTFEncoding RTFControlWord where
+  encodeRTF (RTFControlWord name NoTrailing) = controlWith name
+  encodeRTF (RTFControlWord name TrailingSpace) = controlWith $ name <> " "
+  encodeRTF (RTFControlWord name (RTFControlParam n)) = controlWith $ name <> showt n
+  decodeRTF =
+    char charControl
+      *> ( RTFControlWord
+            <$> name
+            <*> ( trailingSpace
+                    <|> RTFControlParam <$> decimal
+                    <|> return NoTrailing
+                )
+         )
+      <?> "RTFControlWord"
+   where
+    name =
+      T.pack <$> many1' (satisfy (inClass charControlName))
+        <?> "name"
+    trailingSpace =
+      void (satisfy isSpace) >> return TrailingSpace
+        <?> "space"
+
+instance RTFEncoding RTFText where
+  encodeRTF (RTFText t) = t
+  decodeRTF =
+    RTFText . T.pack <$> many1' (satisfy (/= charControl))
+      <?> "RTFText"
+
+instance RTFEncoding FontFamily where
+  encodeRTF f = encodeRTF $ RTFControlWord (fontFamilyText f) NoTrailing
+  decodeRTF = decWith f
+   where
+    f name _ = toEnum <$> elemIndex name names
+    -- Just i -> Just (toEnum i)
+    -- Nothing -> Nothing
+    all = [minBound .. maxBound :: FontFamily]
+    names = fontFamilyText <$> all
+
+-- decodeControlType p = do
+--   (RTFControlWord na
+
+decWith :: (Text -> RTFControlWordEnd -> Maybe a) -> Parser a
+decWith toType = do
+  (RTFControlWord name t) <- decodeRTF @RTFControlWord
+  case toType name t of
+    Nothing -> fail ""
+    Just v -> return v
+
+-- ============================== OLD ==============================
+
 instance RTFEncoding RTFDoc where
   encodeRTF RTFDoc{..} =
     "{"
@@ -61,7 +132,7 @@ instance RTFEncoding RTFContent where
     s = case trailing of
       RTFControlParam n -> showt n
       TrailingSpace -> " "
-      TrailingSymbol -> ""
+      NoTrailing -> ""
   encodeRTF (RTFBlock t) = encodeRTFBlock t
   decodeRTF =
     choice
@@ -167,9 +238,10 @@ instance RTFEncoding FontInfo where
   decodeRTF =
     FontInfo
       <$> (rtfHeaderControl "f" >> decimal <?> "fontNum")
-      <*> decodeRTF
+      <*> decodeRTF @FontFamily
       <*> optional (rtfHeaderControl "fcharset" >> decimal <?> "fontCharset")
-      <*> (char ' ' >> fontName <?> "fontName")
+      <*> (skipSpace >> fontName <?> "fontName")
+      -- <*> (fontName <?> "fontName")
       <* blockEnd
       <?> "FontInfo"
    where
@@ -197,15 +269,15 @@ instance RTFEncoding RTFColor where
       optional (rtfHeaderControl s >> decimal)
         <?> "color"
 
-instance RTFEncoding FontFamily where
-  encodeRTF :: FontFamily -> Text
-  encodeRTF = encodeRTFControl . fontFamilyText
-  decodeRTF :: Parser FontFamily
-  decodeRTF =
-    foldr1 (<|>) (f <$> [FNil .. FBidi])
-      <?> "FontFamily"
-   where
-    f x = rtfHeaderControl (fontFamilyText x) *> return x
+-- instance RTFEncoding FontFamily where
+--   encodeRTF :: FontFamily -> Text
+--   encodeRTF = encodeRTFControl . fontFamilyText
+--   decodeRTF :: Parser FontFamily
+--   decodeRTF =
+--     foldr1 (<|>) (f <$> [FNil .. FBidi])
+--       <?> "FontFamily"
+--    where
+--     f x = rtfHeaderControl (fontFamilyText x) *> return x
 
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
@@ -329,7 +401,7 @@ parseTag =
         (,TrailingSpace) <$> tagName <* satisfy isSpace
       , -- case: end with number
         (,) <$> tagName <*> (RTFControlParam <$> tagNum)
-      , (,TrailingSymbol) <$> tagName
+      , (,NoTrailing) <$> tagName
       ]
  where
   tagName = T.pack <$> many1' letter_ascii

@@ -2,7 +2,8 @@ module RTF.Types (
   RTFGroup(..),
   RTFControlWord(..),
   RTFControlSymbol(..),
-  _TrailingSymbol,
+  RTFText(..),
+  _NoTrailing,
   _RTFControlParam,
   _TrailingSpace,
   --
@@ -50,10 +51,10 @@ import Utils
 data RTFControlWord = RTFControlWord Text RTFControlWordEnd
   deriving stock (Eq, Show)
 
-data RTFControlWordEnd = RTFControlParam Word8 | TrailingSpace | TrailingSymbol
+data RTFControlWordEnd = RTFControlParam Word8 | TrailingSpace | NoTrailing
   deriving stock (Eq, Show)
 
-newtype RTFControlSymbol = RTFControlSymbol Text
+newtype RTFControlSymbol = RTFControlSymbol Char
   deriving stock (Eq, Show)
 
 newtype RTFGroup = RTFGroup [RTFContent]

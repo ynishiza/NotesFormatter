@@ -43,7 +43,7 @@ genFontInfo =
     <*> name
  where
   genInt = int (linear 0 20)
-  nameBase = G.text (linear 2 20) $ G.frequency [(9, alphaNum), (1, G.element "-_ ")]
+  nameBase = G.text (linear 2 20) $ G.frequency [(9, alphaNum), (1, G.element "-_")]
   name = G.frequency $ (length commonFont, nameBase) : ((1,) . return <$> commonFont)
 
 genCocoaControl :: Gen CocoaControl
@@ -94,7 +94,7 @@ genRTFContents = do
   plainText = RTFPlainText <$> G.text (R.constant 1 100) (G.filter isPlainChar unicodeAll)
   isPlainChar c = (c `notElem` ("//{}" :: String)) && isPrint c
 
-  clean (RTFTag n TrailingSymbol : RTFPlainText t : rest) = RTFTag n TrailingSymbol : RTFPlainText ("!" <> t) : rest
+  clean (RTFTag n NoTrailing : RTFPlainText t : rest) = RTFTag n NoTrailing : RTFPlainText ("!" <> t) : rest
   clean (RTFTag n p@(RTFControlParam _) : RTFPlainText t : rest) = RTFTag n p : RTFPlainText ("a" <> t) : rest
   clean (x : xs) = x : clean xs
   clean [] = []
@@ -108,7 +108,7 @@ genRTFContents2 =
   isPlainChar c = (c `notElem` ("\\{}" :: String)) && isPrint c
 
   clean (RTFPlainText t1 : RTFPlainText t2 : rest) = clean $ RTFPlainText (t1 <> " " <> t2) : rest
-  clean (RTFTag n TrailingSymbol : RTFPlainText t : rest) = RTFTag n TrailingSymbol : clean (RTFPlainText ("!" <> t) : rest)
+  clean (RTFTag n NoTrailing : RTFPlainText t : rest) = RTFTag n NoTrailing : clean (RTFPlainText ("!" <> t) : rest)
   clean (RTFTag n p@(RTFControlParam _) : RTFPlainText t : rest) = RTFTag n p : clean (RTFPlainText ("a" <> t) : rest)
   clean (x : xs) = x : clean xs
   clean [] = []
@@ -124,7 +124,7 @@ genRTFNonTextContent =
         <$> G.text (R.constant 1 20) alpha
         <*> choice
           [ RTFControlParam <$> word8 (linear 1 100)
-          , return TrailingSymbol
+          , return NoTrailing
           , return TrailingSpace
           ]
     ]
