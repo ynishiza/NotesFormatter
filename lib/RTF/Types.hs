@@ -49,25 +49,25 @@ import RTF.ExtensionTypes
 import Utils
 
 data RTFControlWord = RTFControlWord Text RTFControlWordEnd
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
-data RTFControlWordEnd = RTFControlParam Word8 | TrailingSpace | NoTrailing
-  deriving stock (Eq, Show)
+data RTFControlWordEnd = RTFControlParam Int | TrailingSpace | NoTrailing
+  deriving stock (Eq, Show, Generic)
 
 newtype RTFControlSymbol = RTFControlSymbol Char
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 newtype RTFGroup = RTFGroup [RTFContent]
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 newtype RTFText = RTFText Text
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 data RTFDoc = RTFDoc
   { rtfDocHeader :: RTFHeader
   , rtfDocContent :: [RTFContent]
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 data RTFContent
   = RTFLiteralSlash
@@ -77,7 +77,7 @@ data RTFContent
   | RTFTag Text RTFControlWordEnd
   | RTFBlock Text
   | RTFPlainText Text
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 -- \rtf <charset> \deff? <fonttbl> <filetbl>? <colortbl>? <stylesheet>? <listtables>? <revtbl>?
 data RTFHeader = RTFHeader
@@ -86,16 +86,16 @@ data RTFHeader = RTFHeader
   , rtfFontTbl :: FontTbl
   , rtfColors :: [(RTFColor, Maybe ColorSpace)]
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 newtype FontTbl = FontTbl [Maybe FontInfo]
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 newtype ColorTbl = ColorTbl [RTFColor]
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 data RTFColor = RTFColor {red :: Maybe Word8, green :: Maybe Word8, blue :: Maybe Word8}
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 data FontInfo = FontInfo
   { fontNum :: Int
@@ -103,13 +103,13 @@ data FontInfo = FontInfo
   , fontCharset :: Maybe Int
   , fontName :: Text
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 data FontFamily = FNil | FRoman | FSwiss | FModern | FScript | FDecor | FTech | FBidi
-  deriving stock (Eq, Show, Enum, Bounded)
+  deriving stock (Eq, Show, Enum, Bounded, Generic)
 
 newtype Charset = Ansi Int
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 $(makeLensesWith dataLensRules ''FontInfo)
 $(makeLensesWith dataLensRules ''RTFHeader)

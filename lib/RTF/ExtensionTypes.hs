@@ -13,10 +13,10 @@ module RTF.ExtensionTypes (
 import Utils
 
 newtype CocoaControl = CocoaControl Text
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 newtype ExpandedColorTbl = ExpandedColorTbl [Maybe ColorSpace]
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 --
 -- CS = Colorspace
@@ -34,7 +34,7 @@ data ColorSpace
   | -- GenericRGB
     --  e.g. csgenericrgb\c88766\c88766\c88766
     CSGenericRGB CSValue CSValue CSValue
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 -- 0 ~ 100000
 type CSValue = Int

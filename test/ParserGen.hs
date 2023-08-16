@@ -123,7 +123,7 @@ genRTFNonTextContent =
     , RTFTag
         <$> G.text (R.constant 1 20) alpha
         <*> choice
-          [ RTFControlParam <$> word8 (linear 1 100)
+          [ RTFControlParam <$> int (linear 1 100)
           , return NoTrailing
           , return TrailingSpace
           ]
