@@ -57,7 +57,7 @@ data RTFControlWordEnd = RTFControlParam Int | TrailingSpace | NoTrailing
 newtype RTFControlSymbol = RTFControlSymbol Char
   deriving stock (Eq, Show, Generic)
 
-newtype RTFGroup = RTFGroup [RTFContent]
+newtype RTFGroup a = RTFGroup a
   deriving stock (Eq, Show, Generic)
 
 newtype RTFText = RTFText Text
