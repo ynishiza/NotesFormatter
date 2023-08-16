@@ -57,6 +57,9 @@ charAlphaNum = charNum <> charControlName <> ['A' .. 'Z']
 controlWith :: Text -> Text
 controlWith = (T.pack [charControl] <>)
 
+(<??>) :: Parser a -> Text -> Parser a
+a <??> b = a <?> T.unpack b
+
 instance RTFEncoding RTFControlSymbol where
   encodeRTF (RTFControlSymbol s) = T.pack [charControl, s]
   decodeRTF =
@@ -67,23 +70,22 @@ instance RTFEncoding RTFControlWord where
   encodeRTF (RTFControlWord name NoTrailing) = controlWith name
   encodeRTF (RTFControlWord name TrailingSpace) = controlWith $ name <> " "
   encodeRTF (RTFControlWord name (RTFControlParam n)) = controlWith $ name <> showt n
-  decodeRTF =
-    char charControl
-      *> ( RTFControlWord
-            <$> name
-            <*> ( trailingSpace
-                    <|> RTFControlParam <$> decimal
-                    <|> return NoTrailing
-                )
-         )
-      <?> "RTFControlWord"
+  decodeRTF = decWithName name
+    -- char charControl
+    --   *> ( RTFControlWord
+    --         <$> name
+    --         <*> ( trailingSpace
+    --                 <|> RTFControlParam <$> decimal
+    --                 <|> return NoTrailing
+    --             )
+    --      )
+    --   <?> "RTFControlWord"
    where
     name =
       T.pack <$> many1' (satisfy (inClass charControlName))
-        <?> "name"
-    trailingSpace =
-      void (satisfy isSpace) >> return TrailingSpace
-        <?> "space"
+    -- trailingSpace =
+    --   void (satisfy isSpace) >> return TrailingSpace
+    --     <?> "space"
 
 instance RTFEncoding RTFText where
   encodeRTF (RTFText t) = t
@@ -93,23 +95,61 @@ instance RTFEncoding RTFText where
 
 instance RTFEncoding FontFamily where
   encodeRTF f = encodeRTF $ RTFControlWord (fontFamilyText f) NoTrailing
-  decodeRTF = decWith f
+  decodeRTF = choice $ parseFamily <$> allColors
    where
-    f name _ = toEnum <$> elemIndex name names
-    -- Just i -> Just (toEnum i)
-    -- Nothing -> Nothing
-    all = [minBound .. maxBound :: FontFamily]
-    names = fontFamilyText <$> all
+    allColors = [minBound .. maxBound :: FontFamily]
+    parseFamily t = decWithName (toText $ string $ T.encodeUtf8 name)
+      >> return t
+      <??> name
+        where name = fontFamilyText t
 
--- decodeControlType p = do
---   (RTFControlWord na
+instance RTFEncoding RTFColor where
+  encodeRTF (RTFColor r g b) = encode "red" r <> encode "green" g <> encode "blue" b
+   where
+    encode name (Just value) = encodeRTF $ RTFControlWord name $ RTFControlParam value
+    encode _ Nothing = ""
+  decodeRTF = RTFColor <$> decode "red" <*> decode "green" <*> decode "blue"
+   where
+     decode name = do 
+      res <- optional $ decWithName $ toText $ string name
+      case res of 
+        Just (RTFControlWord _ (RTFControlParam v)) -> return $ Just v
+        _ -> return Nothing
 
-decWith :: (Text -> RTFControlWordEnd -> Maybe a) -> Parser a
-decWith toType = do
-  (RTFControlWord name t) <- decodeRTF @RTFControlWord
-  case toType name t of
-    Nothing -> fail ""
-    Just v -> return v
+-- decodeControlWord :: (Text -> RTFControlWordEnd -> Maybe a) -> Parser a
+-- decodeControlWord toType = do
+--   (Just v) <- decodeOptionalControlWord toType
+--   return v
+
+-- decodeOptionalControlWord :: (Text -> RTFControlWordEnd -> Maybe a) -> Parser (Maybe a)
+-- decodeOptionalControlWord toType = do
+--   Just (RTFControlWord name t) <- optional $ decodeRTF @RTFControlWord
+--   return $ toType name t
+
+decWithName :: Parser Text -> Parser RTFControlWord
+decWithName name =
+    char charControl
+      *> ( RTFControlWord
+            <$> (name <?> "name")
+            <*> ( trailingSpace
+                    <|> RTFControlParam <$> decimal
+                    <|> return NoTrailing
+                )
+         )
+      <?> "RTFControlWord"
+   where
+    -- name =
+    --   T.pack <$> many1' (satisfy (inClass charControlName))
+    trailingSpace =
+      void (satisfy isSpace) >> return TrailingSpace
+        <?> "space"
+
+appendBlockEnd :: Text -> Text
+appendBlockEnd t = t <> charBlockEnd
+
+toText :: Parser ByteString -> Parser Text
+toText = (T.decodeUtf8 <$>)
+
 
 -- ============================== OLD ==============================
 
@@ -207,11 +247,11 @@ instance RTFEncoding ExpandedColorTbl where
 instance RTFEncoding ColorTbl where
   encodeRTF (ColorTbl defs) =
     encodeRTFBlock $
-      encodeRTFControl "colortbl" <> T.intercalate "" (encodeRTF <$> defs)
+      encodeRTFControl "colortbl" <> T.intercalate "" (appendBlockEnd . encodeRTF  <$> defs)
   decodeRTF = rtfBlock' (rtfHeaderControl "colortbl" >> colorContent)
    where
     colorContent =
-      ColorTbl <$> many' (removeSurroundSpace $ decodeRTF @RTFColor)
+      ColorTbl <$> many' (removeSurroundSpace $ (decodeRTF @RTFColor <* blockEnd))
         <?> "ColorTbl"
 
 instance RTFEncoding FontTbl where
@@ -252,22 +292,22 @@ instance RTFEncoding FontInfo where
 instance RTFItemEncoding FontInfo
 instance RTFItemEncoding ColorSpace
 
-instance RTFEncoding RTFColor where
-  encodeRTF :: RTFColor -> Text
-  encodeRTF (RTFColor r g b) =
-    encodeOptionalControlWith ("red" <>) r
-      <> encodeOptionalControlWith ("green" <>) g
-      <> encodeOptionalControlWith ("blue" <>) b
-      <> charBlockEnd
-  decodeRTF :: Parser RTFColor
-  decodeRTF =
-    RTFColor <$> c "red" <*> c "green" <*> c "blue" <* blockEnd
-      <?> "RTFColor"
-   where
-    c :: Text -> Parser (Maybe Word8)
-    c s =
-      optional (rtfHeaderControl s >> decimal)
-        <?> "color"
+-- instance RTFEncoding RTFColor where
+--   encodeRTF :: RTFColor -> Text
+--   encodeRTF (RTFColor r g b) =
+--     encodeOptionalControlWith ("red" <>) r
+--       <> encodeOptionalControlWith ("green" <>) g
+--       <> encodeOptionalControlWith ("blue" <>) b
+--       <> charBlockEnd
+--   decodeRTF :: Parser RTFColor
+--   decodeRTF =
+--     RTFColor <$> c "red" <*> c "green" <*> c "blue" <* blockEnd
+--       <?> "RTFColor"
+--    where
+--     c :: Text -> Parser (Maybe Word8)
+--     c s =
+--       optional (rtfHeaderControl s >> decimal)
+--         <?> "color"
 
 -- instance RTFEncoding FontFamily where
 --   encodeRTF :: FontFamily -> Text
@@ -361,9 +401,6 @@ nonEmpty name p = do
   t <- p
   when (T.null t) $ fail $ "[" <> name <> "] Empty text"
   return t
-
-toText :: Parser ByteString -> Parser Text
-toText = (T.decodeUtf8 <$>)
 
 toNonEmptyText :: String -> Parser ByteString -> Parser Text
 toNonEmptyText name = nonEmpty name . toText
