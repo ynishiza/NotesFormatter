@@ -51,6 +51,8 @@ charControlName = ['a' .. 'z']
 charNum :: [Char]
 charNum = ['0' .. '9']
 
+charNewline = ['\n', '\r', '\f']
+
 charAlphaNum :: [Char]
 charAlphaNum = charNum <> charControlName <> ['A' .. 'Z']
 
@@ -76,6 +78,29 @@ instance RTFEncoding RTFControlWord where
       T.pack <$> many1' (satisfy (inClass charControlName))
         <?> "RTFControlWord"
 
+instance RTFEncoding RTFHeader where
+  encodeRTF (RTFHeader{..}) =
+    encodeControlWithLabel "rtf1" False
+      <> encodeRTF rtfCharset
+      <> T.intercalate "" (encodeRTF <$> rtfCocoaControls)
+      <> encodeRTF rtfFontTbl
+      <> encodeRTF (ColorTbl (fst <$> rtfColors))
+      <> encodeRTF (ExpandedColorTbl (snd <$> rtfColors))
+  decodeRTF =
+    decodeControlWord (text "rtf1")
+      *> ( RTFHeader
+            <$> (decodeRTF @Charset)
+            <*> manyControls (decodeRTF @CocoaControl)
+            <*> (decodeRTF @FontTbl)
+            <*> colors
+         )
+   where
+    colors = do
+      ColorTbl baseColors <- decodeRTF
+      ExpandedColorTbl expandedColors <- decodeRTF
+      unless (length baseColors == length expandedColors) $ fail $ "Non matching color and expanded color table" <> show (length baseColors) <> show (length expandedColors)
+      return $ zip baseColors expandedColors
+
 instance RTFEncoding Charset where
   encodeRTF (Ansi n) =
     encodeControlWithLabel "ansi" False
@@ -99,7 +124,7 @@ instance RTFEncoding FontTbl where
    where
     content =
       decodeControlWord (text "fonttbl")
-        *> (FontTbl <$> many' (decodeRTFInnerControl @FontInfo))
+        *> (FontTbl <$> manyControls (decodeRTFInnerControl @FontInfo))
 
 instance RTFEncoding ColorTbl where
   encodeRTF (ColorTbl colors) =
@@ -112,7 +137,7 @@ instance RTFEncoding ColorTbl where
    where
     content =
       decodeControlWord (text "colortbl")
-        *> (ColorTbl <$> many' (decodeRTF @RTFColor <* blockEnd))
+        *> (ColorTbl <$> manyControls (decodeRTF @RTFColor <* blockEnd))
 
 instance RTFEncoding ExpandedColorTbl where
   encodeRTF (ExpandedColorTbl colors) =
@@ -125,7 +150,7 @@ instance RTFEncoding ExpandedColorTbl where
    where
     content =
       decodeControlWord (text "expandedcolortbl")
-        *> (ExpandedColorTbl <$> many' (decodeRTFInnerControl @ColorSpace))
+        *> (ExpandedColorTbl <$> manyControls (decodeRTFInnerControl @ColorSpace))
 
 instance RTFEncoding RTFText where
   encodeRTF (RTFText t) = t
@@ -212,7 +237,7 @@ encodeRTFGroup t = "{" <> t <> "}"
 
 decodeRTFGroup :: Parser a -> Parser a
 decodeRTFGroup p =
-  char '{' *> p <* char '}'
+  trimNewLines (char '{' *> trimNewLines p <* char '}') 
     <?> "RTFGroup"
 
 encodeControlWithLabel :: Text -> Bool -> Text
@@ -228,7 +253,10 @@ decodeControlWordWithValue p f = do
   return $ f name v
 
 decodeControlWord :: Parser Text -> Parser RTFControlWord
-decodeControlWord name =
+decodeControlWord name = trimNewLines $ decodeControlWordBase name
+
+decodeControlWordBase :: Parser Text -> Parser RTFControlWord
+decodeControlWordBase name =
   char charControl
     *> ( RTFControlWord
           <$> (name <?> "name")
@@ -250,6 +278,23 @@ toText = (T.decodeUtf8 <$>)
 
 text :: Text -> Parser Text
 text value = string (T.encodeUtf8 value) *> return value
+
+
+-- New lines are ignored in RTF
+-- A new line plain text uses a RTF symbol instead
+--
+-- e.g. 
+--        \n        ignored
+--        \\n       symbol \n
+--
+skipNewLines :: Parser ()
+skipNewLines = void $ many (satisfy (inClass charNewline)) 
+
+trimNewLines :: Parser a -> Parser a
+trimNewLines p = skipNewLines *> p <* skipNewLines
+
+manyControls :: Parser a -> Parser [a]
+manyControls p = many (trimNewLines p)
 
 -- ============================== OLD ==============================
 
@@ -308,29 +353,6 @@ instance RTFEncoding RTFContent where
     plainText =
       RTFPlainText <$> toNonEmptyText "RTFContent" (takeWhile (/= '\\'))
         <?> "RTFText"
-
-instance RTFEncoding RTFHeader where
-  encodeRTF (RTFHeader{..}) =
-    encodeControlWithLabel "rtf1" False
-      <> encodeRTF rtfCharset
-      <> T.intercalate "" (encodeRTF <$> rtfCocoaControls)
-      <> encodeRTF rtfFontTbl
-      <> encodeRTF (ColorTbl (fst <$> rtfColors))
-      <> encodeRTF (ExpandedColorTbl (snd <$> rtfColors))
-  decodeRTF =
-    decodeControlWord (text "rtf1")
-      *> ( RTFHeader
-            <$> removeSurroundSpace (decodeRTF @Charset)
-            <*> many' (removeSurroundSpace $ decodeRTF @CocoaControl)
-            <*> removeSurroundSpace (decodeRTF @FontTbl)
-            <*> colors
-         )
-   where
-    colors = do
-      ColorTbl baseColors <- removeSurroundSpace decodeRTF
-      ExpandedColorTbl expandedColors <- removeSurroundSpace decodeRTF
-      unless (length baseColors == length expandedColors) $ fail $ "Non matching color and expanded color table" <> show (length baseColors) <> show (length expandedColors)
-      return $ zip baseColors expandedColors
 
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
