@@ -58,10 +58,9 @@ getNameBase name = do
   (TyConI t) <- reify name
   case t of
     (DataD _ n _ _ _ _) -> return $ LitE $ StringL $ nameBase n
-    (NewtypeD _ n _ _ _ _ ) -> return $ LitE $ StringL $ nameBase n
+    (NewtypeD _ n _ _ _ _) -> return $ LitE $ StringL $ nameBase n
     (TySynD n _ _) -> return $ LitE $ StringL $ nameBase n
     _ -> undefined
-  -- undefined
 
 getTypeName :: forall c. Proxy c -> Q Exp
 getTypeName _ = getNameBase ''c

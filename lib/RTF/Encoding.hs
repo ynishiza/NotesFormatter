@@ -34,14 +34,6 @@ class Generic c => RTFEncoding c where
   encodeRTF :: c -> Text
   decodeRTF :: Parser c
 
-class RTFEncoding c => RTFItemEncoding c where
-  encodeItem :: Maybe c -> Text
-  encodeItem (Just item) = encodeRTF item
-  encodeItem Nothing = charBlockEnd
-
-  decodeItem :: Parser (Maybe c)
-  decodeItem = (blockEnd >> return Nothing) <|> (Just <$> decodeRTF)
-
 encodeRTFInnerControl :: RTFEncoding c => Maybe c -> Text
 encodeRTFInnerControl (Just item) = encodeRTF item <> charBlockEnd
 encodeRTFInnerControl Nothing = charBlockEnd
@@ -84,18 +76,56 @@ instance RTFEncoding RTFControlWord where
       T.pack <$> many1' (satisfy (inClass charControlName))
         <?> "RTFControlWord"
 
+instance RTFEncoding Charset where
+  encodeRTF (Ansi n) =
+    encodeControlWithLabel "ansi" False
+      <> encodeControlWithValue "ansicpg" n
+  decodeRTF =
+    rtfHeaderControl "ansi" *> (Ansi <$> (rtfHeaderControl "ansicpg" >> decimal))
+      <?> "Ansi"
+
+instance RTFEncoding CocoaControl where
+  encodeRTF (CocoaControl v) = encodeControlWithLabel ("cocoa" <> v) False
+  decodeRTF = rtfHeaderControl "cocoa" *> (CocoaControl <$> alphaNum)
+
+instance RTFEncoding FontTbl where
+  encodeRTF (FontTbl infos) =
+    encodeRTFGroup $
+      encodeControlWithLabel "fonttbl" False
+        <> T.intercalate "" (encodeRTFInnerControl <$> infos)
+  decodeRTF =
+    decodeRTFGroup content
+      <?> "FontTbl"
+   where
+    content =
+      decodeControlWord (text "fonttbl")
+        *> (FontTbl <$> many' (decodeRTFInnerControl @FontInfo))
+
 instance RTFEncoding ColorTbl where
   encodeRTF (ColorTbl colors) =
     encodeRTFGroup $
       encodeControlWithLabel "colortbl" False
         <> T.intercalate "" (appendBlockEnd . encodeRTF <$> colors)
   decodeRTF =
-    decodeRTFGroup contetn
+    decodeRTFGroup content
       <?> "ColorTbl"
    where
-    contetn =
+    content =
       decodeControlWord (text "colortbl")
         *> (ColorTbl <$> many' (decodeRTF @RTFColor <* blockEnd))
+
+instance RTFEncoding ExpandedColorTbl where
+  encodeRTF (ExpandedColorTbl colors) =
+    encodeRTFGroup $
+      encodeControlWithLabel "expandedcolortbl" False
+        <> T.intercalate "" (encodeRTFInnerControl <$> colors)
+  decodeRTF =
+    decodeRTFGroup content
+      <?> "ExpandedColorTbl"
+   where
+    content =
+      decodeControlWord (text "expandedcolortbl")
+        *> (ExpandedColorTbl <$> many' (decodeRTFInnerControl @ColorSpace))
 
 instance RTFEncoding RTFText where
   encodeRTF (RTFText t) = t
@@ -254,7 +284,6 @@ instance RTFEncoding RTFContent where
       , newline
       , plainText
       ]
-      -- (skipSpace >> slash <|> openBrace <|> closeBrace <|> newline <|> tag <|> block <|> plainText)
       <?> "RTFContent"
    where
     slash =
@@ -282,14 +311,14 @@ instance RTFEncoding RTFContent where
 
 instance RTFEncoding RTFHeader where
   encodeRTF (RTFHeader{..}) =
-    encodeRTFControl "rtf1"
+    encodeControlWithLabel "rtf1" False
       <> encodeRTF rtfCharset
       <> T.intercalate "" (encodeRTF <$> rtfCocoaControls)
       <> encodeRTF rtfFontTbl
       <> encodeRTF (ColorTbl (fst <$> rtfColors))
       <> encodeRTF (ExpandedColorTbl (snd <$> rtfColors))
   decodeRTF =
-    rtfHeaderControl "rtf1"
+    decodeControlWord (text "rtf1")
       *> ( RTFHeader
             <$> removeSurroundSpace (decodeRTF @Charset)
             <*> many' (removeSurroundSpace $ decodeRTF @CocoaControl)
@@ -303,52 +332,8 @@ instance RTFEncoding RTFHeader where
       unless (length baseColors == length expandedColors) $ fail $ "Non matching color and expanded color table" <> show (length baseColors) <> show (length expandedColors)
       return $ zip baseColors expandedColors
 
-instance RTFEncoding ExpandedColorTbl where
-  encodeRTF (ExpandedColorTbl defs) =
-    encodeRTFBlock $
-      encodeRTFControl "*\\expandedcolortbl" <> T.intercalate "" (encodeRTFInnerControl <$> defs)
-
-  decodeRTF = rtfBlock' (rtfHeaderControl "*\\expandedcolortbl" >> colorContent)
-   where
-    colorContent =
-      ExpandedColorTbl <$> many' (decodeRTFInnerControl @ColorSpace)
-        <?> "ExpandedColorTbl"
-
--- instance RTFEncoding ColorTbl where
---   encodeRTF (ColorTbl defs) =
---     encodeRTFBlock $
---       encodeRTFControl "colortbl" <> T.intercalate "" (appendBlockEnd . encodeRTF <$> defs)
---   decodeRTF = rtfBlock' (rtfHeaderControl "colortbl" >> colorContent)
---    where
---     colorContent =
---       ColorTbl <$> many' (decodeRTF @RTFColor <* blockEnd)
---         <?> "ColorTbl"
-
-instance RTFEncoding FontTbl where
-  encodeRTF (FontTbl infos) =
-    encodeRTFBlock $
-      encodeRTFControl "fonttbl" <> T.intercalate "" (encodeRTFInnerControl @FontInfo <$> infos)
-  decodeRTF = rtfBlock' (rtfHeaderControl "fonttbl" >> fontContent)
-   where
-    fontContent =
-      FontTbl . fromList <$> many' (decodeRTFInnerControl @FontInfo)
-        <?> "FontTbl"
-
-instance RTFItemEncoding FontInfo
-instance RTFItemEncoding ColorSpace
-
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
-
-instance RTFEncoding Charset where
-  encodeRTF (Ansi n) = encodeRTFControl "ansi" <> encodeRTFControl ("ansicpg" <> showt n)
-  decodeRTF =
-    rtfHeaderControl "ansi" *> (Ansi <$> (rtfHeaderControl "ansicpg" >> decimal))
-      <?> "Ansi"
-
-instance RTFEncoding CocoaControl where
-  encodeRTF (CocoaControl v) = encodeRTFControl "cocoa" <> v
-  decodeRTF = rtfHeaderControl "cocoa" *> (CocoaControl <$> alphaNum)
 
 removeSurroundSpace :: Parser a -> Parser a
 removeSurroundSpace p = skipSpace *> p <* skipSpace
@@ -386,9 +371,6 @@ blockEnd = void $ char ';' >> skipSpace
 
 charBlockEnd :: Text
 charBlockEnd = ";"
-
-encodeOptionalControlWith :: TextShow a => (Text -> Text) -> Maybe a -> Text
-encodeOptionalControlWith f = maybe "" (("\\" <>) . f . showt)
 
 alphaNum :: Parser Text
 alphaNum =
