@@ -12,7 +12,7 @@ import Data.Char (isPrint)
 import Hedgehog
 import Hedgehog.Gen as G
 import Hedgehog.Range as R
-import RTF.Encoding
+import RTFDoc
 
 commonFont :: [Text]
 commonFont =
@@ -36,7 +36,7 @@ genRTFColor =
 genName :: Gen Text
 genName = G.text (R.constant 1 32) (G.element charControlName)
 
-genControlWord:: Gen RTFControlWord
+genControlWord :: Gen RTFControlWord
 genControlWord = genControlWordWithName genName
 
 genControlSymbol :: Gen RTFControlSymbol
@@ -65,7 +65,7 @@ genFontInfo =
   name = G.frequency $ (length commonFont, nameBase) : ((1,) . return <$> commonFont)
 
 genCocoaControl :: Gen CocoaControl
-genCocoaControl = CocoaControl <$> ((<>) <$> name <*> (showt <$> value))
+genCocoaControl = CocoaControl <$> name <*> G.maybe value
  where
   name = element ["rtf", "textscaling"]
   value = int (linear 0 10)
@@ -80,9 +80,9 @@ genColorSpace =
  where
   value =
     frequency
-      [ (10, int (R.constant 0 csValueMax))
-      , (1, return csValueMax)
-      , (1, return 0)
+      [ (6, int (R.constant 0 csValueMax))
+      , (2, return csValueMax)
+      , (2, return 0)
       ]
 
 genRTFHeader :: Gen RTFHeader
@@ -96,29 +96,29 @@ genRTFHeader =
   charset = Ansi <$> int (linear 0 10)
   color = (,) <$> genRTFColor <*> G.maybe genColorSpace
 
-
 genRTFContents :: Gen [RTFContent]
-genRTFContents = 
+genRTFContents =
   list (linear 1 200) (choice [genRTFNonTextContent, plainText])
     <&> clean
-  where
-    plainText = RTFContentT . RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
-    isPlainChar c = (c `notElem` ("\\{}" :: String)) && isPrint c
+ where
+  plainText = RTFContentT . RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
+  isPlainChar c = (c `notElem` charReserved) && isPrint c
 
-    clean (RTFContentT (RTFText t1) : RTFContentT (RTFText t2) : rest) = clean $ RTFContentT (RTFText $ t1 <> " " <> t2) : rest
-    -- make sure text begins with a non-alphabet delimiter
-    clean (RTFContentW (RTFControlWord n NoTrailing) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n NoTrailing) : clean (RTFContentT (RTFText $ "!" <> t) : rest)
-    -- make sure text begins with a non-number delimiter
-    clean (RTFContentW (RTFControlWord n p@(RTFControlParam _)) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n p) : clean (RTFContentT (RTFText $ "a" <> t) : rest)
-    clean (x : xs) = x : clean xs
-    clean [] = []
+  clean (RTFContentT (RTFText t1) : RTFContentT (RTFText t2) : rest) = clean $ RTFContentT (RTFText $ t1 <> " " <> t2) : rest
+  -- make sure text begins with a non-alphabet delimiter
+  clean (RTFContentW (RTFControlWord n NoTrailing) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n NoTrailing) : clean (RTFContentT (RTFText $ "!" <> t) : rest)
+  -- make sure text begins with a non-number delimiter
+  clean (RTFContentW (RTFControlWord n p@(RTFControlParam _)) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n p) : clean (RTFContentT (RTFText $ "a" <> t) : rest)
+  clean (x : xs) = x : clean xs
+  clean [] = []
 
 genRTFNonTextContent :: Gen RTFContent
 genRTFNonTextContent =
   choice
-    [ RTFContentW <$> genControlWord,
-      RTFContentS <$> frequency [
-        (1, rtfControlSymbol <$> element ['\\', '{', '}']),
-        (9, genControlSymbol)
-      ]
+    [ RTFContentW <$> genControlWord
+    , RTFContentS
+        <$> frequency
+          [ (1, rtfControlSymbol <$> element ['\\', '{', '}'])
+          , (9, genControlSymbol)
+          ]
     ]

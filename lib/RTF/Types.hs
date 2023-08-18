@@ -9,32 +9,12 @@ module RTF.Types (
   _RTFControlParam,
   _TrailingSpace,
   --
-  RTFHeader (..),
-  ColorTbl (..),
-  FontTbl (..),
-  RTFColor (..),
-  FontFamily (..),
-  FontInfo (..),
-  Charset (..),
-  RTFDoc (..),
   RTFContent (..),
   Word8,
   Text,
   Parser,
   RTFControlWordEnd (..),
   -- Lens
-  _rtfCharset,
-  _rtfCocoaControls,
-  _rtfFontTbl,
-  _rtfColors,
-  _fontNum,
-  _fontFamily,
-  _fontCharset,
-  _fontName,
-  _FNil,
-  _FRoman,
-  _rtfDocContent,
-  _rtfDocHeader,
   _RTFControlWord,
   _RTFControlSymbol,
   _RTFContentS,
@@ -42,20 +22,23 @@ module RTF.Types (
   _RTFContentG,
   _RTFContentT,
   --
-  charNewline,
-  charControlName,
   charControl,
+  charControlName,
   charSymbol,
+  charReserved,
+  charNewline,
 ) where
 
 import Data.Attoparsec.ByteString.Char8
 import Data.Char (toUpper)
 import Data.Word
-import RTF.ExtensionTypes
 import Utils
 
 charControl :: Char
 charControl = '\\'
+
+charReserved :: String
+charReserved = "\\{}"
 
 charControlName :: String
 charControlName = ['a' .. 'z']
@@ -68,7 +51,7 @@ charNonSymbol = ['0' .. '9'] <> charControlName <> (toUpper <$> charControlName)
 
 -- 8 bits
 charSymbol :: String
-charSymbol = filter (not . (`elem` charNonSymbol)) $ toEnum <$> [0..127]
+charSymbol = filter (not . (`elem` charNonSymbol)) $ toEnum <$> [0 .. 127]
 
 data RTFControlWord = RTFControlWord Text RTFControlWordEnd
   deriving stock (Eq, Show, Generic)
@@ -93,12 +76,6 @@ newtype RTFGroup a = RTFGroup [a]
 newtype RTFText = RTFText Text
   deriving stock (Eq, Show, Generic)
 
-data RTFDoc = RTFDoc
-  { rtfDocHeader :: RTFHeader
-  , rtfDocContent :: [RTFContent]
-  }
-  deriving stock (Eq, Show, Generic)
-
 data RTFContent
   = RTFContentS RTFControlSymbol
   | RTFContentW RTFControlWord
@@ -106,42 +83,6 @@ data RTFContent
   | RTFContentT RTFText
   deriving stock (Eq, Show, Generic)
 
--- \rtf <charset> \deff? <fonttbl> <filetbl>? <colortbl>? <stylesheet>? <listtables>? <revtbl>?
-data RTFHeader = RTFHeader
-  { rtfCharset :: Charset
-  , rtfCocoaControls :: [CocoaControl]
-  , rtfFontTbl :: FontTbl
-  , rtfColors :: [(RTFColor, Maybe ColorSpace)]
-  }
-  deriving stock (Eq, Show, Generic)
-
-newtype FontTbl = FontTbl [Maybe FontInfo]
-  deriving stock (Eq, Show, Generic)
-
-newtype ColorTbl = ColorTbl [RTFColor]
-  deriving stock (Eq, Show, Generic)
-
-data RTFColor = RTFColor {red :: Maybe Word8, green :: Maybe Word8, blue :: Maybe Word8}
-  deriving stock (Eq, Show, Generic)
-
-data FontInfo = FontInfo
-  { fontNum :: Int
-  , fontFamily :: FontFamily
-  , fontCharset :: Maybe Int
-  , fontName :: Text
-  }
-  deriving stock (Eq, Show, Generic)
-
-data FontFamily = FNil | FRoman | FSwiss | FModern | FScript | FDecor | FTech | FBidi
-  deriving stock (Eq, Show, Enum, Bounded, Generic)
-
-newtype Charset = Ansi Int
-  deriving stock (Eq, Show, Generic)
-
-$(makeLensesWith dataLensRules ''FontInfo)
-$(makeLensesWith dataLensRules ''RTFHeader)
-$(makeLensesWith dataLensRules ''RTFDoc)
-$(makePrisms ''FontFamily)
 $(makePrisms ''RTFContent)
 $(makePrisms ''RTFControlWord)
 $(makePrisms ''RTFControlSymbol)

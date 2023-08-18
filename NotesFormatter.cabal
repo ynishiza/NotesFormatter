@@ -26,8 +26,12 @@ source-repository head
 library
   exposed-modules:
       RTF.Encoding
-      RTF.ExtensionTypes
       RTF.Types
+      RTFDoc
+      RTFDoc.Convert
+      RTFDoc.Encoding
+      RTFDoc.ExtensionTypes
+      RTFDoc.Types
       Utils
   other-modules:
       Paths_NotesFormatter
@@ -173,8 +177,14 @@ test-suite main-test
       ParserGen
       ParserProperties
       RTF.Encoding
-      RTF.ExtensionTypes
       RTF.Types
+      RTFDoc
+      RTFDoc.Convert
+      RTFDoc.Encoding
+      RTFDoc.ExtensionTypes
+      RTFDoc.Types
+      Spec
+      TestUtils
       Utils
       Paths_NotesFormatter
   hs-source-dirs:

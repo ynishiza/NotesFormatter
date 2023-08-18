@@ -14,8 +14,9 @@
 import Data.Time
 import Language.Haskell.TH
 import Data.Attoparsec.ByteString.Char8 as P
-import Data.ByteString.Char8 as B
+import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T
 import Data.Text.Encoding
 import System.Environment
 import Hedgehog
+import Test.Hspec

@@ -1,4 +1,4 @@
-module RTF.ExtensionTypes (
+module RTFDoc.ExtensionTypes (
   CocoaControl (..),
   ColorSpace (..),
   ExpandedColorTbl (..),
@@ -12,7 +12,7 @@ module RTF.ExtensionTypes (
 
 import Utils
 
-newtype CocoaControl = CocoaControl Text
+data CocoaControl = CocoaControl Text (Maybe Int)
   deriving stock (Eq, Show, Generic)
 
 newtype ExpandedColorTbl = ExpandedColorTbl [Maybe ColorSpace]

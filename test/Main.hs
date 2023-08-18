@@ -1,8 +1,14 @@
 module Main (main) where
 
-import Test.Tasty.Hedgehog
-import Test.Tasty
 import ParserProperties
+import Spec
+import Test.Tasty
+import Test.Tasty.Hedgehog
+import Test.Tasty.Hspec
 
 main :: IO ()
-main = defaultMain $ fromGroup group
+main = do
+  specTree <- testSpecs spec
+  defaultMain $
+    testGroup "main" $
+      fromGroup group : specTree

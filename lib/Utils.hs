@@ -29,7 +29,7 @@ basePath :: FilePath
 basePath =
   $( location
       >>= runIO . makeAbsolute . loc_filename
-      <&> LitE . StringL . takeDirectory
+      <&> LitE . StringL . takeDirectory . takeDirectory
    )
 
 lensNamer :: FieldNamer
