@@ -5,7 +5,6 @@ module ParserGen (
   genColorSpace,
   genRTFHeader,
   genRTFContents,
-  genRTFContents2,
   genRTFNonTextContent,
 ) where
 
@@ -33,6 +32,25 @@ genRTFColor =
     ]
  where
   w = word8 constantBounded
+
+genName :: Gen Text
+genName = G.text (R.constant 1 32) (G.element charControlName)
+
+genControlWord:: Gen RTFControlWord
+genControlWord = genControlWordWithName genName
+
+genControlSymbol :: Gen RTFControlSymbol
+genControlSymbol = rtfControlSymbol <$> element charSymbol
+
+genControlWordWithName :: Gen Text -> Gen RTFControlWord
+genControlWordWithName n =
+  RTFControlWord
+    <$> n
+    <*> choice
+      [ RTFControlParam <$> int (linear 1 100)
+      , return NoTrailing
+      , return TrailingSpace
+      ]
 
 genFontInfo :: Gen FontInfo
 genFontInfo =
@@ -78,53 +96,29 @@ genRTFHeader =
   charset = Ansi <$> int (linear 0 10)
   color = (,) <$> genRTFColor <*> G.maybe genColorSpace
 
+
 genRTFContents :: Gen [RTFContent]
-genRTFContents = do
-  texts <- list (linearFrom 10 0 100) plainText
-  let contents = clean . concat <$> traverse (\t -> (t :) <$> others) texts
-      contentsEndingWithText = clean <$> ((++) <$> contents <*> ((: []) <$> plainText))
-  choice
-    [ (:) <$> genRTFNonTextContent <*> contents
-    , (:) <$> genRTFNonTextContent <*> contentsEndingWithText
-    , contents
-    , contentsEndingWithText
-    ]
- where
-  others = list (linear 1 20) genRTFNonTextContent
-  plainText = RTFPlainText <$> G.text (R.constant 1 100) (G.filter isPlainChar unicodeAll)
-  isPlainChar c = (c `notElem` ("//{}" :: String)) && isPrint c
-
-  clean (RTFTag n NoTrailing : RTFPlainText t : rest) = RTFTag n NoTrailing : RTFPlainText ("!" <> t) : rest
-  clean (RTFTag n p@(RTFControlParam _) : RTFPlainText t : rest) = RTFTag n p : RTFPlainText ("a" <> t) : rest
-  clean (x : xs) = x : clean xs
-  clean [] = []
-
-genRTFContents2 :: Gen [RTFContent]
-genRTFContents2 =
+genRTFContents = 
   list (linear 1 200) (choice [genRTFNonTextContent, plainText])
     <&> clean
- where
-  plainText = RTFPlainText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
-  isPlainChar c = (c `notElem` ("\\{}" :: String)) && isPrint c
+  where
+    plainText = RTFContentT . RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
+    isPlainChar c = (c `notElem` ("\\{}" :: String)) && isPrint c
 
-  clean (RTFPlainText t1 : RTFPlainText t2 : rest) = clean $ RTFPlainText (t1 <> " " <> t2) : rest
-  clean (RTFTag n NoTrailing : RTFPlainText t : rest) = RTFTag n NoTrailing : clean (RTFPlainText ("!" <> t) : rest)
-  clean (RTFTag n p@(RTFControlParam _) : RTFPlainText t : rest) = RTFTag n p : clean (RTFPlainText ("a" <> t) : rest)
-  clean (x : xs) = x : clean xs
-  clean [] = []
+    clean (RTFContentT (RTFText t1) : RTFContentT (RTFText t2) : rest) = clean $ RTFContentT (RTFText $ t1 <> " " <> t2) : rest
+    -- make sure text begins with a non-alphabet delimiter
+    clean (RTFContentW (RTFControlWord n NoTrailing) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n NoTrailing) : clean (RTFContentT (RTFText $ "!" <> t) : rest)
+    -- make sure text begins with a non-number delimiter
+    clean (RTFContentW (RTFControlWord n p@(RTFControlParam _)) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n p) : clean (RTFContentT (RTFText $ "a" <> t) : rest)
+    clean (x : xs) = x : clean xs
+    clean [] = []
 
 genRTFNonTextContent :: Gen RTFContent
 genRTFNonTextContent =
   choice
-    [ return RTFNewLine
-    , return RTFLiteralCloseBrace
-    , return RTFLiteralOpenBrace
-    , return RTFLiteralSlash
-    , RTFTag
-        <$> G.text (R.constant 1 20) alpha
-        <*> choice
-          [ RTFControlParam <$> int (linear 1 100)
-          , return NoTrailing
-          , return TrailingSpace
-          ]
+    [ RTFContentW <$> genControlWord,
+      RTFContentS <$> frequency [
+        (1, rtfControlSymbol <$> element ['\\', '{', '}']),
+        (9, genControlSymbol)
+      ]
     ]

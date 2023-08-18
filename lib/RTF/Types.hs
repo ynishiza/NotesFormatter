@@ -1,8 +1,10 @@
 module RTF.Types (
-  RTFGroup(..),
-  RTFControlWord(..),
-  RTFControlSymbol(..),
-  RTFText(..),
+  RTFGroup (..),
+  RTFControlWord (..),
+  RTFControlSymbol,
+  rtfControlSymbol,
+  getRtfControlSymbol,
+  RTFText (..),
   _NoTrailing,
   _RTFControlParam,
   _TrailingSpace,
@@ -33,20 +35,40 @@ module RTF.Types (
   _FRoman,
   _rtfDocContent,
   _rtfDocHeader,
-  _RTFPlainText,
-  _RTFLiteralSlash,
-  _RTFLiteralOpenBrace,
-  _RTFLiteralCloseBrace,
-  _RTFNewLine,
-  _RTFTag,
-  _RTFBlock,
+  _RTFControlWord,
+  _RTFControlSymbol,
+  _RTFContentS,
+  _RTFContentW,
+  _RTFContentG,
+  _RTFContentT,
   --
+  charNewline,
+  charControlName,
+  charControl,
+  charSymbol,
 ) where
 
 import Data.Attoparsec.ByteString.Char8
+import Data.Char (toUpper)
 import Data.Word
 import RTF.ExtensionTypes
 import Utils
+
+charControl :: Char
+charControl = '\\'
+
+charControlName :: String
+charControlName = ['a' .. 'z']
+
+charNewline :: String
+charNewline = ['\n', '\r', '\f']
+
+charNonSymbol :: String
+charNonSymbol = ['0' .. '9'] <> charControlName <> (toUpper <$> charControlName)
+
+-- 8 bits
+charSymbol :: String
+charSymbol = filter (not . (`elem` charNonSymbol)) $ toEnum <$> [0..127]
 
 data RTFControlWord = RTFControlWord Text RTFControlWordEnd
   deriving stock (Eq, Show, Generic)
@@ -57,7 +79,15 @@ data RTFControlWordEnd = RTFControlParam Int | TrailingSpace | NoTrailing
 newtype RTFControlSymbol = RTFControlSymbol Char
   deriving stock (Eq, Show, Generic)
 
-newtype RTFGroup a = RTFGroup a
+getRtfControlSymbol :: RTFControlSymbol -> Char
+getRtfControlSymbol (RTFControlSymbol s) = s
+rtfControlSymbol :: Char -> RTFControlSymbol
+rtfControlSymbol c =
+  if c `elem` charSymbol
+    then RTFControlSymbol c
+    else error $ "Invalid symbol " <> ['\'', c, '\'']
+
+newtype RTFGroup a = RTFGroup [a]
   deriving stock (Eq, Show, Generic)
 
 newtype RTFText = RTFText Text
@@ -70,13 +100,10 @@ data RTFDoc = RTFDoc
   deriving stock (Eq, Show, Generic)
 
 data RTFContent
-  = RTFLiteralSlash
-  | RTFLiteralOpenBrace
-  | RTFLiteralCloseBrace
-  | RTFNewLine
-  | RTFTag Text RTFControlWordEnd
-  | RTFBlock Text
-  | RTFPlainText Text
+  = RTFContentS RTFControlSymbol
+  | RTFContentW RTFControlWord
+  | RTFContentG (RTFGroup RTFContent)
+  | RTFContentT RTFText
   deriving stock (Eq, Show, Generic)
 
 -- \rtf <charset> \deff? <fonttbl> <filetbl>? <colortbl>? <stylesheet>? <listtables>? <revtbl>?
@@ -116,4 +143,6 @@ $(makeLensesWith dataLensRules ''RTFHeader)
 $(makeLensesWith dataLensRules ''RTFDoc)
 $(makePrisms ''FontFamily)
 $(makePrisms ''RTFContent)
+$(makePrisms ''RTFControlWord)
+$(makePrisms ''RTFControlSymbol)
 $(makePrisms ''RTFControlWordEnd)

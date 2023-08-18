@@ -88,20 +88,21 @@ prop_rtfContentOther = property_ $ do
   x <- forAll $ G.list (R.linearFrom 5 0 100) genRTFNonTextContent
   -- TODO: plaintext
   -- collect $ T.intercalate "a" $ encodeRTF <$> x
+  -- collect $ parseOnly (many' (decodeRTF @RTFContent)) $ T.encodeUtf8 $ T.intercalate "" $ encodeRTF <$> x
   tripping x (T.intercalate "" . (encodeRTF <$>)) (parseOnly (many' decodeRTF) . T.encodeUtf8)
 
 prop_rtfContent :: Property
 prop_rtfContent = property_ $ do
-  -- x <- forAll genRTFContents
-  x <- forAll genRTFContents2
+  x <- forAll genRTFContents
 
-  cover 20 "Newline" $ has (traverse . _RTFNewLine) x
-  cover 20 "Literal \\" $ has (traverse . _RTFLiteralSlash) x
-  cover 20 "Literal {" $ has (traverse . _RTFLiteralOpenBrace) x
-  cover 20 "Tag with trailing space" $ has (traverse . _RTFTag . _2 . _TrailingSpace) x
-  cover 20 "Tag with trailing symbol" $ has (traverse . _RTFTag . _2 . _NoTrailing) x
-  cover 20 "Tag with parameter" $ has (traverse . _RTFTag . _2 . _RTFControlParam) x
-  cover 20 "Large text" $ anyOf (traverse . _RTFPlainText) (\t -> T.length t > 100) x
+  -- cover 20 "Newline" $ has (traverse . _RTFNewLine) x
+  -- cover 20 "Literal \\" $ has (traverse . _RTFLiteralSlash) x
+  -- cover 20 "Literal {" $ has (traverse . _RTFLiteralOpenBrace) x
+  let f = to (\(RTFControlWord _ v) -> v)
+  cover 20 "Tag with trailing space" $ has (traverse . _RTFContentW . f . _TrailingSpace) x
+  cover 20 "Tag with trailing symbol" $ has (traverse . _RTFContentW . f  . _NoTrailing) x
+  cover 20 "Tag with parameter" $ has (traverse . _RTFContentW . f . _RTFControlParam) x
+  -- cover 20 "Large text" $ anyOf (traverse . _RTFPlainText) (\t -> T.length t > 100) x
   tripping x (T.intercalate "" . (encodeRTF <$>)) (parseOnly (many' decodeRTF) . T.encodeUtf8)
 
 -- undefined
