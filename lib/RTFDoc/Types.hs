@@ -21,7 +21,7 @@ module RTFDoc.Types (
   _rtfDocContent,
   _rtfDocHeader,
   --
-  module X
+  module X,
 ) where
 
 import Data.Word

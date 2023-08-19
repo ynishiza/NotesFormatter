@@ -36,13 +36,13 @@ genRTFColor =
 genName :: Gen Text
 genName = G.text (R.constant 1 32) (G.element charControlName)
 
-genControlWord :: Gen RTFControlWord
+genControlWord :: Gen RTFContent
 genControlWord = genControlWordWithName genName
 
-genControlSymbol :: Gen RTFControlSymbol
+genControlSymbol :: Gen RTFContent
 genControlSymbol = rtfControlSymbol <$> element charSymbol
 
-genControlWordWithName :: Gen Text -> Gen RTFControlWord
+genControlWordWithName :: Gen Text -> Gen RTFContent
 genControlWordWithName n =
   RTFControlWord
     <$> n
@@ -101,24 +101,23 @@ genRTFContents =
   list (linear 1 200) (choice [genRTFNonTextContent, plainText])
     <&> clean
  where
-  plainText = RTFContentT . RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
+  plainText = RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
   isPlainChar c = (c `notElem` charReserved) && isPrint c
 
-  clean (RTFContentT (RTFText t1) : RTFContentT (RTFText t2) : rest) = clean $ RTFContentT (RTFText $ t1 <> " " <> t2) : rest
+  clean ((RTFText t1) : (RTFText t2) : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
   -- make sure text begins with a non-alphabet delimiter
-  clean (RTFContentW (RTFControlWord n NoTrailing) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n NoTrailing) : clean (RTFContentT (RTFText $ "!" <> t) : rest)
+  clean ((RTFControlWord n NoTrailing) : (RTFText t) : rest) = RTFControlWord n NoTrailing : clean (RTFText ("!" <> t) : rest)
   -- make sure text begins with a non-number delimiter
-  clean (RTFContentW (RTFControlWord n p@(RTFControlParam _)) : RTFContentT (RTFText t) : rest) = RTFContentW (RTFControlWord n p) : clean (RTFContentT (RTFText $ "a" <> t) : rest)
+  clean ((RTFControlWord n p@(RTFControlParam _)) : (RTFText t) : rest) = RTFControlWord n p : clean (RTFText ("a" <> t) : rest)
   clean (x : xs) = x : clean xs
   clean [] = []
 
 genRTFNonTextContent :: Gen RTFContent
 genRTFNonTextContent =
   choice
-    [ RTFContentW <$> genControlWord
-    , RTFContentS
-        <$> frequency
-          [ (1, rtfControlSymbol <$> element ['\\', '{', '}'])
-          , (9, genControlSymbol)
-          ]
+    [ genControlWord
+    , frequency
+        [ (1, rtfControlSymbol <$> element ['\\', '{', '}'])
+        , (9, genControlSymbol)
+        ]
     ]

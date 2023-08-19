@@ -1,10 +1,6 @@
 module RTF.Types (
-  RTFGroup (..),
-  RTFControlWord (..),
-  RTFControlSymbol,
   rtfControlSymbol,
   getRtfControlSymbol,
-  RTFText (..),
   _NoTrailing,
   _RTFControlParam,
   _TrailingSpace,
@@ -17,10 +13,8 @@ module RTF.Types (
   -- Lens
   _RTFControlWord,
   _RTFControlSymbol,
-  _RTFContentS,
-  _RTFContentW,
-  _RTFContentG,
-  _RTFContentT,
+  _RTFGroup,
+  _RTFText,
   --
   charControl,
   charControlName,
@@ -53,37 +47,25 @@ charNonSymbol = ['0' .. '9'] <> charControlName <> (toUpper <$> charControlName)
 charSymbol :: String
 charSymbol = filter (not . (`elem` charNonSymbol)) $ toEnum <$> [0 .. 127]
 
-data RTFControlWord = RTFControlWord Text RTFControlWordEnd
-  deriving stock (Eq, Show, Generic)
-
 data RTFControlWordEnd = RTFControlParam Int | TrailingSpace | NoTrailing
   deriving stock (Eq, Show, Generic)
 
-newtype RTFControlSymbol = RTFControlSymbol Char
-  deriving stock (Eq, Show, Generic)
+getRtfControlSymbol :: RTFContent -> Maybe Char
+getRtfControlSymbol (RTFControlSymbol s) = Just s
+getRtfControlSymbol _ = Nothing
 
-getRtfControlSymbol :: RTFControlSymbol -> Char
-getRtfControlSymbol (RTFControlSymbol s) = s
-rtfControlSymbol :: Char -> RTFControlSymbol
+rtfControlSymbol :: Char -> RTFContent
 rtfControlSymbol c =
   if c `elem` charSymbol
     then RTFControlSymbol c
     else error $ "Invalid symbol " <> ['\'', c, '\'']
 
-newtype RTFGroup a = RTFGroup [a]
-  deriving stock (Eq, Show, Generic)
-
-newtype RTFText = RTFText Text
-  deriving stock (Eq, Show, Generic)
-
 data RTFContent
-  = RTFContentS RTFControlSymbol
-  | RTFContentW RTFControlWord
-  | RTFContentG (RTFGroup RTFContent)
-  | RTFContentT RTFText
+  = RTFControlSymbol Char
+  | RTFControlWord Text RTFControlWordEnd
+  | RTFGroup [RTFContent]
+  | RTFText Text
   deriving stock (Eq, Show, Generic)
 
 $(makePrisms ''RTFContent)
-$(makePrisms ''RTFControlWord)
-$(makePrisms ''RTFControlSymbol)
 $(makePrisms ''RTFControlWordEnd)

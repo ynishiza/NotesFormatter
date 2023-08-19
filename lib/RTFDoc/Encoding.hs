@@ -222,7 +222,7 @@ decodeControlWordWithValue p f = do
 
 decodeControlWordWithValue_ :: Text -> (Text -> Int -> a) -> Parser a
 decodeControlWordWithValue_ name f = decodeControlWordWithValue (parseText name) f
-decodeControlWord_ :: Text -> Parser RTFControlWord
+decodeControlWord_ :: Text -> Parser RTFContent
 decodeControlWord_ name = trimNewLines $ decodeControlWordBase $ parseText name
 
 withDestination :: Parser a -> Parser a
@@ -231,7 +231,7 @@ withDestination p = string "\\*" *> p
 toDestination :: Text -> Text
 toDestination t = "\\*" <> t
 
-decodeControlWordBase :: Parser Text -> Parser RTFControlWord
+decodeControlWordBase :: Parser Text -> Parser RTFContent
 decodeControlWordBase name =
   char charControl
     *> ( RTFControlWord

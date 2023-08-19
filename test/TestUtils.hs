@@ -8,5 +8,8 @@ import Data.Text qualified as T
 
 multiline :: QuasiQuoter
 multiline = QuasiQuoter {
-  quoteExp = \s ->  [| encodeUtf8 $ T.pack s |]
+  quoteExp = \s ->  [| encodeUtf8 $ T.pack s |],
+  quoteDec = undefined,
+  quoteType = undefined,
+  quotePat = undefined
             }
