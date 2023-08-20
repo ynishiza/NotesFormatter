@@ -28,7 +28,7 @@ library
       RTF.Encoding
       RTF.Types
       RTFDoc
-      RTFDoc.Convert
+      RTFDoc.DocParser
       RTFDoc.Encoding
       RTFDoc.ExtensionTypes
       RTFDoc.Types
@@ -179,7 +179,7 @@ test-suite main-test
       RTF.Encoding
       RTF.Types
       RTFDoc
-      RTFDoc.Convert
+      RTFDoc.DocParser
       RTFDoc.Encoding
       RTFDoc.ExtensionTypes
       RTFDoc.Types

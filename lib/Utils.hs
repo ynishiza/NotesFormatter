@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 module Utils (
   module X,
   Text,
@@ -11,6 +12,7 @@ module Utils (
   ConstructorInfo (..),
   getTypeName,
   getNameBase,
+  defaultShowt,
 ) where
 
 import Control.Lens hiding (from, to)
@@ -52,6 +54,9 @@ instance (ConstructorInfo a, ConstructorInfo b) => ConstructorInfo (a :+: b) whe
 
 instance Constructor c => ConstructorInfo (M1 C c f) where
   cname x = T.pack $ conName x
+
+defaultShowt :: Show a => a -> Text
+defaultShowt = T.pack . show
 
 getNameBase :: Name -> Q Exp
 getNameBase name = do
