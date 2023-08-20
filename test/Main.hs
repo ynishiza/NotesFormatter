@@ -1,6 +1,7 @@
 module Main (main) where
 
 import ParserProperties
+import RTFDocParserProperties
 import Spec
 import Test.Tasty
 import Test.Tasty.Hedgehog
@@ -11,4 +12,4 @@ main = do
   specTree <- testSpecs spec
   defaultMain $
     testGroup "main" $
-      fromGroup group : specTree
+      [fromGroup group, fromGroup rtfDocParseProperties] <> specTree

@@ -38,13 +38,6 @@ instance RTFEncoding RTFDoc where
       <> T.intercalate "" (encodeRTF <$> rtfDocContent)
       <> "}"
 
-  -- decodeRTF =
-  --   trimNewLines
-  --     ( char '{'
-  --         *> (RTFDoc <$> trimNewLines decodeRTF <*> trimNewLines (many (trimNewLines decodeRTF)))
-  --     )
-  --     <?> "RTFDoc"
-
   decodeRTF =
     trimNewLines
       ( decodeRTFGroup $
@@ -120,6 +113,7 @@ instance RTFEncoding ColorTbl where
     content =
       decodeControlWord_ "colortbl"
         *> (ColorTbl <$> manyControls (decodeRTF @RTFColor <* blockEnd))
+
 instance RTFEncoding ExpandedColorTbl where
   encodeRTF (ExpandedColorTbl colors) =
     encodeRTFGroup $

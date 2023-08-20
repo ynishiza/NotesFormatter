@@ -89,9 +89,9 @@ genRTFHeader :: Gen RTFHeader
 genRTFHeader =
   RTFHeader
     <$> charset
-    <*> list (linear 1 5) genCocoaControl
-    <*> (FontTbl <$> list (linear 0 5) (G.maybe genFontInfo))
-    <*> list (linear 0 10) color
+    <*> list (linear 1 10) genCocoaControl
+    <*> (FontTbl <$> list (linear 0 20) (G.maybe genFontInfo))
+    <*> list (linear 0 20) color
  where
   charset = Ansi <$> int (linear 0 10)
   color = (,) <$> genRTFColor <*> G.maybe genColorSpace

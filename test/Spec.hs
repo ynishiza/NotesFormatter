@@ -43,8 +43,8 @@ normalize text =
     & T.replace " " whitespacePlaholder
     & T.replace newlinePlaceholder "\\\n"
  where
-   whitespacePlaholder = "@@@"
-   newlinePlaceholder = "😄"
+  whitespacePlaholder = "@@@"
+  newlinePlaceholder = "😄"
 
 tryParse :: Parser a -> ByteString -> IO a
 tryParse p d = do
@@ -80,7 +80,13 @@ spec = describe "main" $ do
 \csgenericrgb\c88766\c88766\c88766;\cssrgb\c1680\c19835\c100000;}
               |]
       result <- tryParse (decodeRTF @RTFHeader) s
-      print result
+      result
+        `shouldBe` RTFHeader
+          { rtfCharset = Ansi 1252
+          , rtfCocoaControls = [CocoaControl "rtf" (Just 2639), CocoaControl "textscaling" (Just 0), CocoaControl "platform" (Just 0)]
+          , rtfFontTbl = FontTbl [Just (FontInfo{fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = "HelveticaNeue"}), Just (FontInfo{fontNum = 1, fontFamily = FNil, fontCharset = Just 0, fontName = "Monaco"})]
+          , rtfColors = [(RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing), (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0)), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000)), (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525)), (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766)), (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))]
+          }
 
     it "Doc" $ do
       let s =
@@ -92,7 +98,18 @@ spec = describe "main" $ do
 \csgenericrgb\c88766\c88766\c88766;\cssrgb\c1680\c19835\c100000;} a}
               |]
       result <- tryParse decodeDoc s
-      print result
-      print rtfFiles
+      result
+        `shouldBe` RTFDoc
+          { rtfDocHeader =
+              RTFHeader
+                { rtfCharset = Ansi 1252
+                , rtfCocoaControls = [CocoaControl "rtf" (Just 2639), CocoaControl "textscaling" (Just 0), CocoaControl "platform" (Just 0)]
+                , rtfFontTbl = FontTbl [Just (FontInfo{fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = "HelveticaNeue"}), Just (FontInfo{fontNum = 1, fontFamily = FNil, fontCharset = Just 0, fontName = "Monaco"})]
+                , rtfColors = [(RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing), (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0)), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000)), (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525)), (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766)), (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))]
+                }
+          , rtfDocContent = [RTFText " a"]
+          }
+    -- print result
+    -- print rtfFiles
 
     foldr (\x r -> r >> testSample x) (pure ()) rtfFiles
