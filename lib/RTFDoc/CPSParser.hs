@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use $>" #-}
-module RTFDoc.Parse (
+module RTFDoc.CPSParser (
   DocParserState,
   DocParser,
   parseDoc,
@@ -18,12 +18,12 @@ module RTFDoc.Parse (
   rtfSymbol_,
 ) where
 
-import CParser as X
+import CPSParser.Types as X
 import Control.Monad.Identity
 import Data.Attoparsec.ByteString
 import Data.ByteString
 import Data.Text qualified as T
-import RTF.Encoding
+import RTF.Convert
 
 type DocParserState = (Int, [RTFContent])
 
@@ -63,9 +63,9 @@ rtfGroup msg (CParserT p) = CParserT g
     p
       (i + 1, groupContent)
       ( \(x, s@(j, leftover)) ->
-          if Prelude.null leftover 
-             then k (x, (j + 1, content')) 
-             else ke (errorWith (msg' <> " Group did not consume all") s)
+          if Prelude.null leftover
+            then k (x, (j + 1, content'))
+            else ke (errorWith (msg' <> " Group did not consume all") s)
       )
       ke
   g state _ ke = ke $ errorWith (msg' <> " not a group") state
@@ -106,7 +106,7 @@ rtfSymbol msg f = CParserT p
 parseDoc :: DocParser (Either DocParseError (c, DocParserState)) c -> ByteString -> Either DocParseError (c, [RTFContent])
 parseDoc p dat =
   let
-    x = parseOnly (many' $ trimNewLines (decodeRTF @RTFContent)) dat
+    x = parseOnly (many' $ trimNewLines parseRTFContent) dat
    in
     case x of
       Left e -> Left $ CParserError (0, []) $ T.pack e

@@ -1,4 +1,4 @@
-module ParserGen (
+module GenRTFDoc (
   genFontFamily,
   genRTFColor,
   genFontInfo,

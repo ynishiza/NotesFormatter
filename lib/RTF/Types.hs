@@ -67,7 +67,7 @@ data RTFContent
   | RTFText Text
   deriving stock (Eq, Show, Generic)
 
-instance TextShow RTFContent where showt = defaultShowt
+-- instance TextShow RTFContent where showt = defaultShowt
 
 $(makePrisms ''RTFContent)
 $(makePrisms ''RTFControlWordEnd)

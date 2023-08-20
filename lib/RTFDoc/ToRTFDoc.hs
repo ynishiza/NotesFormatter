@@ -1,54 +1,44 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use $>" #-}
-module RTFDoc.ToRTF (
-  ToRTF (..),
-  FromRTF (..),
+module RTFDoc.ToRTFDoc (
+  ToRTFDoc (..),
   splitGroupDelim,
   module X,
 ) where
 
-import CParser
+import CPSParser.Combinator
+import CPSParser.Types
 import Data.Text qualified as T
 import RTF.Types
-import RTFDoc.Parse as X
+import RTFDoc.CPSParser as X
 import RTFDoc.Types
 
-class FromRTF c where
-  fromRTF :: c -> [RTFContent]
+class ToRTFDoc c where
+  toRTFDoc :: DocParser r c
 
-class ToRTF c where
-  toRTF :: DocParser r c
-
-instance FromRTF RTFColor where
-  fromRTF (RTFColor r g b) = f "red" r <> f "green" g <> f "blue" b
-   where
-    delim = RTFText ";"
-    f n (Just v) = [RTFControlWord n (RTFControlParam (fromIntegral v)), delim]
-    f _ Nothing = [delim]
-
-instance ToRTF RTFHeader where
-  toRTF =
+instance ToRTFDoc RTFHeader where
+  toRTFDoc =
     rtfControlWordValue_ "rtf" id
       *> ( RTFHeader
-            <$> (toRTF @Charset)
-            <*> many' (toRTF @CocoaControl)
-            <*> (toRTF @FontTbl)
+            <$> (toRTFDoc @Charset)
+            <*> many' (toRTFDoc @CocoaControl)
+            <*> (toRTFDoc @FontTbl)
             <*> colors
          )
    where
     colors = do
-      ColorTbl baseColors <- toRTF
-      ExpandedColorTbl expandedColors <- toRTF
+      ColorTbl baseColors <- toRTFDoc
+      ExpandedColorTbl expandedColors <- toRTFDoc
       unless (length baseColors == length expandedColors) $ fail $ "Non matching color and expanded color table" <> show (length baseColors) <> show (length expandedColors)
       return $ zip baseColors expandedColors
 
-instance ToRTF Charset where
-  toRTF =
+instance ToRTFDoc Charset where
+  toRTFDoc =
     rtfControlWordLabel_ "ansi" *> rtfControlWordValue_ "ansicpg" Ansi
 
-instance ToRTF CocoaControl where
-  toRTF = rtfControlWord "cocoa" $ \name end ->
+instance ToRTFDoc CocoaControl where
+  toRTFDoc = rtfControlWord "cocoa" $ \name end ->
     case T.stripPrefix "cocoa" name of
       Just name' ->
         Just $ case end of
@@ -56,30 +46,30 @@ instance ToRTF CocoaControl where
           _ -> CocoaControl name' Nothing
       Nothing -> Nothing
 
-instance ToRTF ExpandedColorTbl where
-  toRTF =
+instance ToRTFDoc ExpandedColorTbl where
+  toRTFDoc =
     rtfGroupWithDelims "expandedcolortbl" content
    where
     content =
       withDestination (rtfControlWordLabel_ "expandedcolortbl")
-        *> (ExpandedColorTbl <$> many' (optional toRTF <* blockDelimiter))
+        *> (ExpandedColorTbl <$> many' (optional toRTFDoc <* blockDelimiter))
 
-instance ToRTF ColorTbl where
-  toRTF = ColorTbl <$> rtfGroupWithDelims "ColorTbl" content
+instance ToRTFDoc ColorTbl where
+  toRTFDoc = ColorTbl <$> rtfGroupWithDelims "ColorTbl" content
    where
-    content = rtfControlWordLabel "colorTbl" f *> many' (toRTF <* blockDelimiter)
+    content = rtfControlWordLabel "colorTbl" f *> many' (toRTFDoc <* blockDelimiter)
     f "colortbl" = Just ()
     f _ = Nothing
 
-instance ToRTF RTFColor where
-  toRTF = RTFColor <$> red <*> green <*> blue
+instance ToRTFDoc RTFColor where
+  toRTFDoc = RTFColor <$> red <*> green <*> blue
    where
     red = optional $ rtfControlWordValue_ "red" (fromIntegral @Int @Word8)
     green = optional $ rtfControlWordValue_ "green" (fromIntegral @Int @Word8)
     blue = optional $ rtfControlWordValue_ "blue" (fromIntegral @Int @Word8)
 
-instance ToRTF ColorSpace where
-  toRTF = gray <|> cssrgb <|> genericrgb
+instance ToRTFDoc ColorSpace where
+  toRTFDoc = gray <|> cssrgb <|> genericrgb
    where
     gray =
       rtfControlWordLabel_ "csgray" *> (CSGray <$> value)
@@ -89,23 +79,23 @@ instance ToRTF ColorSpace where
       rtfControlWordLabel_ "csgenericrgb" *> (CSGenericRGB <$> value <*> value <*> value)
     value = rtfControlWordValue_ "c" id
 
-instance ToRTF FontTbl where
-  toRTF =
+instance ToRTFDoc FontTbl where
+  toRTFDoc =
     rtfGroupWithDelims "FontTbl" content
    where
     content =
       rtfControlWordLabel_ "fonttbl"
-        *> (FontTbl <$> many' (optional toRTF <* blockDelimiter))
+        *> (FontTbl <$> many' (optional toRTFDoc <* blockDelimiter))
 
-instance ToRTF FontInfo where
-  toRTF = FontInfo <$> fontId <*> toRTF @FontFamily <*> optional charset <*> fontName
+instance ToRTFDoc FontInfo where
+  toRTFDoc = FontInfo <$> fontId <*> toRTFDoc @FontFamily <*> optional charset <*> fontName
    where
     fontId = rtfControlWordValue_ "f" id
     charset = rtfControlWordValue_ "fcharset" id
     fontName = rtfText "font name" $ \t -> if T.length t > 0 then Just (T.strip t) else Nothing
 
-instance ToRTF FontFamily where
-  toRTF = choice (parseFamily <$> allColors)
+instance ToRTFDoc FontFamily where
+  toRTFDoc = choice (parseFamily <$> allColors)
    where
     allColors = [minBound .. maxBound :: FontFamily]
     parseFamily t =

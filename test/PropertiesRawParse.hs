@@ -1,4 +1,4 @@
-module ParserProperties (group) where
+module PropertiesRawParse (properties) where
 
 import Control.Lens
 import Data.Attoparsec.ByteString hiding (parse)
@@ -17,8 +17,8 @@ import RTFDoc.RawParse
 testCount :: TestLimit
 testCount = 200
 
-group :: Group
-group = $$discover
+properties :: Group
+properties = $$discover
 
 labelName :: Show a => a -> LabelName
 labelName = fromString . show

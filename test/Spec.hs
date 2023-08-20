@@ -5,12 +5,13 @@ module Spec (
 ) where
 
 import Control.Monad
-import Data.Attoparsec.ByteString
+import Data.Attoparsec.ByteString hiding (parse)
 import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T
 import Data.Text.Encoding
 import Language.Haskell.TH
-import RTFDoc.Encoding
+import RTFDoc.RawParse
+import RTFDoc
 import System.Directory
 import System.FilePath
 import Test.Hspec hiding (runIO)
@@ -58,16 +59,16 @@ tryParse p d = do
 testSample :: FilePath -> Spec
 testSample path = it ("sample: " <> path) $ do
   bytes <- B.readFile path
-  result <- tryParse (decodeRTF @RTFDoc) bytes
+  result <- tryParse (parse @RTFDoc) bytes
   let src = normalize (decodeUtf8 bytes)
-      encoded = normalize (encodeRTF result)
+      encoded = normalize (render result)
   when (encoded /= src) $ print result
   encoded `shouldBe` src
   T.length encoded `shouldBe` T.length src
 
 spec :: Spec
 spec = describe "main" $ do
-  let decodeDoc = decodeRTF @RTFDoc
+  let decodeDoc = parse @RTFDoc
 
   describe "sample parses" $ do
     it "Header" $ do
@@ -79,7 +80,7 @@ spec = describe "main" $ do
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\csgray\c100000;\csgray\c79525;
 \csgenericrgb\c88766\c88766\c88766;\cssrgb\c1680\c19835\c100000;}
               |]
-      result <- tryParse (decodeRTF @RTFHeader) s
+      result <- tryParse (parse @RTFHeader) s
       result
         `shouldBe` RTFHeader
           { rtfCharset = Ansi 1252

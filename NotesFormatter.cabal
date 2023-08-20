@@ -25,14 +25,16 @@ source-repository head
 
 library
   exposed-modules:
-      CParser
-      RTF.Encoding
+      CPSParser.Combinator
+      CPSParser.Types
+      RTF.Convert
       RTF.Types
       RTFDoc
-      RTFDoc.Encoding
+      RTFDoc.CPSParser
       RTFDoc.ExtensionTypes
-      RTFDoc.Parse
-      RTFDoc.ToRTF
+      RTFDoc.RawParse
+      RTFDoc.Render
+      RTFDoc.ToRTFDoc
       RTFDoc.Types
       Utils
   other-modules:
@@ -176,18 +178,21 @@ test-suite main-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      CParser
-      ParserGen
+      CPSParser.Combinator
+      CPSParser.Types
+      GenRTFDoc
       ParserProperties
-      RTF.Encoding
+      PropertiesRawParse
+      PropertiesToRTFDoc
+      RTF.Convert
       RTF.Types
       RTFDoc
-      RTFDoc.Encoding
+      RTFDoc.CPSParser
       RTFDoc.ExtensionTypes
-      RTFDoc.Parse
-      RTFDoc.ToRTF
+      RTFDoc.RawParse
+      RTFDoc.Render
+      RTFDoc.ToRTFDoc
       RTFDoc.Types
-      RTFDocParserProperties
       Spec
       TestUtils
       Utils
