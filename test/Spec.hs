@@ -10,8 +10,9 @@ import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T
 import Data.Text.Encoding
 import Language.Haskell.TH
-import RTFDoc.RawParse
 import RTFDoc
+import RTFDoc.RawParse
+import RTFDoc.ToRTFDoc
 import System.Directory
 import System.FilePath
 import Test.Hspec hiding (runIO)
@@ -56,10 +57,20 @@ tryParse p d = do
       undefined
     Right v -> return v
 
+tryParse2 :: ToRTFDoc a => ByteString -> IO a
+tryParse2 d = do
+  let result = parseDoc toRTFDoc d
+  case result of
+    Left msg -> do
+      expectationFailure $ show msg
+      undefined
+    Right (v, _) -> return v
+
 testSample :: FilePath -> Spec
 testSample path = it ("sample: " <> path) $ do
   bytes <- B.readFile path
-  result <- tryParse (parse @RTFDoc) bytes
+  -- result <- tryParse (parse @RTFDoc) bytes
+  result <- tryParse2 @RTFDoc bytes
   let src = normalize (decodeUtf8 bytes)
       encoded = normalize (render result)
   when (encoded /= src) $ print result

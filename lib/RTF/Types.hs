@@ -1,15 +1,16 @@
 module RTF.Types (
   rtfControlSymbol,
   getRtfControlSymbol,
-  _NoTrailing,
+  _SpaceSuffix,
   _RTFControlParam,
-  _TrailingSpace,
+  _NoSuffix,
   --
   RTFContent (..),
   Word8,
   Text,
   Parser,
-  RTFControlWordEnd (..),
+  RTFControlPrefix (..),
+  RTFControlSuffix (..),
   -- Lens
   _RTFControlWord,
   _RTFControlSymbol,
@@ -21,6 +22,7 @@ module RTF.Types (
   charSymbol,
   charReserved,
   charNewline,
+  charOptionalDestination,
 ) where
 
 import Data.Attoparsec.ByteString.Char8
@@ -34,6 +36,9 @@ charControl = '\\'
 charReserved :: String
 charReserved = "\\{}"
 
+charOptionalDestination :: Char
+charOptionalDestination = '*'
+
 charControlName :: String
 charControlName = ['a' .. 'z']
 
@@ -41,13 +46,16 @@ charNewline :: String
 charNewline = ['\n', '\r', '\f']
 
 charNonSymbol :: String
-charNonSymbol = ['0' .. '9'] <> charControlName <> (toUpper <$> charControlName)
+charNonSymbol = ['0' .. '9'] <> [charOptionalDestination] <> charControlName <> (toUpper <$> charControlName)
 
 -- 8 bits
 charSymbol :: String
 charSymbol = filter (not . (`elem` charNonSymbol)) $ toEnum <$> [0 .. 127]
 
-data RTFControlWordEnd = RTFControlParam Int | TrailingSpace | NoTrailing
+data RTFControlPrefix = StarPrefix | NoPrefix
+  deriving stock (Eq, Show, Generic)
+
+data RTFControlSuffix = RTFControlParam Int | SpaceSuffix | NoSuffix
   deriving stock (Eq, Show, Generic)
 
 getRtfControlSymbol :: RTFContent -> Maybe Char
@@ -62,12 +70,10 @@ rtfControlSymbol c =
 
 data RTFContent
   = RTFControlSymbol Char
-  | RTFControlWord Text RTFControlWordEnd
+  | RTFControlWord RTFControlPrefix Text RTFControlSuffix
   | RTFGroup [RTFContent]
   | RTFText Text
   deriving stock (Eq, Show, Generic)
 
--- instance TextShow RTFContent where showt = defaultShowt
-
 $(makePrisms ''RTFContent)
-$(makePrisms ''RTFControlWordEnd)
+$(makePrisms ''RTFControlSuffix)

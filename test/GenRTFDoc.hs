@@ -44,12 +44,12 @@ genControlSymbol = rtfControlSymbol <$> element charSymbol
 
 genControlWordWithName :: Gen Text -> Gen RTFContent
 genControlWordWithName n =
-  RTFControlWord
+  RTFControlWord NoPrefix
     <$> n
     <*> choice
       [ RTFControlParam <$> int (linear 1 100)
-      , return NoTrailing
-      , return TrailingSpace
+      , return NoSuffix
+      , return SpaceSuffix
       ]
 
 genFontInfo :: Gen FontInfo
@@ -106,9 +106,9 @@ genRTFContents =
 
   clean ((RTFText t1) : (RTFText t2) : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
   -- make sure text begins with a non-alphabet delimiter
-  clean ((RTFControlWord n NoTrailing) : (RTFText t) : rest) = RTFControlWord n NoTrailing : clean (RTFText ("!" <> t) : rest)
+  clean ((RTFControlWord prefix n NoSuffix) : (RTFText t) : rest) = RTFControlWord prefix n NoSuffix : clean (RTFText ("!" <> t) : rest)
   -- make sure text begins with a non-number delimiter
-  clean ((RTFControlWord n p@(RTFControlParam _)) : (RTFText t) : rest) = RTFControlWord n p : clean (RTFText ("a" <> t) : rest)
+  clean ((RTFControlWord prefix n p@(RTFControlParam _)) : (RTFText t) : rest) = RTFControlWord prefix n p : clean (RTFText ("a" <> t) : rest)
   clean (x : xs) = x : clean xs
   clean [] = []
 

@@ -8,7 +8,7 @@
 -}
 
 module RTFDoc.RawParse (
-  Parseable(..),
+  Parseable (..),
   module X,
 ) where
 
@@ -25,14 +25,11 @@ import Prelude hiding (takeWhile)
 class Generic c => Parseable c where
   parse :: Parser c
 
-parseRTFInnerControl :: Parseable c => Parser (Maybe c)
-parseRTFInnerControl = (blockEnd >> return Nothing) <|> (Just <$> parse <* blockEnd)
-
 instance Parseable RTFDoc where
   parse =
     trimNewLines
       ( parseRTFGroupWith $
-          RTFDoc <$> trimNewLines parse <*> trimNewLines (many (trimNewLines parseRTFContent))
+          RTFDoc <$> trimNewLines (parse @RTFHeader) <*> parseRTFContents
       )
       <?> "RTFDoc"
 
@@ -59,10 +56,10 @@ instance Parseable Charset where
 
 instance Parseable CocoaControl where
   parse = do
-    (RTFControlWord name v_) <- parseRTFControlWord nameParse
+    (RTFControlWord NoPrefix name v_) <- parseRTFControlWord nameParse
     return $ case v_ of
-      NoTrailing -> CocoaControl name Nothing
-      TrailingSpace -> CocoaControl name Nothing
+      NoSuffix -> CocoaControl name Nothing
+      SpaceSuffix -> CocoaControl name Nothing
       RTFControlParam val -> CocoaControl name (Just val)
    where
     nameParse = parseText "cocoa" *> (T.pack <$> many (satisfy (`elem` charControlName)))
@@ -74,7 +71,7 @@ instance Parseable FontTbl where
    where
     content =
       parseControlWord_ "fonttbl"
-        *> (FontTbl <$> manyControls (parseRTFInnerControl @FontInfo))
+        *> (FontTbl <$> manyControls (parseGroupItem @FontInfo))
 
 instance Parseable ColorTbl where
   parse =
@@ -83,7 +80,7 @@ instance Parseable ColorTbl where
    where
     content =
       parseControlWord_ "colortbl"
-        *> (ColorTbl <$> manyControls (parse @RTFColor <* blockEnd))
+        *> (ColorTbl <$> manyControls (parse @RTFColor <* groupItemDelim))
 
 instance Parseable ExpandedColorTbl where
   parse =
@@ -91,8 +88,8 @@ instance Parseable ExpandedColorTbl where
       <?> "ExpandedColorTbl"
    where
     content =
-      withDestination (parseControlWord_ "expandedcolortbl")
-        *> (ExpandedColorTbl <$> manyControls (parseRTFInnerControl @ColorSpace))
+      parseControlWord_ "expandedcolortbl"
+        *> (ExpandedColorTbl <$> manyControls (parseGroupItem @ColorSpace))
 
 instance Parseable FontInfo where
   parse =
@@ -154,40 +151,23 @@ instance Parseable ColorSpace where
 
 parseControlWordWithValue :: Parser Text -> (Text -> Int -> a) -> Parser a
 parseControlWordWithValue p f = do
-  RTFControlWord name (RTFControlParam v) <- parseRTFControlWord p
+  RTFControlWord NoPrefix name (RTFControlParam v) <- parseRTFControlWord p
   return $ f name v
 
 parseControlWordWithValue_ :: Text -> (Text -> Int -> a) -> Parser a
 parseControlWordWithValue_ name f = parseControlWordWithValue (parseText name) f
+
 parseControlWord_ :: Text -> Parser RTFContent
-parseControlWord_ name = trimNewLines $ parseControlWordBase $ parseText name
-
-withDestination :: Parser a -> Parser a
-withDestination p = string "\\*" *> p
-
-parseControlWordBase :: Parser Text -> Parser RTFContent
-parseControlWordBase name =
-  char charControl
-    *> ( RTFControlWord
-          <$> (name <?> "name")
-          <*> ( trailingSpace
-                  <|> (RTFControlParam <$> decimal <?> "RTFControlParam")
-                  <|> return NoTrailing
-              )
-       )
- where
-  trailingSpace =
-    void (satisfy (== ' ')) >> return TrailingSpace
-      <?> "TrailingSpace"
+parseControlWord_ name = trimNewLines $ parseRTFControlWordBase $ parseText name
 
 toText :: Parser ByteString -> Parser Text
 toText = (T.decodeUtf8 <$>)
 
-parseText :: Text -> Parser Text
-parseText value = string (T.encodeUtf8 value) *> return value
+parseGroupItem :: Parseable c => Parser (Maybe c)
+parseGroupItem = (groupItemDelim >> return Nothing) <|> (Just <$> parse <* groupItemDelim)
 
-blockEnd :: Parser ()
-blockEnd = void $ char ';' >> skipSpace
+groupItemDelim :: Parser ()
+groupItemDelim = void $ char ';' >> skipSpace
 
 manyControls :: Parser a -> Parser [a]
 manyControls p = many (trimNewLines p)

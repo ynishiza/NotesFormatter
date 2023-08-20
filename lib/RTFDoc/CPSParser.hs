@@ -40,8 +40,8 @@ rtfControlWordValue_ name f = rtfControlWordValue name (\n v -> if name == n the
 rtfControlWordValue :: Text -> (Text -> Int -> Maybe c) -> DocParser r c
 rtfControlWordValue msg f = rtfControlWord msg f'
  where
-  f' name (RTFControlParam v) = f name v
-  f' _ _ = Nothing
+  f' _ name (RTFControlParam v) = f name v
+  f' _ _ _ = Nothing
 
 rtfText_ :: Text -> DocParser r Text
 rtfText_ text = rtfText text $ \t -> if t == text then Just text else Nothing
@@ -50,25 +50,25 @@ rtfText :: Text -> (Text -> Maybe Text) -> DocParser r Text
 rtfText msg f = CParserT p
  where
   msg' = "[RTFText]" <> msg
-  p state@(i, RTFText text : content') k ke = case f text of
-    Just text' -> k (text', (i + 1, content'))
+  p state@(i, RTFText text : state') k ke = case f text of
+    Just text' -> k (text', (i + 1, state'))
     Nothing -> ke (errorWith msg' state)
   p state _ ke = ke (errorWith msg' state)
 
 rtfGroup :: Text -> DocParser r c -> DocParser r c
-rtfGroup msg (CParserT p) = CParserT g
+rtfGroup msg (CParserT contentParser) = CParserT p
  where
   msg' = "[RTFGroup]" <> msg
-  g (i, RTFGroup groupContent : content') k ke =
-    p
+  p (i, RTFGroup groupContent : rest) k ke =
+    contentParser
       (i + 1, groupContent)
-      ( \(x, s@(j, leftover)) ->
+      ( \(x, state'@(j, leftover)) ->
           if Prelude.null leftover
-            then k (x, (j + 1, content'))
-            else ke (errorWith (msg' <> " Group did not consume all") s)
+            then k (x, (j + 1, rest))
+            else ke (errorWith (msg' <> "\nGroup has left overs") state')
       )
       ke
-  g state _ ke = ke $ errorWith (msg' <> " not a group") state
+  p state _ ke = ke $ errorWith (msg' <> " not a group") state
 
 rtfControlWordLabel_ :: Text -> DocParser r Text
 rtfControlWordLabel_ name = rtfControlWordLabel name (\v -> if v == name then Just v else Nothing)
@@ -76,19 +76,17 @@ rtfControlWordLabel_ name = rtfControlWordLabel name (\v -> if v == name then Ju
 rtfControlWordLabel :: Text -> (Text -> Maybe c) -> DocParser r c
 rtfControlWordLabel msg f = rtfControlWord msg f'
  where
-  f' name end
-    | end == TrailingSpace || end == NoTrailing = f name
+  f' _ name end
+    | end == SpaceSuffix || end == NoSuffix = f name
     | otherwise = Nothing
 
-rtfControlWord :: Text -> (Text -> RTFControlWordEnd -> Maybe c) -> DocParser r c
+rtfControlWord :: Text -> (RTFControlPrefix -> Text -> RTFControlSuffix -> Maybe c) -> DocParser r c
 rtfControlWord msg f = CParserT p
  where
   msg' = "[RTFControlWord]" <> msg
-  p state@(i, RTFControlWord n t : rest) k ke = case f n t of
+  p state@(i, RTFControlWord prefix name suffix : rest) k ke = case f prefix name suffix of
     Just v -> k (v, (i + 1, rest))
     Nothing -> ke $ errorWith msg' state
-  -- \| t == TrailingSpace || t == NoTrailing, Just c <- f n = k (c, (i + 1, rest))
-  -- \| otherwise = ke $ errorWith msg' state
   p state _ ke = ke $ errorWith msg' state
 
 rtfSymbol_ :: Char -> DocParser r Char
@@ -98,18 +96,14 @@ rtfSymbol :: Text -> (Char -> Maybe c) -> DocParser r c
 rtfSymbol msg f = CParserT p
  where
   msg' = "[RTFControlSymbol]" <> msg
-  p state@(i, RTFControlSymbol c : rest) k ke = case f c of
+  p state@(i, RTFControlSymbol symbol : rest) k ke = case f symbol of
     Just v -> k (v, (i + 1, rest))
     Nothing -> ke $ errorWith msg state
   p state _ ke = ke $ errorWith msg' state
 
 parseDoc :: DocParser (Either DocParseError (c, DocParserState)) c -> ByteString -> Either DocParseError (c, [RTFContent])
-parseDoc p dat =
-  let
-    x = parseOnly (many' $ trimNewLines parseRTFContent) dat
-   in
-    case x of
-      Left e -> Left $ CParserError (0, []) $ T.pack e
-      Right v -> case runIdentity (execCParser p (0, v)) of
-        Left e -> Left e
-        Right (result, (_, z)) -> Right (result, z)
+parseDoc p d = case parseOnly parseRTFContents d of
+  Left e -> Left $ CParserError (0, []) $ T.pack e
+  Right v -> case runIdentity (execCParser p (0, v)) of
+    Left e -> Left e
+    Right (result, (_, z)) -> Right (result, z)

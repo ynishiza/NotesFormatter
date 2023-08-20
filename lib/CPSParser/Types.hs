@@ -9,6 +9,7 @@ import Control.Applicative as X
 import Control.Arrow (first)
 import Control.Exception (Exception)
 import Control.Monad as X
+import Control.Monad.Reader as X
 import Data.Data (Typeable)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -45,7 +46,11 @@ instance Monad (CParserT error state result m) where
   CParserT xp >>= h = CParserT $ \state k ke -> xp state (\(x, state') -> (runCParserBase $ h x) state' k ke) ke
 
 instance MonadFail (CParserT (CParserError state) state result m) where
-  fail msg = CParserT $ \state _ ke -> ke (CParserError state (T.pack msg))
+  fail msg = CParserT $ \ust _ ke -> ke (CParserError ust (T.pack msg))
+
+instance Monad m => MonadReader state (CParserT error state result m) where
+  ask = CParserT $ \state k _ -> k (state, state)
+  local = error "Local not supported"
 
 execCParser :: Monad m => CParserT error state (Either error (a, state)) m a -> state -> m (Either error (a, state))
 execCParser (CParserT f) i = f i (return . Right) (return . Left)

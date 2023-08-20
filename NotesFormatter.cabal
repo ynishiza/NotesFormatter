@@ -181,7 +181,6 @@ test-suite main-test
       CPSParser.Combinator
       CPSParser.Types
       GenRTFDoc
-      ParserProperties
       PropertiesRawParse
       PropertiesToRTFDoc
       RTF.Convert

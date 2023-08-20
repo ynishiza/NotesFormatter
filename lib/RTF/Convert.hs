@@ -11,18 +11,24 @@
 
 module RTF.Convert (
   charBlockEnd,
-  -- RTFEncoding (..),
   ByteString,
+  -- parse
   parseRTFControlWord,
+  parseRTFControlWordBase,
   parseRTFGroupWith,
+  parseRTFContent,
+  parseRTFContents,
+  -- render
   renderRTFGroup,
+  renderRTFContent,
+  -- utils
+  debugPeek,
+  parseText,
+  (<??>),
   skipNewLines,
   trimNewLines,
-  debugPeek,
-  (<??>),
+  notNewLine,
   module X,
-  renderRTFContent,
-  parseRTFContent,
 ) where
 
 import Control.Applicative
@@ -38,72 +44,43 @@ import RTF.Types as X
 import Utils as X
 import Prelude hiding (takeWhile)
 
--- class Generic c => RTFEncoding c where
---   renderRTF :: c -> Text
---   decodeRTF :: Parser c
-
 controlWith :: Text -> Text
 controlWith = (T.pack [charControl] <>)
 
 (<??>) :: Parser a -> Text -> Parser a
 a <??> b = a <?> T.unpack b
 
--- instance RTFEncoding RTFContent where
---   renderRTF (RTFControlSymbol symbol) = T.pack [charControl, symbol]
---   renderRTF (RTFControlWord name NoTrailing) = controlWith name
---   renderRTF (RTFControlWord name TrailingSpace) = controlWith $ name <> " "
---   renderRTF (RTFControlWord name (RTFControlParam n)) = controlWith $ name <> showt n
---   renderRTF (RTFGroup content) = renderRTFGroup $ T.intercalate "" $ renderRTF <$> content
---   renderRTF (RTFText text) = text
-
---   decodeRTF =
---     choice
---       [ symbol
---       , parseRTFControlWord wordName
---       , group
---       , text
---       ]
---       <?> "RTFContent"
---    where
---     symbol =
---       char charControl *> (rtfControlSymbol <$> satisfy (notInClass charControlName))
---         <?> "RTFControlSymbol"
---     wordName =
---       T.pack <$> many1' (satisfy (inClass charControlName))
---         <?> "RTFControlWord"
---     group =
---       RTFGroup <$> parseRTFGroupWith (many decodeRTF)
---         <?> "RTFGroup"
---     text =
---       RTFText
---         . T.decodeUtf8
---         <$> isNonEmpty (takeWhile (not . (`elem` charReserved)))
---         <??> "RTFText"
---     isNonEmpty :: Parser ByteString -> Parser ByteString
---     isNonEmpty p = do
---       d <- p
---       guard $ B.length d > 0
---       return d
-
 renderRTFContent :: RTFContent -> Text
 renderRTFContent (RTFControlSymbol symbol) = T.pack [charControl, symbol]
-renderRTFContent (RTFControlWord name NoTrailing) = controlWith name
-renderRTFContent (RTFControlWord name TrailingSpace) = controlWith $ name <> " "
-renderRTFContent (RTFControlWord name (RTFControlParam n)) = controlWith $ name <> showt n
+renderRTFContent (RTFControlWord prefix name suffix) = renderPrefix prefix <> controlWith name <> renderSuffix suffix
 renderRTFContent (RTFGroup content) = renderRTFGroup $ T.intercalate "" $ renderRTFContent <$> content
 renderRTFContent (RTFText text) = text
+
+renderPrefix :: RTFControlPrefix -> Text
+renderPrefix NoPrefix = ""
+renderPrefix StarPrefix = controlWith "*"
+
+renderSuffix :: RTFControlSuffix -> Text
+renderSuffix NoSuffix = ""
+renderSuffix SpaceSuffix = " "
+renderSuffix (RTFControlParam n) = showt n
 
 renderRTFGroup :: Text -> Text
 renderRTFGroup t = "{" <> t <> "}"
 
+parseRTFContents :: Parser [RTFContent]
+parseRTFContents = filter notNewLine <$> many (trimNewLines parseRTFContent)
+
+notNewLine :: RTFContent -> Bool
+notNewLine (RTFText "\n") = False
+notNewLine _ = True
+
 parseRTFContent :: Parser RTFContent
 parseRTFContent =
-  choice
-    [ symbol
-    , parseRTFControlWord wordName
-    , group
-    , text
-    ]
+  parseRTFControlWord wordName
+    <|> group
+    <|> symbol
+    <|> text
     <?> "RTFContent"
  where
   symbol =
@@ -131,22 +108,24 @@ parseRTFGroupWith p =
   trimNewLines (char '{' *> trimNewLines p <* char '}')
 
 parseRTFControlWord :: Parser Text -> Parser RTFContent
-parseRTFControlWord name = trimNewLines $ parseControlWordBase name
+parseRTFControlWord name = trimNewLines $ parseRTFControlWordBase name
 
-parseControlWordBase :: Parser Text -> Parser RTFContent
-parseControlWordBase name =
-  char charControl
-    *> ( RTFControlWord
-          <$> (name <?> "name")
-          <*> ( trailingSpace
-                  <|> (RTFControlParam <$> decimal <?> "RTFControlParam")
-                  <|> return NoTrailing
-              )
-       )
+parseRTFControlWordBase :: Parser Text -> Parser RTFContent
+parseRTFControlWordBase name =
+  RTFControlWord
+    <$> prefix
+    <*> (char charControl *> name <?> "name")
+    <*> ( trailingSpace
+            <|> (RTFControlParam <$> decimal <?> "RTFControlParam")
+            <|> return NoSuffix
+        )
  where
+  prefix =
+    (char charControl *> char '*' *> return StarPrefix) <|> return NoPrefix
+      <?> "RTFControlPrefix"
   trailingSpace =
-    void (satisfy (== ' ')) >> return TrailingSpace
-      <?> "TrailingSpace"
+    void (satisfy (== ' ')) >> return SpaceSuffix
+      <?> "SpaceSuffix"
 
 -- New lines are ignored in RTF
 -- A new line plain text uses a RTF symbol instead
@@ -168,3 +147,6 @@ debugPeek = do
 
 charBlockEnd :: Text
 charBlockEnd = ";"
+
+parseText :: Text -> Parser Text
+parseText value = string (T.encodeUtf8 value) *> return value

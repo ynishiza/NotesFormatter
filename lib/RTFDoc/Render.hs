@@ -30,7 +30,7 @@ instance Renderable RTFDoc where
 
 instance Renderable RTFHeader where
   render (RTFHeader{..}) =
-    encodeControlWithLabel "rtf1" False
+    renderControlWithLabel_ "rtf1" 
       <> render rtfCharset
       <> T.intercalate "" (render <$> rtfCocoaControls)
       <> render rtfFontTbl
@@ -39,72 +39,71 @@ instance Renderable RTFHeader where
 
 instance Renderable Charset where
   render (Ansi n) =
-    encodeControlWithLabel "ansi" False
-      <> encodeControlWithValue "ansicpg" n
+    renderControlWithLabel_ "ansi" 
+      <> renderControlWithValue "ansicpg" n
 
 instance Renderable CocoaControl where
-  render (CocoaControl name (Just v)) = encodeControlWithValue ("cocoa" <> name) v
-  render (CocoaControl name Nothing) = encodeControlWithLabel ("cocoa" <> name) False
+  render (CocoaControl name (Just v)) = renderControlWithValue ("cocoa" <> name) v
+  render (CocoaControl name Nothing) = renderControlWithLabel_ ("cocoa" <> name) 
 
 instance Renderable FontTbl where
   render (FontTbl infos) =
     renderRTFGroup $
-      encodeControlWithLabel "fonttbl" False
-        <> T.intercalate "" (encodeRTFInnerControl <$> infos)
+      renderControlWithLabel_ "fonttbl" 
+        <> T.intercalate "" (renderRTFInnerControl <$> infos)
 
 instance Renderable ColorTbl where
   render (ColorTbl colors) =
     renderRTFGroup $
-      encodeControlWithLabel "colortbl" False
+      renderControlWithLabel_ "colortbl" 
         <> T.intercalate "" (appendBlockEnd . render <$> colors)
 
 instance Renderable ExpandedColorTbl where
   render (ExpandedColorTbl colors) =
     renderRTFGroup $
-      toDestination (encodeControlWithLabel "expandedcolortbl" False)
-        <> T.intercalate "" (encodeRTFInnerControl <$> colors)
+      renderControlWithLabel StarPrefix "expandedcolortbl" NoSuffix
+        <> T.intercalate "" (renderRTFInnerControl <$> colors)
 
 instance Renderable FontInfo where
   render (FontInfo fontId family charset name) =
-    encodeControlWithValue "f" fontId
+    renderControlWithValue "f" fontId
       <> render family
-      <> maybe "" (encodeControlWithValue "fcharset") charset
+      <> maybe "" (renderControlWithValue "fcharset") charset
       <> " "
       <> name
 
 instance Renderable FontFamily where
-  render f = renderRTFContent $ RTFControlWord (fontFamilyText f) NoTrailing
+  render f = renderRTFContent $ RTFControlWord NoPrefix (fontFamilyText f) NoSuffix
 
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
 
 instance Renderable RTFColor where
-  render (RTFColor r g b) = encode "red" r <> encode "green" g <> encode "blue" b
+  render (RTFColor r g b) = renderValue "red" r <> renderValue "green" g <> renderValue "blue" b
    where
-    encode name (Just value) = encodeControlWithValue name value
-    encode _ Nothing = ""
+    renderValue name (Just value) = renderControlWithValue name value
+    renderValue _ Nothing = ""
 
 instance Renderable ColorSpace where
   render word = case word of
-    CSGray v -> encodeControlWithLabel "csgray" False <> value v
-    CSSRGB r g b -> encodeControlWithLabel "cssrgb" False <> value r <> value g <> value b
-    CSGenericRGB r g b -> encodeControlWithLabel "csgenericrgb" False <> value r <> value g <> value b
+    CSGray v -> renderControlWithLabel_ "csgray" <> value v
+    CSSRGB r g b -> renderControlWithLabel_ "cssrgb" <> value r <> value g <> value b
+    CSGenericRGB r g b -> renderControlWithLabel_ "csgenericrgb" <> value r <> value g <> value b
    where
-    value = encodeControlWithValue "c"
+    value = renderControlWithValue "c"
 
-encodeControlWithLabel :: Text -> Bool -> Text
-encodeControlWithLabel name False = renderRTFContent $ RTFControlWord name NoTrailing
-encodeControlWithLabel name True = renderRTFContent $ RTFControlWord name TrailingSpace
+renderControlWithLabel_ :: Text -> Text
+renderControlWithLabel_ name = renderControlWithLabel NoPrefix name NoSuffix
 
-encodeControlWithValue :: Integral v => Text -> v -> Text
-encodeControlWithValue name v = renderRTFContent $ RTFControlWord name $ RTFControlParam $ fromIntegral v
+renderControlWithLabel :: RTFControlPrefix -> Text -> RTFControlSuffix -> Text
+renderControlWithLabel prefix name suffix = renderRTFContent $ RTFControlWord prefix  name suffix
 
-toDestination :: Text -> Text
-toDestination t = "\\*" <> t
+renderControlWithValue :: Integral v => Text -> v -> Text
+renderControlWithValue name v = renderRTFContent $ RTFControlWord NoPrefix name $ RTFControlParam $ fromIntegral v
 
 appendBlockEnd :: Text -> Text
 appendBlockEnd text = text <> charBlockEnd
 
-encodeRTFInnerControl :: Renderable c => Maybe c -> Text
-encodeRTFInnerControl (Just item) = render item <> charBlockEnd
-encodeRTFInnerControl Nothing = charBlockEnd
+renderRTFInnerControl :: Renderable c => Maybe c -> Text
+renderRTFInnerControl (Just item) = render item <> charBlockEnd
+renderRTFInnerControl Nothing = charBlockEnd

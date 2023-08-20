@@ -3,12 +3,13 @@
 {-# HLINT ignore "Use $>" #-}
 module RTFDoc.ToRTFDoc (
   ToRTFDoc (..),
-  splitGroupDelim,
+  separateDelimitedGroupItems,
   module X,
 ) where
 
 import CPSParser.Combinator
 import CPSParser.Types
+import Data.List (intersperse)
 import Data.Text qualified as T
 import RTF.Types
 import RTFDoc.CPSParser as X
@@ -16,6 +17,11 @@ import RTFDoc.Types
 
 class ToRTFDoc c where
   toRTFDoc :: DocParser r c
+
+instance ToRTFDoc RTFDoc where
+  toRTFDoc = rtfGroup "RTFDoc" $ RTFDoc <$> toRTFDoc @RTFHeader <*> readRest
+   where
+    readRest = CParserT $ \(i, s) k _ -> k (s, (i + length s, []))
 
 instance ToRTFDoc RTFHeader where
   toRTFDoc =
@@ -38,7 +44,7 @@ instance ToRTFDoc Charset where
     rtfControlWordLabel_ "ansi" *> rtfControlWordValue_ "ansicpg" Ansi
 
 instance ToRTFDoc CocoaControl where
-  toRTFDoc = rtfControlWord "cocoa" $ \name end ->
+  toRTFDoc = rtfControlWord "cocoa" $ \_ name end ->
     case T.stripPrefix "cocoa" name of
       Just name' ->
         Just $ case end of
@@ -51,13 +57,13 @@ instance ToRTFDoc ExpandedColorTbl where
     rtfGroupWithDelims "expandedcolortbl" content
    where
     content =
-      withDestination (rtfControlWordLabel_ "expandedcolortbl")
-        *> (ExpandedColorTbl <$> many' (optional toRTFDoc <* blockDelimiter))
+      rtfControlWordLabel_ "expandedcolortbl"
+        *> (ExpandedColorTbl <$> many' (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc ColorTbl where
   toRTFDoc = ColorTbl <$> rtfGroupWithDelims "ColorTbl" content
    where
-    content = rtfControlWordLabel "colorTbl" f *> many' (toRTFDoc <* blockDelimiter)
+    content = rtfControlWordLabel "colorTbl" f *> many' (toRTFDoc <* groupItemDelimiter)
     f "colortbl" = Just ()
     f _ = Nothing
 
@@ -85,7 +91,7 @@ instance ToRTFDoc FontTbl where
    where
     content =
       rtfControlWordLabel_ "fonttbl"
-        *> (FontTbl <$> many' (optional toRTFDoc <* blockDelimiter))
+        *> (FontTbl <$> many' (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc FontInfo where
   toRTFDoc = FontInfo <$> fontId <*> toRTFDoc @FontFamily <*> optional charset <*> fontName
@@ -104,27 +110,43 @@ instance ToRTFDoc FontFamily where
      where
       name = fontFamilyText t
 
-blockDelimiter :: DocParser r ()
-blockDelimiter = rtfText_ ";" *> pure ()
-
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
 
-withDestination :: DocParser r c -> DocParser r c
-withDestination p = rtfSymbol_ '*' *> p
-
 rtfGroupWithDelims :: Text -> DocParser r c -> DocParser r c
-rtfGroupWithDelims name p = rtfGroup name $ splitGroupDelim *> p
+rtfGroupWithDelims name p = rtfGroup name $ separateDelimitedGroupItems ";" *> p
 
-splitGroupDelim :: DocParser r ()
-splitGroupDelim = CParserT $ \(i, content) k _ -> k ((), (i, cleans content))
+charItemDelim :: Text
+charItemDelim = ";"
+
+groupItemDelimiter :: DocParser r ()
+groupItemDelimiter = rtfText_ charItemDelim *> pure ()
+
+{- |
+  Group items are often delimited with ";"
+  If there are multiple empty items, it maybe be parsed as a single text.
+  To count the items correctly, we need to split them
+
+  e.g. if group is
+
+    {\fonttbl\f0\fnil abc;;;}           3 font infos, 2 empty
+
+  We need to split the text
+
+    "abc;;;"   --split-->   ["abc;", ";", ";"]
+-}
+separateDelimitedGroupItems :: Text -> DocParser r ()
+separateDelimitedGroupItems delimiter = CParserT $ \(i, content) k _ -> k ((), (i, cleans content))
  where
-  cleans (RTFText t : rest) =
+  cleans (RTFText text : rest) =
     let
-      f "" = [RTFText ";"]
-      f t' = [RTFText t', RTFText ";"]
-      ts = concatMap f $ init $ T.splitOn ";" t
+      rm t = t == "\n" || t == ""
+      ts' =
+        T.splitOn delimiter text
+          & intersperse delimiter
+          & filter (not . rm)
+          <&> RTFText
      in
-      ts <> cleans rest
+      ts' <> cleans rest
   cleans (x : rest) = x : cleans rest
   cleans [] = []
