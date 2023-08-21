@@ -10,9 +10,9 @@ import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T
 import Data.Text.Encoding
 import Language.Haskell.TH
-import RTFDoc
-import RTFDoc.RawParse
-import RTFDoc.ToRTFDoc
+import Notes.RTFDoc
+import Notes.RTFDoc.RawParse
+-- import Notes.RTFDoc.ToRTFDoc
 import System.Directory
 import System.FilePath
 import Test.Hspec hiding (runIO)

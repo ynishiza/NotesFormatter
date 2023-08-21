@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use $>" #-}
-module RTFDoc.ToRTFDoc (
+module Notes.RTFDoc.ToRTFDoc (
   ToRTFDoc (..),
   separateDelimitedGroupItems,
   module X,
@@ -11,9 +11,9 @@ import CPSParser.Combinator
 import CPSParser.Types
 import Data.List (intersperse)
 import Data.Text qualified as T
-import RTF.Types
-import RTFDoc.CPSParser as X
-import RTFDoc.Types
+import Notes.RTF.Types
+import Notes.RTFDoc.CPSParser as X
+import Notes.RTFDoc.Types
 
 class ToRTFDoc c where
   toRTFDoc :: DocParser r c

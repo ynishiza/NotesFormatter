@@ -9,7 +9,7 @@
   Apple's extensions: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/AttributedStrings/Tasks/RTFAndAttrStrings.html#//apple_ref/doc/uid/20000164-155922
 -}
 
-module RTF.Convert (
+module Notes.RTF.Convert (
   charBlockEnd,
   ByteString,
   -- parse
@@ -40,8 +40,8 @@ import Data.Functor
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
 import Debug.Trace
-import RTF.Types as X
-import Utils as X
+import Notes.RTF.Types as X
+import Notes.Utils as X
 import Prelude hiding (takeWhile)
 
 controlWith :: Text -> Text

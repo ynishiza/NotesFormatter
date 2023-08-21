@@ -1,4 +1,4 @@
-module RTFDoc.Types (
+module Notes.RTFDoc.Types (
   RTFHeader (..),
   ColorTbl (..),
   FontTbl (..),
@@ -20,14 +20,19 @@ module RTFDoc.Types (
   _FRoman,
   _rtfDocContent,
   _rtfDocHeader,
+  _FontTbl,
+  _ColorTbl,
+  _ExpandedColorTbl,
+  _RTFDoc,
+  _RTFHeader,
   --
   module X,
 ) where
 
 import Data.Word
-import RTF.Types
-import RTFDoc.ExtensionTypes as X
-import Utils as X
+import Notes.RTF.Types as X
+import Notes.RTFDoc.ExtensionTypes as X
+import Notes.Utils as X
 
 data RTFDoc = RTFDoc
   { rtfDocHeader :: RTFHeader
@@ -70,4 +75,9 @@ newtype Charset = Ansi Int
 $(makeLensesWith dataLensRules ''FontInfo)
 $(makeLensesWith dataLensRules ''RTFHeader)
 $(makeLensesWith dataLensRules ''RTFDoc)
+$(makePrisms ''RTFDoc)
+$(makePrisms ''RTFHeader)
 $(makePrisms ''FontFamily)
+$(makePrisms ''FontTbl)
+$(makePrisms ''ColorTbl)
+$(makePrisms ''ExpandedColorTbl)

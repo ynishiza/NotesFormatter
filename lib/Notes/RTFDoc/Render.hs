@@ -3,7 +3,7 @@
   Apple's extensions: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/AttributedStrings/Tasks/RTFAndAttrStrings.html#//apple_ref/doc/uid/20000164-155922
 -}
 
-module RTFDoc.Render (
+module Notes.RTFDoc.Render (
   Renderable (..),
   module X,
 ) where
@@ -13,8 +13,8 @@ import Control.Monad
 import Data.Attoparsec.ByteString.Char8 as P
 import Data.Functor
 import Data.Text qualified as T
-import RTF.Convert as X
-import RTFDoc.Types as X
+import Notes.RTF.Convert as X
+import Notes.RTFDoc.Types as X
 import Prelude hiding (takeWhile)
 
 class Renderable c where

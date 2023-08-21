@@ -1,4 +1,4 @@
-module RTF.Types (
+module Notes.RTF.Types (
   rtfControlSymbol,
   getRtfControlSymbol,
   _SpaceSuffix,
@@ -28,7 +28,7 @@ module RTF.Types (
 import Data.Attoparsec.ByteString.Char8
 import Data.Char (toUpper)
 import Data.Word
-import Utils
+import Notes.Utils
 
 charControl :: Char
 charControl = '\\'

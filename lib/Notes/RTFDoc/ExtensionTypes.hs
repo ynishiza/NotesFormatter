@@ -1,4 +1,4 @@
-module RTFDoc.ExtensionTypes (
+module Notes.RTFDoc.ExtensionTypes (
   CocoaControl (..),
   ColorSpace (..),
   ExpandedColorTbl (..),
@@ -10,7 +10,7 @@ module RTFDoc.ExtensionTypes (
   _CSGenericRGB,
 ) where
 
-import Utils
+import Notes.Utils
 
 data CocoaControl = CocoaControl Text (Maybe Int)
   deriving stock (Eq, Show, Generic)

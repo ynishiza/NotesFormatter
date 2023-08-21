@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use $>" #-}
-module RTFDoc.CPSParser (
+module Notes.RTFDoc.CPSParser (
   DocParserState,
   DocParser,
   parseDoc,
@@ -23,7 +23,7 @@ import Control.Monad.Identity
 import Data.Attoparsec.ByteString
 import Data.ByteString
 import Data.Text qualified as T
-import RTF.Convert
+import Notes.RTF.Convert
 
 type DocParserState = (Int, [RTFContent])
 

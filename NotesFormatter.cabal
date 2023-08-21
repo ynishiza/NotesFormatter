@@ -27,16 +27,17 @@ library
   exposed-modules:
       CPSParser.Combinator
       CPSParser.Types
-      RTF.Convert
-      RTF.Types
-      RTFDoc
-      RTFDoc.CPSParser
-      RTFDoc.ExtensionTypes
-      RTFDoc.RawParse
-      RTFDoc.Render
-      RTFDoc.ToRTFDoc
-      RTFDoc.Types
-      Utils
+      Notes.Process
+      Notes.RTF.Convert
+      Notes.RTF.Types
+      Notes.RTFDoc
+      Notes.RTFDoc.CPSParser
+      Notes.RTFDoc.ExtensionTypes
+      Notes.RTFDoc.RawParse
+      Notes.RTFDoc.Render
+      Notes.RTFDoc.ToRTFDoc
+      Notes.RTFDoc.Types
+      Notes.Utils
   other-modules:
       Paths_NotesFormatter
   hs-source-dirs:
@@ -95,6 +96,7 @@ library
     , monad-logger >=0.3.37 && <0.4
     , mtl >=2.0 && <2.3
     , optparse-applicative >=0.17 && <0.20
+    , regex-tdfa
     , template-haskell >=2.18 && <3
     , text >=1.2 && <3
     , text-show >=3.0 && <4
@@ -165,6 +167,7 @@ executable main
     , monad-logger >=0.3.37 && <0.4
     , mtl >=2.0 && <2.3
     , optparse-applicative >=0.17 && <0.20
+    , regex-tdfa
     , template-haskell >=2.18 && <3
     , text >=1.2 && <3
     , text-show >=3.0 && <4
@@ -181,20 +184,21 @@ test-suite main-test
       CPSParser.Combinator
       CPSParser.Types
       GenRTFDoc
+      Notes.Process
+      Notes.RTF.Convert
+      Notes.RTF.Types
+      Notes.RTFDoc
+      Notes.RTFDoc.CPSParser
+      Notes.RTFDoc.ExtensionTypes
+      Notes.RTFDoc.RawParse
+      Notes.RTFDoc.Render
+      Notes.RTFDoc.ToRTFDoc
+      Notes.RTFDoc.Types
+      Notes.Utils
       PropertiesRawParse
       PropertiesToRTFDoc
-      RTF.Convert
-      RTF.Types
-      RTFDoc
-      RTFDoc.CPSParser
-      RTFDoc.ExtensionTypes
-      RTFDoc.RawParse
-      RTFDoc.Render
-      RTFDoc.ToRTFDoc
-      RTFDoc.Types
       Spec
       TestUtils
-      Utils
       Paths_NotesFormatter
   hs-source-dirs:
       ./test
@@ -254,6 +258,7 @@ test-suite main-test
     , monad-logger >=0.3.37 && <0.4
     , mtl >=2.0 && <2.3
     , optparse-applicative >=0.17 && <0.20
+    , regex-tdfa
     , tasty >=0.11 && <1.6
     , tasty-hedgehog >=0.1 && <=1.4
     , tasty-hspec >=1.1 && <1.3

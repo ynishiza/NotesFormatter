@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-module Utils (
+module Notes.Utils (
   module X,
   Text,
   TextShow (..),
@@ -31,7 +31,7 @@ basePath :: FilePath
 basePath =
   $( location
       >>= runIO . makeAbsolute . loc_filename
-      <&> LitE . StringL . takeDirectory . takeDirectory
+      <&> LitE . StringL . takeDirectory . takeDirectory . takeDirectory
    )
 
 lensNamer :: FieldNamer
