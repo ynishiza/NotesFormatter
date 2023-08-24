@@ -20,7 +20,7 @@ module Notes.RTFDoc.CPSParser (
 
 import CPSParser.Types as X
 import Control.Monad.Identity
-import Data.Attoparsec.ByteString
+import Data.Attoparsec.ByteString (parseOnly)
 import Data.ByteString
 import Data.Text qualified as T
 import Notes.RTF.Convert

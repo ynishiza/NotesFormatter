@@ -10,7 +10,6 @@ module Notes.RTFDoc.Render (
 
 import Control.Applicative
 import Control.Monad
-import Data.Attoparsec.ByteString.Char8 as P
 import Data.Functor
 import Data.Text qualified as T
 import Notes.RTF.Convert as X

@@ -8,7 +8,6 @@ module Notes.RTF.Types (
   RTFContent (..),
   Word8,
   Text,
-  Parser,
   RTFControlPrefix (..),
   RTFControlSuffix (..),
   -- Lens
@@ -25,7 +24,6 @@ module Notes.RTF.Types (
   charOptionalDestination,
 ) where
 
-import Data.Attoparsec.ByteString.Char8
 import Data.Char (toUpper)
 import Data.Word
 import Notes.Utils

@@ -1,0 +1,17 @@
+{
+  "colorMap": [
+    {
+      "from": { "color": [226, 226, 226] },
+      "to":  {
+        "color": [200, 200, 200],
+        "colorSpace": { "csgray": 300 }
+      }
+    }
+  ],
+  "textMap": [
+    {
+      "pattern": "====",
+      "replacement": "****"
+    }
+  ]
+}

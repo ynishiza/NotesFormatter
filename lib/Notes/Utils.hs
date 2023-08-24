@@ -13,6 +13,7 @@ module Notes.Utils (
   getTypeName,
   getNameBase,
   defaultShowt,
+  (</>),
 ) where
 
 import Control.Lens hiding (from, to)

@@ -1,13 +1,33 @@
 module Notes.Process (
   mapColor,
   mapPlainText,
+  applyConfig,
+  module X
 ) where
 
+import Control.Arrow (second)
 import Control.Lens
 import Data.Text qualified as T
-import Notes.RTFDoc.Types
+import Notes.Config as X
+import Notes.RTFDoc.Types as X
 
-mapColor :: RTFColor -> (RTFColor, Maybe ColorSpace) -> RTFDoc -> (RTFDoc, [Int])
+type MapColorResult = [Int]
+type MapTextResult = Int
+
+applyConfig :: Config -> RTFDoc -> (RTFDoc, [MapColorResult], [MapTextResult])
+applyConfig Config{..} doc =
+  let
+    (doc', r1) = cols doc
+    (doc'', r2) = txts doc'
+   in
+    (doc'', r1, r2)
+ where
+  cols d = foldr (\c (d', res) -> second (: res) (apCol c d')) (d, []) cfgColorMap
+  txts d = foldr (\c (d', res) -> second (: res) (apText c d')) (d, []) cfgTextMap
+  apCol ColorMap{..} = mapColor fromColor (toColor, Just toColorSpace)
+  apText TextMap{..} = mapPlainText pattern replacement
+
+mapColor :: RTFColor -> (RTFColor, Maybe ColorSpace) -> RTFDoc -> (RTFDoc, MapColorResult)
 mapColor oldColor newColor doc = (set (_rtfDocHeader . _rtfColors) newColors doc, indexes)
  where
   mapToNewColor (x@(c, _) : rest) =
@@ -24,7 +44,7 @@ mapColor oldColor newColor doc = (set (_rtfDocHeader . _rtfColors) newColors doc
       <&> fst
   newColors = snd <$> colorResult
 
-mapPlainText :: Text -> Text -> RTFDoc -> (RTFDoc, Int)
+mapPlainText :: Text -> Text -> RTFDoc -> (RTFDoc, MapTextResult)
 mapPlainText pattern replacement doc = (set _rtfDocContent newContent doc, count)
  where
   (count, newContent) = mapContent (0, view _rtfDocContent doc)

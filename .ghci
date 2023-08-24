@@ -11,6 +11,7 @@
 :set +s            
 :set +t
 
+import Data.Aeson
 import Data.Time
 import Language.Haskell.TH
 import Data.Attoparsec.ByteString.Char8 as P
