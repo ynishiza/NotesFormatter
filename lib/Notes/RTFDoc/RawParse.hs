@@ -12,14 +12,14 @@ module Notes.RTFDoc.RawParse (
   module X,
 ) where
 
-import Control.Applicative
+import Control.Applicative hiding (many, some)
 import Control.Monad
-import Data.Attoparsec.ByteString.Char8 as P hiding (parse)
 import Data.Functor
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as T
 import Notes.RTF.Convert as X
 import Notes.RTFDoc.Types as X
+import Text.Megaparsec hiding (parse)
+import Text.Megaparsec.Char
 import Prelude hiding (takeWhile)
 
 class Generic c => Parseable c where
@@ -100,6 +100,7 @@ instance Parseable FontInfo where
       <*> (skipSpace *> fontName <?> "fontName")
       <?> "FontInfo"
    where
+    skipSpace = takeWhileP (Just "space") (inClass " ")
     fontId =
       parseControlWordWithValue_ "f" (\_ v -> v)
         <?> "fontNum"
@@ -107,18 +108,18 @@ instance Parseable FontInfo where
       parseControlWordWithValue_ "fcharset" (\_ v -> v)
         <?> "fontCharset"
     fontName =
-      toText $
-        takeWhile (/= ';')
+      takeWhile1P (Just "Font name") (/= ';')
 
 instance Parseable FontFamily where
   parse =
-    choice (parseFamily <$> allColors)
+    choice (parseFamily <$> allValues)
       <??> "FontFamily"
    where
-    allColors = [minBound .. maxBound :: FontFamily]
+    allValues = [minBound .. maxBound :: FontFamily]
     parseFamily t =
-      parseControlWord_ name
-        >> return t
+      ( parseControlWord_ name
+          >> return t
+      )
         <??> name
      where
       name = fontFamilyText t
@@ -160,14 +161,11 @@ parseControlWordWithValue_ name f = parseControlWordWithValue (parseText name) f
 parseControlWord_ :: Text -> Parser RTFContent
 parseControlWord_ name = trimNewLines $ parseRTFControlWordBase $ parseText name
 
-toText :: Parser ByteString -> Parser Text
-toText = (T.decodeUtf8 <$>)
-
 parseGroupItem :: Parseable c => Parser (Maybe c)
 parseGroupItem = (groupItemDelim >> return Nothing) <|> (Just <$> parse <* groupItemDelim)
 
 groupItemDelim :: Parser ()
-groupItemDelim = void $ char ';' >> skipSpace
+groupItemDelim = void $ char ';' >> skipNewLines
 
 manyControls :: Parser a -> Parser [a]
 manyControls p = many (trimNewLines p)

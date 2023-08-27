@@ -28,7 +28,7 @@ instance ToRTFDoc RTFHeader where
     rtfControlWordValue_ "rtf" id
       *> ( RTFHeader
             <$> (toRTFDoc @Charset)
-            <*> many' (toRTFDoc @CocoaControl)
+            <*> many (toRTFDoc @CocoaControl)
             <*> (toRTFDoc @FontTbl)
             <*> colors
          )
@@ -58,12 +58,12 @@ instance ToRTFDoc ExpandedColorTbl where
    where
     content =
       rtfControlWordLabel_ "expandedcolortbl"
-        *> (ExpandedColorTbl <$> many' (optional toRTFDoc <* groupItemDelimiter))
+        *> (ExpandedColorTbl <$> many (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc ColorTbl where
   toRTFDoc = ColorTbl <$> rtfGroupWithDelims "ColorTbl" content
    where
-    content = rtfControlWordLabel "colorTbl" f *> many' (toRTFDoc <* groupItemDelimiter)
+    content = rtfControlWordLabel "colorTbl" f *> many (toRTFDoc <* groupItemDelimiter)
     f "colortbl" = Just ()
     f _ = Nothing
 
@@ -91,7 +91,7 @@ instance ToRTFDoc FontTbl where
    where
     content =
       rtfControlWordLabel_ "fonttbl"
-        *> (FontTbl <$> many' (optional toRTFDoc <* groupItemDelimiter))
+        *> (FontTbl <$> many (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc FontInfo where
   toRTFDoc = FontInfo <$> fontId <*> toRTFDoc @FontFamily <*> optional charset <*> fontName

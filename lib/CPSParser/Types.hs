@@ -7,7 +7,7 @@ module CPSParser.Types (
   execCParser,
 ) where
 
-import Control.Applicative as X
+import Control.Applicative as X hiding (many, some)
 import Control.Arrow (first)
 import Control.Exception (Exception)
 import Control.Monad as X

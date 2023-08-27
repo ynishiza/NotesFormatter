@@ -17,7 +17,7 @@ import Data.Aeson.Types
 import Data.Char (toLower)
 import Data.Scientific
 import Data.Vector
-import Notes.RTFDoc
+import Notes.RTFDoc hiding (Parser)
 
 data Config = Config
   { cfgColorMap :: [ColorMap]

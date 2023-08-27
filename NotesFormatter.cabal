@@ -82,7 +82,6 @@ library
   build-depends:
       aeson ==2.*
     , async >=2.2 && <3
-    , attoparsec >0.10 && <0.20
     , base >=4.14 && <5
     , bytestring >=0.10 && <0.12
     , containers ==0.6.*
@@ -99,6 +98,7 @@ library
     , monad-logger >=0.3.37 && <0.4
     , mtl >=2.0 && <2.3
     , optparse-applicative >=0.17 && <0.20
+    , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
     , scientific
     , template-haskell >=2.18 && <3
@@ -157,7 +157,6 @@ executable main
       NotesFormatter
     , aeson ==2.*
     , async >=2.2 && <3
-    , attoparsec >0.10 && <0.20
     , base >=4.14 && <5
     , bytestring >=0.10 && <0.12
     , containers ==0.6.*
@@ -174,6 +173,7 @@ executable main
     , monad-logger >=0.3.37 && <0.4
     , mtl >=2.0 && <2.3
     , optparse-applicative >=0.17 && <0.20
+    , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
     , scientific
     , template-haskell >=2.18 && <3
@@ -251,7 +251,6 @@ test-suite main-test
   build-depends:
       aeson ==2.*
     , async >=2.2 && <3
-    , attoparsec >0.10 && <0.20
     , base >=4.14 && <5
     , bytestring >=0.10 && <0.12
     , containers ==0.6.*
@@ -270,6 +269,7 @@ test-suite main-test
     , monad-logger >=0.3.37 && <0.4
     , mtl >=2.0 && <2.3
     , optparse-applicative >=0.17 && <0.20
+    , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
     , scientific
     , tasty >=0.11 && <1.6

@@ -20,10 +20,10 @@ module Notes.RTFDoc.CPSParser (
 
 import CPSParser.Types as X
 import Control.Monad.Identity
-import Data.Attoparsec.ByteString (parseOnly)
-import Data.ByteString
+import Text.Megaparsec
 import Data.Text qualified as T
 import Notes.RTF.Convert
+import GHC.Stack (HasCallStack)
 
 type DocParserState = (Int, [RTFContent])
 
@@ -101,9 +101,9 @@ rtfSymbol msg f = CParserT p
     Nothing -> ke $ errorWith msg state
   p state _ ke = ke $ errorWith msg' state
 
-parseDoc :: DocParser (Either DocParseError (c, DocParserState)) c -> ByteString -> Either DocParseError (c, [RTFContent])
-parseDoc p d = case parseOnly parseRTFContents d of
-  Left e -> Left $ CParserError (0, []) $ T.pack e
+parseDoc :: HasCallStack => DocParser (Either DocParseError (c, DocParserState)) c -> Text -> Either DocParseError (c, [RTFContent])
+parseDoc p d = case runParser parseRTFContents "" d of
+  Left e -> Left $ CParserError (0, []) $ T.pack $ errorBundlePretty e
   Right v -> case runIdentity (execCParser p (0, v)) of
     Left e -> Left e
     Right (result, (_, z)) -> Right (result, z)

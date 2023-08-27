@@ -10,6 +10,7 @@ import Notes.Config
 -- import Data.Attoparsec.ByteString hiding (parse)
 import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T
+import Data.Text.IO qualified as T
 import Data.Text.Encoding
 import Language.Haskell.TH
 import Notes.RTFDoc
@@ -40,9 +41,9 @@ spec = describe "main" $ do
   rtfSpec
 
   describe "Config" $ do
-    let testJSONParse :: forall a. (Show a, Eq a, FromJSON a) => a -> ByteString -> Expectation
+    let testJSONParse :: forall a. (Show a, Eq a, FromJSON a) => a -> Text -> Expectation
         testJSONParse expected text = do
-          let result = eitherDecode' @a $ B.fromStrict text
+          let result = eitherDecode' @a $ B.fromStrict $ encodeUtf8 text
           result `shouldBe` Right expected
 
     it "should parse Config" $ do
@@ -99,7 +100,7 @@ rtfSpec = describe "RTF" $ do
     --       undefined
     --     Right v -> return v
 
-    tryParse2 :: ToRTFDoc a => ByteString -> IO a
+    tryParse2 :: ToRTFDoc a => Text -> IO a
     tryParse2 d = do
       let result = parseDoc toRTFDoc d
       case result of
@@ -110,10 +111,10 @@ rtfSpec = describe "RTF" $ do
 
     testSampleRtf :: FilePath -> Spec
     testSampleRtf path = it ("sample: " <> path) $ do
-      bytes <- B.readFile path
+      bytes <- T.readFile path
       -- result <- tryParse (parse @RTFDoc) bytes
       result <- tryParse2 @RTFDoc bytes
-      let src = normalize (decodeUtf8 bytes)
+      let src = normalize bytes
           encoded = normalize (render result)
       when (encoded /= src) $ print result
       encoded `shouldBe` src
@@ -171,6 +172,6 @@ rtfSpec = describe "RTF" $ do
               , cfgTextMap = [TextMap "a" "b"]
               }
             )
-      bytes <- B.readFile $ rtfPath </> "Default new.rtf"
+      bytes <- T.readFile $ rtfPath </> "Default new.rtf"
       result <- tryParse2 @RTFDoc bytes
       applyConfig config result `shouldBe` (result, [], [])

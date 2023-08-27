@@ -1,18 +1,18 @@
 module PropertiesRawParse (properties) where
 
 import Control.Lens
-import Data.Attoparsec.ByteString hiding (parse)
+import Control.Monad.Combinators
 import Data.Foldable
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as T
 import GHC.Exts (fromString)
+import GenRTFDoc
 import Hedgehog
 import Hedgehog.Gen qualified as G
 import Hedgehog.Range qualified as R
-import GenRTFDoc
 import Notes.RTFDoc
 import Notes.RTFDoc.RawParse
+import Text.Megaparsec qualified as M
 
 testCount :: TestLimit
 testCount = 200
@@ -30,10 +30,10 @@ prop_fontFamily :: Property
 prop_fontFamily = property_ $ do
   x <- forAll genFontFamily
   coverEnum x
-  testParse x
+  testParse "FontFamily" x
 
-prop_colorDef :: Property
-prop_colorDef = property_ $ do
+prop_rtfColor :: Property
+prop_rtfColor = property_ $ do
   x@(RTFColor r g b) <- forAll genRTFColor
   cover 10 "small red" $ maybe False (< 100) r
   cover 10 "large red" $ maybe False (> 200) r
@@ -46,13 +46,13 @@ prop_colorDef = property_ $ do
   cover 1 "default blue" $ isNothing b
   cover 1 "all default" $ isNothing r && isNothing g && isNothing b
   cover 1 "all non-default" $ isJust r && isJust g && isJust b
-  testParse x
+  testParse "RTFColor" x
 
 prop_fontInfo :: Property
 prop_fontInfo = property_ $ do
   x@(FontInfo _ fontFamily _ _) <- forAll genFontInfo
   coverEnum fontFamily
-  testParse x
+  testParse "FontInfo" x
 
 prop_colorSpace :: Property
 prop_colorSpace = property_ $ do
@@ -73,43 +73,43 @@ prop_colorSpace = property_ $ do
     , ("CSGenericRGB B", _CSGenericRGB . _3)
     ]
 
-  testParse x
+  testParse "ColorSpace" x
 
 prop_rtfHeader :: Property
 prop_rtfHeader = property_ $ do
   x@(RTFHeader _ _ _ colors) <- forAll genRTFHeader
+  cover 1 "font with charset" $ anyOf (_rtfFontTbl . _FontTbl . each . _Just . _fontCharset) isJust x
+  cover 1 "font without charset" $ anyOf (_rtfFontTbl . _FontTbl . each . _Just . _fontCharset) isJust x
+  -- anyOf
   cover 1 "Default color " $ any (\(RTFColor{..}, _) -> isNothing red && isNothing green && isNothing green) colors
   cover 10 "Non-default color " $ any (\(RTFColor{..}, _) -> isJust red || isJust green || isJust green) colors
   cover 1 "Default color space" $ any (isNothing . snd) colors
   cover 10 "Non-default color space" $ any (isJust . snd) colors
-  testParse x
+  testParse "RTFHeader" x
 
 prop_rtfContentOther :: Property
 prop_rtfContentOther = property_ $ do
   x <- forAll $ G.list (R.linearFrom 5 0 100) genRTFNonTextContent
-  -- TODO: plaintext
-  -- collect $ T.intercalate "a" $ render <$> x
-  tripping x (T.intercalate "" . (renderRTFContent <$>)) (parseOnly (many' parseRTFContent) . T.encodeUtf8)
-  -- collect $ parseOnly (many' (decodeRTF @RTFContent)) $ T.encodeUtf8 $ T.intercalate "" $ render <$> x
+  tripping x (T.intercalate "" . (renderRTFContent <$>)) (M.parse (many parseRTFContent) "RTFContent")
 
 prop_rtfContent :: Property
 prop_rtfContent = property_ $ do
   x <- forAll genRTFContents
 
-  -- cover 20 "Newline" $ has (traverse . _RTFNewLine) x
-  -- cover 20 "Literal \\" $ has (traverse . _RTFLiteralSlash) x
-  -- cover 20 "Literal {" $ has (traverse . _RTFLiteralOpenBrace) x
-  -- let f = to (\(RTFControlWord _ v) -> v)
-  cover 20 "Tag with trailing space" $ has (traverse . _RTFControlWord . _3 . _SpaceSuffix) x
-  cover 20 "Tag with trailing symbol" $ has (traverse . _RTFControlWord . _3 . _NoSuffix) x
-  cover 20 "Tag with parameter" $ has (traverse . _RTFControlWord . _3 . _RTFControlParam) x
-  -- cover 20 "Large text" $ anyOf (traverse . _RTFPlainText) (\t -> T.length t > 100) x
-  tripping x (T.intercalate "" . (renderRTFContent <$>)) (parseOnly (many' parseRTFContent) . T.encodeUtf8)
+  cover 20 "Control word with trailing space" $ has (traverse . _RTFControlWord . _3 . _SpaceSuffix) x
+  cover 20 "Control word with trailing symbol" $ has (traverse . _RTFControlWord . _3 . _NoSuffix) x
+  cover 20 "Control word with parameter" $ has (traverse . _RTFControlWord . _3 . _RTFControlParam) x
+  cover 10 "Group" $ has (traverse . _RTFGroup) x
+  cover 10 "Symbol" $ has (traverse . _RTFControlSymbol) x
+  cover 10 "Text" $ has (traverse . _RTFText) x
+  tripping x (T.intercalate "" . (renderRTFContent <$>)) (M.parse (many parseRTFContent) "RTFContent")
 
--- undefined
-
-testParse :: (Show a, Eq a, Renderable a, Parseable a, Monad m) => a -> PropertyT m ()
-testParse x = tripping x render (parseOnly parse . T.encodeUtf8)
+testParse :: (Show a, Eq a, Renderable a, Parseable a, Monad m) => String -> a -> PropertyT m ()
+testParse name x = tripping x render p
+ where
+  p v =
+    M.parse parse name v
+      & either (Left . M.errorBundlePretty) Right
 
 coverEnum :: (Monad m, Show a, Enum a, Eq a, Bounded a) => a -> PropertyT m ()
 coverEnum v = traverse_ (\x -> cover minCover (labelName v) (x == v)) values

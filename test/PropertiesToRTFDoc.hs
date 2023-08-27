@@ -3,16 +3,15 @@ module PropertiesToRTFDoc (
 ) where
 
 import Control.Lens
-import Data.Attoparsec.ByteString (parseOnly)
 import Data.Foldable
 import Data.Maybe (fromMaybe, isJust, isNothing)
-import Data.Text.Encoding
+import Data.Text qualified as T
 import GHC.Exts (fromString)
 import GenRTFDoc
 import Hedgehog
 import Notes.RTFDoc
-import Data.Text qualified as T
 import Notes.RTFDoc.RawParse
+import Text.Megaparsec qualified as M
 
 testCount :: TestLimit
 testCount = 200
@@ -25,19 +24,18 @@ labelName = fromString . show
 
 isEqualToParseable :: forall a. (Eq a, Show a, Renderable a, ToRTFDoc a, Parseable a) => a -> PropertyT IO ()
 isEqualToParseable x = do
-  let text = encodeUtf8 $ render x
-  case parseOnly (parse @a) text of
-    Left e -> fail e
+  let text = render x
+  case M.parse (parse @a) "" text of
+    Left e -> fail $ show e
     Right v -> case parseDoc (toRTFDoc @a) text of
       Left e -> fail $ show e
       Right (v', _) -> v === v'
 
 testEquality :: forall a. (Eq a, Show a, Renderable a, ToRTFDoc a) => a -> PropertyT IO ()
 testEquality x = do
-  -- tripping x (encodeUtf8 . encodeRTF) f
-  tripping x (encodeUtf8 . render) parseRTF
+  tripping x render parseRTF
  where
-  parseRTF :: ByteString -> Either String a
+  parseRTF :: Text -> Either String a
   parseRTF b = case parseDoc (toRTFDoc @a) b of
     Left e -> Left $ show e
     Right (v, _) -> Right v
@@ -110,7 +108,7 @@ prop_rtfheader = property_ $ do
 prop_rtfdoc :: Property
 prop_rtfdoc = property_ $ do
   x@(RTFDoc _ contents) <- forAll genRTFDoc
-  let fullText = T.intercalate "" $ toListOf (traverse . _RTFText ) contents 
+  let fullText = T.intercalate "" $ toListOf (traverse . _RTFText) contents
   cover 1 "long text" $ T.length fullText > 100
   cover 1 "short text" $ T.length fullText < 10
   testEquality x

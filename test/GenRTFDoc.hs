@@ -4,6 +4,7 @@ module GenRTFDoc (
   genFontInfo,
   genColorSpace,
   genRTFHeader,
+  genRTFContentsBase,
   genRTFContents,
   genRTFNonTextContent,
   genRTFDoc,
@@ -22,7 +23,7 @@ commonFont =
   , "HelveticaNueue-Bold"
   ]
 
-genRTFDoc :: Gen RTFDoc 
+genRTFDoc :: Gen RTFDoc
 genRTFDoc = RTFDoc <$> genRTFHeader <*> genRTFContents
 
 genRTFHeader :: Gen RTFHeader
@@ -38,19 +39,29 @@ genRTFHeader =
 
 genRTFContents :: Gen [RTFContent]
 genRTFContents =
+  recursive
+    choice
+    [ genRTFContentsBase
+    ]
+    [ subterm genRTFContents (\x -> [RTFGroup x])
+    ]
+
+genRTFContentsBase :: Gen [RTFContent]
+genRTFContentsBase =
   list (linear 1 200) (choice [genRTFNonTextContent, plainText])
     <&> clean
  where
   plainText = RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
   isPlainChar c = (c `notElem` charReserved) && isPrint c
 
-  clean ((RTFText t1) : (RTFText t2) : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
-  -- make sure text begins with a non-alphabet delimiter
-  clean ((RTFControlWord prefix n NoSuffix) : (RTFText t) : rest) = RTFControlWord prefix n NoSuffix : clean (RTFText ("!" <> t) : rest)
-  -- make sure text begins with a non-number delimiter
-  clean ((RTFControlWord prefix n p@(RTFControlParam _)) : (RTFText t) : rest) = RTFControlWord prefix n p : clean (RTFText ("a" <> t) : rest)
-  clean (x : xs) = x : clean xs
-  clean [] = []
+clean :: [RTFContent] -> [RTFContent]
+clean ((RTFText t1) : (RTFText t2) : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
+-- make sure text begins with a non-alphabet delimiter
+clean ((RTFControlWord prefix n NoSuffix) : (RTFText t) : rest) = RTFControlWord prefix n NoSuffix : clean (RTFText ("!" <> t) : rest)
+-- make sure text begins with a non-number delimiter
+clean ((RTFControlWord prefix n p@(RTFControlParam _)) : (RTFText t) : rest) = RTFControlWord prefix n p : clean (RTFText ("a" <> t) : rest)
+clean (x : xs) = x : clean xs
+clean [] = []
 
 genRTFNonTextContent :: Gen RTFContent
 genRTFNonTextContent =
@@ -92,12 +103,12 @@ genControlWordWithName n =
  where
   prefix =
     choice
-      [ return NoPrefix,
-        return StarPrefix
+      [ return NoPrefix
+      , return StarPrefix
       ]
   suffix =
     choice
-      [ RTFControlParam <$> int (linear 1 100)
+      [ RTFControlParam <$> int (linear (-100) 100)
       , return NoSuffix
       , return SpaceSuffix
       ]
@@ -134,4 +145,3 @@ genColorSpace =
       , (2, return csValueMax)
       , (2, return 0)
       ]
-
