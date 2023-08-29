@@ -12,6 +12,7 @@ module Notes.Config (
 ) where
 
 import Control.Lens
+import Control.Applicative
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Char (toLower)

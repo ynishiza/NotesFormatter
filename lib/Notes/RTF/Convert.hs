@@ -34,13 +34,13 @@ import Control.Monad
 import Data.ByteString (ByteString)
 import Data.Functor
 import Data.Text qualified as T
-import Data.Void (Void)
 import Notes.RTF.Types as X
 import Notes.Utils as X
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (takeWhile)
+import Data.Void (Void)
 
 type Parser = Parsec Void Text
 

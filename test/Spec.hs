@@ -7,21 +7,17 @@ module Spec (
 import Control.Monad
 import Notes.Config
 
--- import Data.Attoparsec.ByteString hiding (parse)
 import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T
-import Data.Text.IO qualified as T
 import Data.Text.Encoding
+import Data.Text.IO qualified as T
 import Language.Haskell.TH
+import Notes.Process
 import Notes.RTFDoc
-
--- import Notes.RTFDoc.RawParse
--- import Notes.RTFDoc.ToRTFDoc
 import System.Directory
 import System.FilePath
 import Test.Hspec hiding (runIO)
 import TestUtils
-import Notes.Process
 
 rtfFiles :: [FilePath]
 rtfFiles =
@@ -102,12 +98,12 @@ rtfSpec = describe "RTF" $ do
 
     tryParse2 :: ToRTFDoc a => Text -> IO a
     tryParse2 d = do
-      let result = parseDoc toRTFDoc d
+      let result = parseDoc_ toRTFDoc d
       case result of
         Left msg -> do
           expectationFailure $ show msg
           fail $ show msg
-        Right (v, _) -> return v
+        Right v -> return v
 
     testSampleRtf :: FilePath -> Spec
     testSampleRtf path = it ("sample: " <> path) $ do
@@ -167,10 +163,11 @@ rtfSpec = describe "RTF" $ do
 
   describe "" $ do
     it "apply" $ do
-      let config = ( Config
-              { cfgColorMap = [ColorMap (RTFColor (Just 226) (Just 226) (Just 226)) (RTFColor (Just 230) (Just 230) (Just 230)) (CSSRGB 1 2 3)]
-              , cfgTextMap = [TextMap "a" "b"]
-              }
+      let config =
+            ( Config
+                { cfgColorMap = [ColorMap (RTFColor (Just 226) (Just 226) (Just 226)) (RTFColor (Just 230) (Just 230) (Just 230)) (CSSRGB 1 2 3)]
+                , cfgTextMap = [TextMap "a" "b"]
+                }
             )
       bytes <- T.readFile $ rtfPath </> "Default new.rtf"
       result <- tryParse2 @RTFDoc bytes

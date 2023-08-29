@@ -3,16 +3,11 @@
 {-# HLINT ignore "Use newtype instead of data" #-}
 
 import Data.Text.IO qualified as T
--- import Data.ByteString qualified as B
--- import Data.Text qualified as T
 import Notes.Process
 import Options.Applicative
--- import Data.Functor
-import Notes.RTFDoc.CPSParser 
+import Notes.RTFDoc.ToRTFDoc 
 import System.IO (withFile, IOMode (..))
 import Notes.RTFDoc hiding (Parser)
--- import Data.Aeson (decodeFileStrict')
--- import Data.Text.Encoding
 
 main :: IO ()
 main = do
@@ -20,9 +15,9 @@ main = do
   (Just config) <- decodeFileStrict' @Config configPath
   d <- withFile rtfPath ReadMode $ \h -> do
     x <- T.hGetContents h
-    case parseDoc (toRTFDoc @RTFDoc) x of
+    case parseDoc_ (toRTFDoc @RTFDoc) x of
       Left e -> error $ show e
-      Right (v, _) -> let (d, _, _) = applyConfig config v in return d
+      Right v -> let (d, _, _) = applyConfig config v in return d
 
   T.writeFile "temp.rtf" $  render d
   T.putStrLn "Done"

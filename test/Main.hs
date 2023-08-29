@@ -1,15 +1,19 @@
 module Main (main) where
 
+import ParserSpec qualified
 import PropertiesRawParse qualified
 import PropertiesToRTFDoc qualified
-import Spec
+import Spec qualified
+import Test.Hspec
 import Test.Tasty
 import Test.Tasty.Hedgehog
 import Test.Tasty.Hspec
 
 main :: IO ()
 main = do
-  specTree <- testSpecs spec
+  specTree <- testSpecs $ describe "main" $ do
+    Spec.spec
+    ParserSpec.spec
   defaultMain $
     testGroup "main" $
       [ fromGroup PropertiesRawParse.properties

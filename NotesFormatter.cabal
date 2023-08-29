@@ -29,10 +29,10 @@ library
       CPSParser.Types
       Notes.Config
       Notes.Process
+      Notes.RTF.ContentParser
       Notes.RTF.Convert
       Notes.RTF.Types
       Notes.RTFDoc
-      Notes.RTFDoc.CPSParser
       Notes.RTFDoc.ExtensionTypes
       Notes.RTFDoc.RawParse
       Notes.RTFDoc.Render
@@ -195,16 +195,17 @@ test-suite main-test
       GenRTFDoc
       Notes.Config
       Notes.Process
+      Notes.RTF.ContentParser
       Notes.RTF.Convert
       Notes.RTF.Types
       Notes.RTFDoc
-      Notes.RTFDoc.CPSParser
       Notes.RTFDoc.ExtensionTypes
       Notes.RTFDoc.RawParse
       Notes.RTFDoc.Render
       Notes.RTFDoc.ToRTFDoc
       Notes.RTFDoc.Types
       Notes.Utils
+      ParserSpec
       PropertiesRawParse
       PropertiesToRTFDoc
       Spec

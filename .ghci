@@ -16,6 +16,8 @@ import Data.Time
 import Language.Haskell.TH
 import Text.Megaparsec hiding (parse)
 import Text.Megaparsec qualified as M 
+import Text.Megaparsec.Char 
+import Text.Megaparsec.Char.Lexer qualified as M
 -- import Data.Attoparsec.ByteString.Char8 as P
 import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T

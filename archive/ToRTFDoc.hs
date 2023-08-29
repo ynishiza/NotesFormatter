@@ -1,58 +1,27 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use $>" #-}
-
 module Notes.RTFDoc.ToRTFDoc (
   ToRTFDoc (..),
-  parseDoc,
-  parseDoc_,
-  parseDocTest,
-  rtfText_,
-  ContentParseResult (..),
-  errorBundlePretty,
+  separateDelimitedGroupItems,
+  module X,
 ) where
 
-import Control.Lens
-import Control.Monad
+import CPSParser.Combinator
+import CPSParser.Types
 import Data.List (intersperse)
 import Data.Text qualified as T
-import Notes.RTF.ContentParser
-import Notes.RTF.Convert
+import Notes.RTF.Types
+import Notes.RTFDoc.CPSParser as X
 import Notes.RTFDoc.Types
-import Text.Megaparsec
-
-data ContentParseResult a
-  = FileParseError (ParseErrorBundle Text Void)
-  | ContentParseError (ParseErrorBundle [RTFContent] RTFParseError)
-  | Success a
-  deriving (Eq, Show)
-
-parseDoc_ :: ContentParser c -> Text -> Either String c
-parseDoc_ p d = case parseDoc p d of
-  FileParseError e -> Left $ errorBundlePretty e
-  ContentParseError e -> Left $ errorBundlePretty e
-  Success v -> Right v
-
-parseDoc :: ContentParser c -> Text -> ContentParseResult c
-parseDoc p d = case runParser parseRTFContents "RTFContent" d of
-  Left e -> FileParseError e
-  Right v -> case runParser p "Doc" v of
-    Left e -> ContentParseError e
-    Right v' -> Success v'
-
-parseDocTest :: Show c => ContentParser c -> Text -> IO ()
-parseDocTest p d = case runParser parseRTFContents "RTFContent" d of
-  Left e -> putStrLn $ errorBundlePretty e
-  Right v -> case runParser p "Doc" v of
-    Left e -> putStrLn $ errorBundlePretty e
-    Right v' -> print v'
 
 class ToRTFDoc c where
-  toRTFDoc :: ContentParser c
+  toRTFDoc :: DocParser r c
 
 instance ToRTFDoc RTFDoc where
-  toRTFDoc = rtfGroup "RTFDoc" $ RTFDoc <$> toRTFDoc @RTFHeader <*> takeRest
+  toRTFDoc = rtfGroup "RTFDoc" $ RTFDoc <$> toRTFDoc @RTFHeader <*> readRest
+   where
+    readRest = CParserT $ \(i, s) k _ -> k (s, (i + length s, []))
 
 instance ToRTFDoc RTFHeader where
   toRTFDoc =
@@ -75,13 +44,13 @@ instance ToRTFDoc Charset where
     rtfControlWordLabel_ "ansi" *> rtfControlWordValue_ "ansicpg" Ansi
 
 instance ToRTFDoc CocoaControl where
-  toRTFDoc = rtfControlWord $ \_ name end ->
+  toRTFDoc = rtfControlWord "cocoa" $ \_ name end ->
     case T.stripPrefix "cocoa" name of
       Just name' ->
-        Right $ case end of
+        Just $ case end of
           RTFControlParam v -> CocoaControl name' (Just v)
           _ -> CocoaControl name' Nothing
-      Nothing -> Left $ errorLabelText "cocoa"
+      Nothing -> Nothing
 
 instance ToRTFDoc ExpandedColorTbl where
   toRTFDoc =
@@ -89,12 +58,14 @@ instance ToRTFDoc ExpandedColorTbl where
    where
     content =
       rtfControlWordLabel_ "expandedcolortbl"
-        *> (ExpandedColorTbl <$> many (try $ optional toRTFDoc <* groupItemDelimiter))
+        *> (ExpandedColorTbl <$> many (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc ColorTbl where
   toRTFDoc = ColorTbl <$> rtfGroupWithDelims "ColorTbl" content
    where
-    content = rtfControlWordLabel_ "colortbl" *> many (toRTFDoc <* groupItemDelimiter)
+    content = rtfControlWordLabel "colorTbl" f *> many (toRTFDoc <* groupItemDelimiter)
+    f "colortbl" = Just ()
+    f _ = Nothing
 
 instance ToRTFDoc RTFColor where
   toRTFDoc = RTFColor <$> red <*> green <*> blue
@@ -104,7 +75,7 @@ instance ToRTFDoc RTFColor where
     blue = optional $ rtfControlWordValue_ "blue" (fromIntegral @Int @Word8)
 
 instance ToRTFDoc ColorSpace where
-  toRTFDoc = try $ gray <|> cssrgb <|> genericrgb
+  toRTFDoc = gray <|> cssrgb <|> genericrgb
    where
     gray =
       rtfControlWordLabel_ "csgray" *> (CSGray <$> value)
@@ -120,40 +91,35 @@ instance ToRTFDoc FontTbl where
    where
     content =
       rtfControlWordLabel_ "fonttbl"
-        *> (FontTbl <$> many (try $ optional toRTFDoc <* groupItemDelimiter))
-
-instance ToRTFDoc FontFamily where
-  toRTFDoc = choice (parseFamily <$> allColors)
-   where
-    allColors = [minBound .. maxBound :: FontFamily]
-    parseFamily t =
-      try $
-        rtfControlWordLabel_ name
-          >> return t
-     where
-      name = fontFamilyText t
+        *> (FontTbl <$> many (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc FontInfo where
   toRTFDoc = FontInfo <$> fontId <*> toRTFDoc @FontFamily <*> optional charset <*> fontName
    where
     fontId = rtfControlWordValue_ "f" id
     charset = rtfControlWordValue_ "fcharset" id
-    fontName = rtfText $ \t -> if T.length t > 0 then Right (T.strip t) else Left (errorLabelText "font name")
+    fontName = rtfText "font name" $ \t -> if T.length t > 0 then Just (T.strip t) else Nothing
+
+instance ToRTFDoc FontFamily where
+  toRTFDoc = choice (parseFamily <$> allColors)
+   where
+    allColors = [minBound .. maxBound :: FontFamily]
+    parseFamily t =
+      rtfControlWordLabel_ name
+        >> return t
+     where
+      name = fontFamilyText t
 
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
 
-rtfGroupWithDelims :: Text -> ContentParser c -> ContentParser c
-rtfGroupWithDelims msg p =
-  updateParserState (over _stateInput prepareGroup) >> rtfGroup msg p
- where
-  prepareGroup (RTFGroup c : rest) = RTFGroup (separateDelimitedGroupItems ";" c) : rest
-  prepareGroup x = x
+rtfGroupWithDelims :: Text -> DocParser r c -> DocParser r c
+rtfGroupWithDelims name p = rtfGroup name $ separateDelimitedGroupItems ";" *> p
 
 charItemDelim :: Text
 charItemDelim = ";"
 
-groupItemDelimiter :: ContentParser ()
+groupItemDelimiter :: DocParser r ()
 groupItemDelimiter = rtfText_ charItemDelim *> pure ()
 
 {- |
@@ -169,16 +135,18 @@ groupItemDelimiter = rtfText_ charItemDelim *> pure ()
 
     "abc;;;"   --split-->   ["abc;", ";", ";"]
 -}
-separateDelimitedGroupItems :: Text -> [RTFContent] -> [RTFContent]
-separateDelimitedGroupItems delimiter (RTFText text : rest) =
-  let
-    isEmptyTerm t = t == "\n" || t == ""
-    texts' =
-      T.splitOn delimiter text
-        & intersperse delimiter
-        & filter (not . isEmptyTerm)
-        <&> RTFText
-   in
-    texts' <> separateDelimitedGroupItems delimiter rest
-separateDelimitedGroupItems delimiter (x : rest) = x : separateDelimitedGroupItems delimiter rest
-separateDelimitedGroupItems _ [] = []
+separateDelimitedGroupItems :: Text -> DocParser r ()
+separateDelimitedGroupItems delimiter = CParserT $ \(i, content) k _ -> k ((), (i, cleans content))
+ where
+  cleans (RTFText text : rest) =
+    let
+      rm t = t == "\n" || t == ""
+      ts' =
+        T.splitOn delimiter text
+          & intersperse delimiter
+          & filter (not . rm)
+          <&> RTFText
+     in
+      ts' <> cleans rest
+  cleans (x : rest) = x : cleans rest
+  cleans [] = []
