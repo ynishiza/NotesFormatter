@@ -1,37 +1,18 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module Spec (
+module Test.Spec (
   spec,
 ) where
 
 import Control.Lens
-import Control.Monad
-import Notes.Config
-
 import Data.ByteString.Char8 qualified as B
-import Data.Text qualified as T
 import Data.Text.Encoding
 import Data.Text.IO qualified as T
-import Language.Haskell.TH
+import Notes.Config
 import Notes.Process
 import Notes.RTFDoc
-import System.Directory
-import System.FilePath
 import Test.Hspec hiding (runIO)
-import TestUtils
-
-rtfFiles :: [FilePath]
-rtfFiles =
-  $( do
-      let dir = rtfPath
-      contents <-
-        runIO
-          ( getDirectoryContents dir
-              <&> filter ((== ".rtf") . takeExtension)
-              <&> ((dir </>) <$>)
-          )
-      [|contents|]
-   )
+import Test.Utils
 
 spec :: Spec
 spec = describe "main" $ do
@@ -71,44 +52,9 @@ spec = describe "main" $ do
 rtfSpec :: Spec
 rtfSpec = describe "RTF" $ do
   let
-    -- Note: newlines are insignificant in RTF.
-    -- Hence, normalize the RTF text by removing new lines.
-    -- However, the content text may have newlines, represented as an
-    -- RTF symbol
-    --      \\n
-    -- To avoid replacing the newline RTF symbol, replace the symbol with a placeholder first.
-    normalize :: Text -> Text
-    normalize text =
-      T.replace "\\\n" newlinePlaceholder text
-        & T.replace "\n" ""
-        -- Note: use placeholder for whitespace to highlight diff more clearly.
-        & T.replace " " whitespacePlaholder
-        & T.replace newlinePlaceholder "\\\n"
-     where
-      whitespacePlaholder = "@@@"
-      newlinePlaceholder = "😄"
 
-    tryParse2 :: ToRTFDoc a => Text -> IO a
-    tryParse2 d = do
-      let result = parseDoc_ toRTFDoc d
-      case result of
-        Left msg -> do
-          expectationFailure $ show msg
-          fail $ show msg
-        Right v -> return v
-
-    testSampleRtf :: FilePath -> Spec
-    testSampleRtf path = it ("sample: " <> path) $ do
-      bytes <- T.readFile path
-      result <- tryParse2 @RTFDoc bytes
-      let src = normalize bytes
-          encoded = normalize (render result)
-      when (encoded /= src) $ print result
-      encoded `shouldBe` src
-      T.length encoded `shouldBe` T.length src
-
-  describe "parse" $ do
-    it "Header" $ do
+  describe "ToRTFDoc" $ do
+    it "RTFHeader" $ do
       let s =
             [multiline|\rtf1\ansi\ansicpg1252\cocoartf2639
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fnil\fcharset0 Monaco;}
@@ -117,7 +63,7 @@ rtfSpec = describe "RTF" $ do
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\csgray\c100000;\csgray\c79525;
 \csgenericrgb\c88766\c88766\c88766;\cssrgb\c1680\c19835\c100000;}
               |]
-      result <- tryParse2 @RTFHeader s
+      result <- expectToRTFDocSuccess @RTFHeader s
       result
         `shouldBe` RTFHeader
           { rtfCharset = Ansi 1252
@@ -142,7 +88,7 @@ rtfSpec = describe "RTF" $ do
               ]
           }
 
-    it "Doc" $ do
+    it "RTFDoc" $ do
       let s =
             [multiline|{\rtf1\ansi\ansicpg1252\cocoartf2639
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fnil\fcharset0 Monaco;}
@@ -151,7 +97,7 @@ rtfSpec = describe "RTF" $ do
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\csgray\c100000;\csgray\c79525;
 \csgenericrgb\c88766\c88766\c88766;\cssrgb\c1680\c19835\c100000;} a}
               |]
-      result <- tryParse2 @RTFDoc s
+      result <- expectToRTFDocSuccess @RTFDoc s
       result
         `shouldBe` RTFDoc
           { rtfDocHeader =
@@ -180,8 +126,6 @@ rtfSpec = describe "RTF" $ do
           , rtfDocContent = [RTFText " a"]
           }
 
-    foldr (\x r -> r >> testSampleRtf x) (pure ()) rtfFiles
-
   describe "process" $ do
     it "apply" $ do
       let config =
@@ -191,7 +135,7 @@ rtfSpec = describe "RTF" $ do
                 }
             )
       bytes <- T.readFile $ rtfPath </> "Default new.rtf"
-      result <- tryParse2 @RTFDoc bytes
+      result <- expectToRTFDocSuccess @RTFDoc bytes
       applyConfig config result
         `shouldBe` ( RTFDoc
                       { rtfDocHeader =

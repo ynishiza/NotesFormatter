@@ -1,4 +1,4 @@
-module GenRTFDoc (
+module Test.GenRTFDoc (
   genFontFamily,
   genRTFColor,
   genFontInfo,
@@ -86,7 +86,7 @@ genRTFColor =
   w = word8 constantBounded
 
 genName :: Gen Text
-genName = G.text (R.constant 1 32) (G.element charControlName)
+genName = G.text (R.constant 1 32) (G.element charExtendedControlName)
 
 genControlWord :: Gen RTFContent
 genControlWord = genControlWordWithName genName

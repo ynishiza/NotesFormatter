@@ -28,6 +28,7 @@ library
       CPSParser.Combinator
       CPSParser.Types
       Notes.Config
+      Notes.File
       Notes.Process
       Notes.RTF.ContentParser
       Notes.RTF.Convert
@@ -192,8 +193,8 @@ test-suite main-test
   other-modules:
       CPSParser.Combinator
       CPSParser.Types
-      GenRTFDoc
       Notes.Config
+      Notes.File
       Notes.Process
       Notes.RTF.ContentParser
       Notes.RTF.Convert
@@ -205,11 +206,13 @@ test-suite main-test
       Notes.RTFDoc.ToRTFDoc
       Notes.RTFDoc.Types
       Notes.Utils
-      ParserSpec
-      PropertiesRawParse
-      PropertiesToRTFDoc
-      Spec
-      TestUtils
+      Test.GenRTFDoc
+      Test.PropertiesRawParse
+      Test.PropertiesToRTFDoc
+      Test.Spec
+      Test.SpecRTFParser
+      Test.SpecSamples
+      Test.Utils
       Paths_NotesFormatter
   hs-source-dirs:
       ./test

@@ -18,12 +18,14 @@ data CocoaControl = CocoaControl Text (Maybe Int)
 newtype ExpandedColorTbl = ExpandedColorTbl [Maybe ColorSpace]
   deriving stock (Eq, Show, Generic)
 
---
--- CS = Colorspace
--- Encoded of NSColorSpace: https://developer.apple.com/documentation/appkit/nscolorspace
---   by
---  {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c0\c0\c93333;\cssrgb\c20000\c20000\c20000; }
---
+{-|
+  cs = Colorspace
+  Encoding of NSColorSpace: https://developer.apple.com/documentation/appkit/nscolorspace
+  by
+    {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c0\c0\c93333;\cssrgb\c20000\c20000\c20000; }
+
+  See README
+-}
 data ColorSpace
   = -- Device gray
     --  e.g. \csgray\c100000

@@ -4,11 +4,9 @@
 {-# HLINT ignore "Use $>" #-}
 {-# HLINT ignore "Eta reduce" #-}
 
-{-
-  RTF 15 spec: https://www.biblioscape.com/rtf15_spec.htm
-  Apple's extensions: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/AttributedStrings/Tasks/RTFAndAttrStrings.html#//apple_ref/doc/uid/20000164-155922
+{-|
+  See README for RTF specs
 -}
-
 module Notes.RTF.Convert (
   charBlockEnd,
   ByteString,
@@ -86,10 +84,10 @@ parseRTFContent =
     <?> "RTFContent"
  where
   symbol =
-    try (char charControl *> (rtfControlSymbol <$> satisfy (notInClass charControlName)))
+    try (char charControl *> (rtfControlSymbol <$> satisfy (notInClass charExtendedControlName)))
       <?> "RTFControlSymbol"
   wordName =
-    takeWhile1P (Just "name character") (inClass charControlName)
+    takeWhile1P (Just "name character") (inClass charExtendedControlName)
       <?> "RTFControlWord"
   group =
     RTFGroup <$> parseRTFGroupWith (many parseRTFContent)
@@ -136,6 +134,7 @@ parseRTFControlWordBase name =
 --        \n        ignored
 --        \\n       symbol \n
 --
+-- See README for the RTF specs.
 skipNewLines :: Parser ()
 skipNewLines = void $ takeWhileP (Just "newline") (inClass charNewline)
 

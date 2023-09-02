@@ -21,6 +21,7 @@ import Text.Megaparsec.Char.Lexer qualified as M
 -- import Data.Attoparsec.ByteString.Char8 as P
 import Data.ByteString.Char8 qualified as B
 import Data.Text qualified as T
+import Data.Text.IO qualified as T
 import Data.Text.Encoding
 import System.Environment
 import Hedgehog

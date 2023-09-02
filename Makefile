@@ -21,7 +21,7 @@ compile-profile: ## Compile with profiler
 	stack build --profile 
 
 document: ## Build haddock documentation 
-	stack haddock --no-haddock-deps --haddock-arguments "-o $(DOCUMENTATION_DIR)" 
+	stack haddock --no-haddock-deps --haddock-arguments "-o $(DOCUMENTATION_DIR) " 
 
 lint: ## Lint
 	@stack exec -- hlint --verbose -h=.hlint.yaml src test

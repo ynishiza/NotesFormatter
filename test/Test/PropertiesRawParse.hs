@@ -1,4 +1,4 @@
-module PropertiesRawParse (properties) where
+module Test.PropertiesRawParse (properties) where
 
 import Control.Lens
 import Control.Monad.Combinators
@@ -6,7 +6,7 @@ import Data.Foldable
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text qualified as T
 import GHC.Exts (fromString)
-import GenRTFDoc
+import Test.GenRTFDoc
 import Hedgehog
 import Hedgehog.Gen qualified as G
 import Hedgehog.Range qualified as R

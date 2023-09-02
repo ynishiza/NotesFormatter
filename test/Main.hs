@@ -1,10 +1,11 @@
 module Main (main) where
 
-import ParserSpec qualified
-import PropertiesRawParse qualified
-import PropertiesToRTFDoc qualified
-import Spec qualified
 import Test.Hspec
+import Test.PropertiesRawParse qualified
+import Test.PropertiesToRTFDoc qualified
+import Test.Spec qualified
+import Test.SpecRTFParser qualified
+import Test.SpecSamples qualified
 import Test.Tasty
 import Test.Tasty.Hedgehog
 import Test.Tasty.Hspec
@@ -12,11 +13,13 @@ import Test.Tasty.Hspec
 main :: IO ()
 main = do
   specTree <- testSpecs $ describe "main" $ do
-    Spec.spec
-    ParserSpec.spec
+    Test.Spec.spec
+    Test.SpecRTFParser.spec
+    Test.SpecSamples.spec
+
   defaultMain $
     testGroup "main" $
-      [ fromGroup PropertiesRawParse.properties
-      , fromGroup PropertiesToRTFDoc.properties
+      [ fromGroup Test.PropertiesRawParse.properties
+      , fromGroup Test.PropertiesToRTFDoc.properties
       ]
         <> specTree

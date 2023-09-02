@@ -62,7 +62,7 @@ instance Parseable CocoaControl where
       SpaceSuffix -> CocoaControl name Nothing
       RTFControlParam val -> CocoaControl name (Just val)
    where
-    nameParse = parseText "cocoa" *> (T.pack <$> many (satisfy (`elem` charControlName)))
+    nameParse = parseText "cocoa" *> (T.pack <$> many (satisfy (`elem` charExtendedControlName)))
 
 instance Parseable FontTbl where
   parse =
