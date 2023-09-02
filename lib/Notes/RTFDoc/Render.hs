@@ -29,7 +29,7 @@ instance Renderable RTFDoc where
 
 instance Renderable RTFHeader where
   render (RTFHeader{..}) =
-    renderControlWithLabel_ "rtf1" 
+    renderControlWithLabel_ "rtf1"
       <> render rtfCharset
       <> T.intercalate "" (render <$> rtfCocoaControls)
       <> render rtfFontTbl
@@ -38,23 +38,23 @@ instance Renderable RTFHeader where
 
 instance Renderable Charset where
   render (Ansi n) =
-    renderControlWithLabel_ "ansi" 
+    renderControlWithLabel_ "ansi"
       <> renderControlWithValue "ansicpg" n
 
 instance Renderable CocoaControl where
   render (CocoaControl name (Just v)) = renderControlWithValue ("cocoa" <> name) v
-  render (CocoaControl name Nothing) = renderControlWithLabel_ ("cocoa" <> name) 
+  render (CocoaControl name Nothing) = renderControlWithLabel_ ("cocoa" <> name)
 
 instance Renderable FontTbl where
   render (FontTbl infos) =
     renderRTFGroup $
-      renderControlWithLabel_ "fonttbl" 
+      renderControlWithLabel_ "fonttbl"
         <> T.intercalate "" (renderRTFInnerControl <$> infos)
 
 instance Renderable ColorTbl where
   render (ColorTbl colors) =
     renderRTFGroup $
-      renderControlWithLabel_ "colortbl" 
+      renderControlWithLabel_ "colortbl"
         <> T.intercalate "" (appendBlockEnd . render <$> colors)
 
 instance Renderable ExpandedColorTbl where
@@ -95,7 +95,7 @@ renderControlWithLabel_ :: Text -> Text
 renderControlWithLabel_ name = renderControlWithLabel NoPrefix name NoSuffix
 
 renderControlWithLabel :: RTFControlPrefix -> Text -> RTFControlSuffix -> Text
-renderControlWithLabel prefix name suffix = renderRTFContent $ RTFControlWord prefix  name suffix
+renderControlWithLabel prefix name suffix = renderRTFContent $ RTFControlWord prefix name suffix
 
 renderControlWithValue :: Integral v => Text -> v -> Text
 renderControlWithValue name v = renderRTFContent $ RTFControlWord NoPrefix name $ RTFControlParam $ fromIntegral v

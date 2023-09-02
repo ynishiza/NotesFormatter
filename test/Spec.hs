@@ -4,6 +4,7 @@ module Spec (
   spec,
 ) where
 
+import Control.Lens
 import Control.Monad
 import Notes.Config
 
@@ -87,15 +88,6 @@ rtfSpec = describe "RTF" $ do
       whitespacePlaholder = "@@@"
       newlinePlaceholder = "😄"
 
-    -- tryParse :: Parser a -> ByteString -> IO a
-    -- tryParse p d = do
-    --   let result = parseOnly p d
-    --   case result of
-    --     Left msg -> do
-    --       expectationFailure msg
-    --       undefined
-    --     Right v -> return v
-
     tryParse2 :: ToRTFDoc a => Text -> IO a
     tryParse2 d = do
       let result = parseDoc_ toRTFDoc d
@@ -108,7 +100,6 @@ rtfSpec = describe "RTF" $ do
     testSampleRtf :: FilePath -> Spec
     testSampleRtf path = it ("sample: " <> path) $ do
       bytes <- T.readFile path
-      -- result <- tryParse (parse @RTFDoc) bytes
       result <- tryParse2 @RTFDoc bytes
       let src = normalize bytes
           encoded = normalize (render result)
@@ -130,9 +121,25 @@ rtfSpec = describe "RTF" $ do
       result
         `shouldBe` RTFHeader
           { rtfCharset = Ansi 1252
-          , rtfCocoaControls = [CocoaControl "rtf" (Just 2639), CocoaControl "textscaling" (Just 0), CocoaControl "platform" (Just 0)]
-          , rtfFontTbl = FontTbl [Just (FontInfo{fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = "HelveticaNeue"}), Just (FontInfo{fontNum = 1, fontFamily = FNil, fontCharset = Just 0, fontName = "Monaco"})]
-          , rtfColors = [(RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing), (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0)), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000)), (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525)), (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766)), (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))]
+          , rtfCocoaControls =
+              [ CocoaControl "rtf" (Just 2639)
+              , CocoaControl "textscaling" (Just 0)
+              , CocoaControl "platform" (Just 0)
+              ]
+          , rtfFontTbl =
+              FontTbl
+                [ Just (FontInfo{fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = "HelveticaNeue"})
+                , Just (FontInfo{fontNum = 1, fontFamily = FNil, fontCharset = Just 0, fontName = "Monaco"})
+                ]
+          , rtfColors =
+              [ (RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing)
+              , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing)
+              , (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0))
+              , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000))
+              , (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525))
+              , (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766))
+              , (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))
+              ]
           }
 
     it "Doc" $ do
@@ -150,18 +157,32 @@ rtfSpec = describe "RTF" $ do
           { rtfDocHeader =
               RTFHeader
                 { rtfCharset = Ansi 1252
-                , rtfCocoaControls = [CocoaControl "rtf" (Just 2639), CocoaControl "textscaling" (Just 0), CocoaControl "platform" (Just 0)]
-                , rtfFontTbl = FontTbl [Just (FontInfo{fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = "HelveticaNeue"}), Just (FontInfo{fontNum = 1, fontFamily = FNil, fontCharset = Just 0, fontName = "Monaco"})]
-                , rtfColors = [(RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing), (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0)), (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000)), (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525)), (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766)), (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))]
+                , rtfCocoaControls =
+                    [ CocoaControl "rtf" (Just 2639)
+                    , CocoaControl "textscaling" (Just 0)
+                    , CocoaControl "platform" (Just 0)
+                    ]
+                , rtfFontTbl =
+                    FontTbl
+                      [ Just (FontInfo{fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = "HelveticaNeue"})
+                      , Just (FontInfo{fontNum = 1, fontFamily = FNil, fontCharset = Just 0, fontName = "Monaco"})
+                      ]
+                , rtfColors =
+                    [ (RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing)
+                    , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing)
+                    , (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0))
+                    , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000))
+                    , (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525))
+                    , (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766))
+                    , (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))
+                    ]
                 }
           , rtfDocContent = [RTFText " a"]
           }
-    -- print result
-    -- print rtfFiles
 
     foldr (\x r -> r >> testSampleRtf x) (pure ()) rtfFiles
 
-  describe "" $ do
+  describe "process" $ do
     it "apply" $ do
       let config =
             ( Config
@@ -171,4 +192,83 @@ rtfSpec = describe "RTF" $ do
             )
       bytes <- T.readFile $ rtfPath </> "Default new.rtf"
       result <- tryParse2 @RTFDoc bytes
-      applyConfig config result `shouldBe` (result, [], [])
+      applyConfig config result
+        `shouldBe` ( RTFDoc
+                      { rtfDocHeader =
+                          RTFHeader
+                            { rtfCharset = Ansi 1252
+                            , rtfCocoaControls = [CocoaControl "rtf" (Just 2639), CocoaControl "textscaling" (Just 0), CocoaControl "platform" (Just 0)]
+                            , rtfFontTbl =
+                                FontTbl
+                                  [ Just
+                                      FontInfo
+                                        { fontNum = 0
+                                        , fontFamily = FNil
+                                        , fontCharset = Just 0
+                                        , fontName = "HelveticaNeue"
+                                        }
+                                  ]
+                            , rtfColors =
+                                [
+                                  ( RTFColor
+                                      { red = Nothing
+                                      , green = Nothing
+                                      , blue = Nothing
+                                      }
+                                  , Nothing
+                                  )
+                                ,
+                                  ( RTFColor
+                                      { red = Just 255
+                                      , green = Just 255
+                                      , blue = Just 255
+                                      }
+                                  , Nothing
+                                  )
+                                ,
+                                  ( RTFColor
+                                      { red = Just 230
+                                      , green = Just 230
+                                      , blue = Just 230
+                                      }
+                                  , Just (CSSRGB 1 2 3)
+                                  )
+                                ]
+                            }
+                      , rtfDocContent =
+                          [ RTFGroup
+                              [ RTFControlWord NoPrefix "info" NoSuffix
+                              , RTFGroup [RTFControlWord NoPrefix "author" SpaceSuffix, RTFText "Yui Nishizawa"]
+                              ]
+                          , RTFControlWord NoPrefix "pard" NoSuffix
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 566)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 1133)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 1700)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 2267)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 2834)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 3401)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 3968)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 4535)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 5102)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 5669)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 6236)
+                          , RTFControlWord NoPrefix "tx" (RTFControlParam 6803)
+                          , RTFControlWord NoPrefix "slleading" (RTFControlParam 24)
+                          , RTFControlWord NoPrefix "pardirnatural" NoSuffix
+                          , RTFControlWord NoPrefix "partightenfactor" (RTFControlParam 0)
+                          , RTFControlWord NoPrefix "f" (RTFControlParam 0)
+                          , RTFControlWord NoPrefix "fs" (RTFControlParam 28)
+                          , RTFText " "
+                          , RTFControlWord NoPrefix "cf" (RTFControlParam 0)
+                          , RTFText " \t\t\t\tb"
+                          , RTFControlSymbol '\n'
+                          , RTFControlSymbol '\n'
+                          , RTFControlWord NoPrefix "cb" (RTFControlParam 2)
+                          , RTFText " \t\tbbb"
+                          ]
+                      }
+                   , [[2]]
+                   , [1]
+                   )
+
+      views _1 render (applyConfig config result) `shouldBe` "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset0 HelveticaNeue;}{\\colortbl;\\red255\\green255\\blue255;\\red230\\green230\\blue230;}{\\*\\expandedcolortbl;;\\cssrgb\\c1\\c2\\c3;}\n{\\info{\\author Yui Nishizawa}}\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \t\t\t\tb\\\n\\\n\\cb2 \t\tbbb}"

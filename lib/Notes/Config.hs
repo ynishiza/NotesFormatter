@@ -11,8 +11,8 @@ module Notes.Config (
   FromJSON (..),
 ) where
 
-import Control.Lens
 import Control.Applicative
+import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Char (toLower)

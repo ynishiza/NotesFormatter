@@ -18,7 +18,11 @@ module Notes.RTF.ContentParser (
   errorLabelString,
   errorLabelText,
   Void,
+  -- lens
   _stateInput,
+  _stateOffset,
+  _statePosState,
+  _stateParseErrors,
 ) where
 
 import Control.Lens

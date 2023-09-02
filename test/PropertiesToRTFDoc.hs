@@ -106,8 +106,6 @@ prop_rtfdoc = property_ $ do
   let fullText = T.intercalate "" $ toListOf (traverse . _RTFText) contents
   cover 1 "long text" $ T.length fullText > 100
   cover 1 "short text" $ T.length fullText < 10
-  -- testEquality x
-  -- isEqualToParseable x
 
 coverEnum :: (MonadTest f, Show a, Eq a, Bounded a, Enum a) => a -> f ()
 coverEnum v = traverse_ (\x -> cover minCover (labelName v) (x == v)) values

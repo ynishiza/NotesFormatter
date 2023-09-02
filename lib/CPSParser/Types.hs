@@ -11,6 +11,7 @@ import Control.Applicative as X hiding (many, some)
 import Control.Arrow (first)
 import Control.Exception (Exception)
 import Control.Monad as X
+import Control.Monad.Base
 import Control.Monad.Reader
 import Control.Monad.State qualified as S
 import Control.Monad.Writer
@@ -18,7 +19,6 @@ import Data.Data (Typeable)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Stack (HasCallStack)
-import Control.Monad.Base
 
 data CParserError state = HasCallStack => CParserError state Text
 
@@ -79,4 +79,3 @@ instance MonadWriter w m => MonadWriter w (CParserT error state result m) where
       ( \(a, state') -> listen (pure a) >>= k . (,state')
       )
       ke
-

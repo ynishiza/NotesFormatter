@@ -2,7 +2,7 @@ module Notes.Process (
   mapColor,
   mapPlainText,
   applyConfig,
-  module X
+  module X,
 ) where
 
 import Control.Arrow (second)
