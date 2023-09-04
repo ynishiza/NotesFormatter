@@ -78,31 +78,34 @@ showToken = show
 showTokens_ :: [RTFContent] -> String
 showTokens_ = intercalate "," . (showToken <$>)
 
+joinTokens :: [String] -> String
+joinTokens = intercalate "," . filter (not . null)
+
 instance TraversableStream [RTFContent] where
   reachOffset newOffset p@PosState{..} =
     trace_
       debugInfo
-      ( Just (showTokens_ lineText <> lineTrailing)
+      ( Just (lineText <> lineTrailing)
       , PosState
           { pstateInput = unconsumed
           , pstateOffset = newOffset
           , pstateSourcePos = newSourcePos
-          , pstateTabWidth = mkPos 0
-          , pstateLinePrefix = ""
+          , pstateTabWidth = mkPos 1
+          , pstateLinePrefix = linePrefix
           }
       )
    where
     SourcePos{..} = pstateSourcePos
     idx = newOffset - pstateOffset
     (consumed, unconsumed) = splitAt idx pstateInput
-    lineText = consumed <> take 10 unconsumed
+    linePrefix = joinTokens [pstateLinePrefix, showTokens_ consumed]
+    lineText = joinTokens [linePrefix, showTokens_ $ take 10 unconsumed]
     lineTrailing = if length unconsumed > 10 then "..." else ""
-    headTokens = take idx lineText
     newSourcePos =
       SourcePos
         { sourceName = "RTF"
         , sourceLine = sourceLine
-        , sourceColumn = mkPos $ sum (length . showToken <$> headTokens) + length headTokens + 1
+        , sourceColumn = mkPos $ if null linePrefix then 1 else length linePrefix + 2
         }
     debugInfo =
       "\ninput (offset, PosState):\t"

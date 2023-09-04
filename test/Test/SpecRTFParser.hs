@@ -5,12 +5,14 @@ module Test.SpecRTFParser (
 ) where
 
 import Control.Monad.Combinators
+import Data.Set qualified as S
 import Data.Text qualified as T
 import Notes.Process
 import Notes.RTF.ContentParser
 import Notes.RTFDoc
 import Test.Hspec hiding (runIO)
 import Test.Utils
+import Text.Megaparsec
 
 spec :: Spec
 spec = describe "RTF Parsers" $ do
@@ -21,6 +23,41 @@ spec = describe "RTF Parsers" $ do
         Right _ -> expectationFailure $ "Failed to test: " <> T.unpack expected
 
   describe "RTF.ContentParser" $ do
+    it "[error message] multiple errors" $ do
+      let withError p = do
+            o <- getOffset
+            registerParseError $ FancyError o $ S.singleton $ ErrorFail "FAIL"
+            p
+
+      testError
+        (count 3 (withError (rtfControlWordLabel_ "abc")) >> withError (rtfText_ "hello"))
+        "\\abc \\abc \\abc hello"
+        [multiline|
+RTF:1:1:
+  |
+1 | RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFText "hello"
+  | ^
+FAIL
+
+RTF:1:43:
+  |
+1 | RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFText "hello"
+  |                                           ^
+FAIL
+
+RTF:1:85:
+  |
+1 | RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFText "hello"
+  |                                                                                     ^
+FAIL
+
+RTF:1:127:
+  |
+1 | RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFControlWord NoPrefix "abc" SpaceSuffix,RTFText "hello"
+  |                                                                                                                               ^
+FAIL
+|]
+
     describe "RTFControlWord" $ do
       let pNoParam = rtfControlWordLabel_ "a"
       let pParam = rtfControlWordValue_ "a" (\x -> if x == 1 then Just x else Nothing)
@@ -273,7 +310,7 @@ expecting RTFControlWord abc
     describe "RTFText" $ do
       let pHello = rtfText_ "Hello"
 
-      it "[error message] not a word" $ do 
+      it "[error message] not a word" $ do
         testError
           (count 3 pHello)
           "\\abc"
@@ -286,7 +323,7 @@ unexpected RTFControlWord NoPrefix "abc" NoSuffix
 expecting RTFText
 |]
 
-      it "[error message] wrong text" $ do 
+      it "[error message] wrong text" $ do
         testError
           (count 3 pHello)
           "This is a pen"
