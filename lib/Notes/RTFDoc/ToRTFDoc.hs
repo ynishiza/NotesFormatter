@@ -32,21 +32,19 @@ parseDoc_ :: ContentParser c -> Text -> Either String c
 parseDoc_ p d = case parseDoc p d of
   FileParseError e -> Left $ errorBundlePretty e
   ContentParseError e -> Left $ errorBundlePretty e
-  Success v -> Right v
+  Success doc -> Right doc
 
 parseDoc :: ContentParser c -> Text -> ContentParseResult c
 parseDoc p d = case runParser parseRTFContents "RTFContent" d of
   Left e -> FileParseError e
-  Right v -> case runParser p "Doc" v of
+  Right contents -> case runParser p "RTFDoc" contents of
     Left e -> ContentParseError e
-    Right v' -> Success v'
+    Right doc -> Success doc
 
 parseDocTest :: Show c => ContentParser c -> Text -> IO ()
-parseDocTest p d = case runParser parseRTFContents "RTFContent" d of
-  Left e -> putStrLn $ errorBundlePretty e
-  Right v -> case runParser p "Doc" v of
-    Left e -> putStrLn $ errorBundlePretty e
-    Right v' -> print v'
+parseDocTest p d = case parseDoc_ p d of
+  Left e -> putStrLn e
+  Right doc -> print doc
 
 class ToRTFDoc c where
   toRTFDoc :: ContentParser c

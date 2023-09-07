@@ -9,6 +9,7 @@ module Notes.Config (
   decodeFileStrict',
   eitherDecode',
   FromJSON (..),
+  emptyConfig,
 ) where
 
 import Control.Applicative
@@ -21,10 +22,14 @@ import Data.Vector
 import Notes.RTFDoc hiding (Parser)
 
 data Config = Config
-  { cfgColorMap :: [ColorMap]
+  { 
+    cfgColorMap :: [ColorMap]
   , cfgTextMap :: [TextMap]
   }
   deriving stock (Show, Eq, Generic)
+
+emptyConfig :: Config
+emptyConfig = Config [] []
 
 data ColorMap = ColorMap
   { fromColor :: RTFColor

@@ -10,14 +10,17 @@ module Notes.Utils (
   makePrisms,
   Generic,
   Proxy (..),
-  ConstructorInfo (..),
-  getTypeName,
-  getNameBase,
   defaultShowt,
   (</>),
+  runAppLogger,
 ) where
 
 import Control.Lens hiding (from, to)
+import Control.Monad
+import Control.Monad.Base
+import Control.Monad.Logger
+import Control.Monad.Trans.Control
+import Data.ByteString qualified as B
 import Data.Function as X
 import Data.Functor as X
 import Data.Text (Text)
@@ -27,6 +30,7 @@ import GHC.Generics
 import Language.Haskell.TH
 import System.Directory
 import System.FilePath
+import System.IO
 import TextShow (TextShow (..))
 
 basePath :: FilePath
@@ -44,30 +48,13 @@ dataLensRules =
   lensRules
     & set lensField lensNamer
 
-class ConstructorInfo c where
-  cname :: c a -> Text
-
-instance ConstructorInfo f => ConstructorInfo (M1 D c f) where
-  cname (M1 x) = cname x
-
-instance (ConstructorInfo a, ConstructorInfo b) => ConstructorInfo (a :+: b) where
-  cname (L1 x) = cname x
-  cname (R1 x) = cname x
-
-instance Constructor c => ConstructorInfo (M1 C c f) where
-  cname x = T.pack $ conName x
+runAppLogger :: forall m a. MonadBaseControl IO m => LogLevel -> FilePath -> LoggingT m a -> m a
+runAppLogger minLevel logPath app = liftBaseOp (withFile logPath WriteMode) runApp
+ where
+  runApp handle = runLoggingT app $ \loc src level message -> do
+    let message' = fromLogStr $ defaultLogStr loc src level message
+    when (level >= minLevel) $ liftBase $ B.putStr message'
+    liftBase $ B.hPutStr handle message'
 
 defaultShowt :: Show a => a -> Text
 defaultShowt = T.pack . show
-
-getNameBase :: Name -> Q Exp
-getNameBase name = do
-  (TyConI t) <- reify name
-  case t of
-    (DataD _ n _ _ _ _) -> return $ LitE $ StringL $ nameBase n
-    (NewtypeD _ n _ _ _ _) -> return $ LitE $ StringL $ nameBase n
-    (TySynD n _ _) -> return $ LitE $ StringL $ nameBase n
-    _ -> undefined
-
-getTypeName :: forall c. Proxy c -> Q Exp
-getTypeName _ = getNameBase ''c

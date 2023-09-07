@@ -57,9 +57,9 @@ dependencies:
 # - dec > 0.0.4 && < 1
 # - fin > 0.2 && < 0.3
 # - free > 5.1 && < 6
-# - singletons > 3 && < 4
-# - singletons-base >= 3 && < 4
-# - singletons-th > 3 && < 4
+- singletons > 3 && < 4
+- singletons-base >= 3 && < 4
+- singletons-th > 3 && < 4
 #
 # Web
 # - blaze-html > 0.9 && < 1

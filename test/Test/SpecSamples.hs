@@ -10,23 +10,24 @@ import Control.Monad
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Language.Haskell.TH
-import Notes.File
+import Notes.File.RTF
 import Notes.Process
 import Notes.RTFDoc
 import Test.Hspec hiding (runIO)
 import Test.Utils
+import Notes.RTFFile
 
 expectedRTFFiles :: Int
-expectedRTFFiles = 6
+expectedRTFFiles = 41
 
 expectedRTFDFiles :: Int
-expectedRTFDFiles = 11
+expectedRTFDFiles = 17
 
 rtfFilePaths :: [FilePath]
 rtfFilePaths =
   $( do
       contents <-
-        runIO $ listFiles (\v _ -> isRTF v) (not . isRTFD) $ basePath </> "data"
+        runIO $ listFilesRecursive (\v _ -> isRTF v) (not . isRTFD) $ basePath </> "data" </> "database"
       [|contents|]
    )
 
@@ -34,7 +35,7 @@ rtfdFilePaths :: [FilePath]
 rtfdFilePaths =
   $( do
       contents <-
-        runIO $ listFiles (\v _ -> isRTFD v) (const True) $ basePath </> "data"
+        runIO $ listFilesRecursive (\v _ -> isRTFD v) (const True) $ basePath </> "data" </> "database"
       [|contents|]
    )
 
@@ -60,7 +61,7 @@ spec =
     describe "RTF" $ do
       let
         testRTFSampleFile :: FilePath -> Spec
-        testRTFSampleFile path = it ("RTF sample: " <> path) $ testWith (readRTF path)
+        testRTFSampleFile path = it ("RTF sample: " <> path) $ testWith (readRTFFile $ rtfFile path)
       it "Tests RTF samples" $ do
         length rtfFilePaths `shouldBe` expectedRTFFiles
 
@@ -69,7 +70,7 @@ spec =
     describe "RTFD" $ do
       let
         testRTFDSampleFile :: FilePath -> Spec
-        testRTFDSampleFile path = it ("RTFD sample: " <> path) $ testWith (readRTFD path)
+        testRTFDSampleFile path = it ("RTFD sample: " <> path) $ testWith (readRTFFile $ rtfdFile path)
 
       it "Tests RTFD samples" $ do
         length rtfdFilePaths `shouldBe` expectedRTFDFiles

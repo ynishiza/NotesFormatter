@@ -211,8 +211,11 @@ rtfSpec = describe "RTF" $ do
                           , RTFText " \t\tbbb"
                           ]
                       }
-                   , [[2]]
-                   , [1]
+                   , ProcessResult
+                      [ (config ^?! (_cfgColorMap . element 0), [2])
+                      ]
+                      [ (config ^?! (_cfgTextMap . element 0), 1)
+                      ]
                    )
 
       views _1 render (applyConfig config result) `shouldBe` "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset0 HelveticaNeue;}{\\colortbl;\\red255\\green255\\blue255;\\red230\\green230\\blue230;}{\\*\\expandedcolortbl;;\\cssrgb\\c1\\c2\\c3;}\n{\\info{\\author Yui Nishizawa}}\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \t\t\t\tb\\\n\\\n\\cb2 \t\tbbb}"

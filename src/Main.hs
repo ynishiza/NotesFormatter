@@ -17,7 +17,7 @@ main = do
     x <- T.hGetContents h
     case parseDoc_ (toRTFDoc @RTFDoc) x of
       Left e -> error $ show e
-      Right v -> let (d, _, _) = applyConfig config v in return d
+      Right v -> let (d, _) = applyConfig config v in return d
 
   T.writeFile "temp.rtf" $ render d
   T.putStrLn "Done"
