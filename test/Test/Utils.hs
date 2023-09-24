@@ -50,7 +50,8 @@ makePathRelativeTo :: FilePath -> FilePath -> FilePath
 makePathRelativeTo base = replace base ""
 
 makeRTFFilePathRelativeTo :: FilePath -> RTFFile filetype -> RTFFile filetype
-makeRTFFilePathRelativeTo base (RTFFile d path) = RTFFile d (makePathRelativeTo base path)
+makeRTFFilePathRelativeTo base (RTFFile path) = RTFFile (makePathRelativeTo base path)
+makeRTFFilePathRelativeTo base (RTFDFile path) = RTFDFile (makePathRelativeTo base path)
 
 rtfPath :: FilePath
 rtfPath = dataPath </> "rtf"

@@ -82,7 +82,7 @@ processSomeRTFFile :: Env m => SomeRTFFile -> m (SomeRTFFile, FilePath, ProcessR
 processSomeRTFFile (SomeRTFFile f) = over _1 SomeRTFFile <$> processRTFFile f
 
 processRTFFile :: Env m => RTFFile filetype -> m (RTFFile filetype, FilePath, ProcessResult)
-processRTFFile file@(RTFFile _ srcPath) = do
+processRTFFile file@(AnyRTFFile srcPath) = do
   validateFileExist srcPath
   backupPath <- createBackup file
 
@@ -92,7 +92,7 @@ processRTFFile file@(RTFFile _ srcPath) = do
   return (file, backupPath, result)
 
 createBackup :: Env m => RTFFile filetype -> m FilePath
-createBackup file@(RTFFile _ srcPath) = do
+createBackup file@(AnyRTFFile srcPath) = do
   backupDir <- asks appBackupDir
   backupTime <- asks (formatTimestamp . appTime)
   let
@@ -111,7 +111,7 @@ createBackup file@(RTFFile _ srcPath) = do
   return backupPath
 
 processFile_ :: forall m filetype. Env m => RTFFile filetype -> m (RTFDoc, ProcessResult)
-processFile_ r@(RTFFile _ path) = do
+processFile_ r@(AnyRTFFile path) = do
   content <- readRTFFile r
   processDocFromData (T.pack path) content
 
