@@ -4,21 +4,29 @@ module Test.Utils (
   normalizeRTFForTest,
   expectToRTFDocSuccess,
   runAppTest,
+  dataPath,
+  prependToFileName,
+  makePathRelativeTo,
+  makeRTFFilePathRelativeTo,
   module X,
 ) where
 
 import Data.Text qualified as T
 import Language.Haskell.TH.Quote
-import Notes.Process
+import Notes.App
 import Notes.RTFDoc as X
+import System.FilePath
 import Test.Hspec
+import Notes.RTFFile
+import Data.List.Extra (replace)
 
 runAppTest :: App a -> IO a
-runAppTest = runApp logPath appConfig
+runAppTest app = do
+  appConfig <- mkAppOtions backupPath testConfig
+  runApp logPath appConfig app
  where
   logPath = "testlog.txt"
   backupPath = "testbak"
-  appConfig = AppOptions backupPath testConfig
   testConfig =
     Config
       { cfgColorMap =
@@ -33,8 +41,22 @@ runAppTest = runApp logPath appConfig
           ]
       }
 
+prependToFileName :: String -> FilePath -> FilePath
+prependToFileName timestamp path = joinPath [takeDirectory path, newFileName]
+ where
+  newFileName = timestamp <> "_" <> takeFileName path
+
+makePathRelativeTo :: FilePath -> FilePath -> FilePath
+makePathRelativeTo base = replace base ""
+
+makeRTFFilePathRelativeTo :: FilePath -> RTFFile filetype -> RTFFile filetype
+makeRTFFilePathRelativeTo base (RTFFile d path) = RTFFile d (makePathRelativeTo base path)
+
 rtfPath :: FilePath
-rtfPath = basePath </> "data" </> "rtf"
+rtfPath = dataPath </> "rtf"
+
+dataPath :: FilePath
+dataPath = basePath </> "data"
 
 multiline :: QuasiQuoter
 multiline =
@@ -58,14 +80,14 @@ normalizeRTFForTest text =
     --
     -- We want to remove insignificant newlines.
     -- However, genuine newlines are represented by an RTF symbol
-    -- i.e. 
+    -- i.e.
     --      newline RTF symbol    \\n
     --
     --  Thus, in order to avoid removing the newline RTF symbol, we replace it with a placeholder first.
     --
-    --  However, when replacing with the newline placeholder, we also need to distinguish between 
+    --  However, when replacing with the newline placeholder, we also need to distinguish between
     --  the backslash RTF symbol followed by an insignificant newline and the newline symbol
-    --  i.e. 
+    --  i.e.
     --     newline symbol                       \\n         should not be removed
     --     backslash RTF symbol + newline       \\\n        should be removed
     --

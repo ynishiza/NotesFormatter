@@ -5,23 +5,27 @@ module Notes.File.Base (
   isExtensionOf,
   validateFilePath,
   validateFile,
+  validateFileExist,
   liftIO,
-  MonadCatch (..),
   (</>),
 ) where
 
+import Control.Exception.Safe
 import Control.Monad
-import Control.Monad.Catch
 import Control.Monad.Trans
 import Data.Foldable (traverse_)
 import System.Directory
 import System.FilePath
 import System.PosixCompat
 
-validateFile :: MonadIO m => FilePath -> String -> m ()
-validateFile path extension = do
+validateFileExist :: MonadIO m => FilePath -> m ()
+validateFileExist path = do
   exists <- liftIO $ fileExist path
   unless exists $ liftIO $ throwM $ userError $ "File not found exist:" <> path
+
+validateFile :: MonadIO m => FilePath -> String -> m ()
+validateFile path extension = do
+  validateFileExist path
   validateFilePath path extension
 
 validateFilePath :: MonadIO m => FilePath -> String -> m ()

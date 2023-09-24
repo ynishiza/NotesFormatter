@@ -2,25 +2,23 @@ module Notes.File.RTF (
   extensionRTF,
   extensionRTFD,
   fileRTFDTXT,
-  readRTF,
-  readRTFD,
-  writeRTFD,
-  writeRTF,
   isRTF,
   isRTFD,
   isRTFDTXT,
+  readRTF,
+  writeRTF,
   module X,
 ) where
 
-import Control.Monad.Catch
+import Control.Exception.Safe
 import Control.Monad.Trans
 import Data.ByteString qualified as B
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text.Encoding
 import Data.Text.Encoding.Error
-import Notes.File.Base as X
 import GHC.IO (evaluate)
+import Notes.File.Base as X
 import System.FilePath
 
 isRTF :: FilePath -> Bool
@@ -41,28 +39,15 @@ extensionRTF = "rtf"
 extensionRTFD :: IsString s => s
 extensionRTFD = "rtfd"
 
-readRTF :: FilePath -> IO Text
+readRTF :: MonadIO m => FilePath -> m Text
 readRTF path = do
   validateFile path extensionRTF
-  B.readFile path >>= decodeRTFFile
-
-readRTFD :: FilePath -> IO Text
-readRTFD path = do
-  validateFile path extensionRTFD
-  let rtfPath = path </> fileRTFDTXT
-  validateFile rtfPath extensionRTF
-  B.readFile rtfPath >>= decodeRTFFile
+  liftIO $ B.readFile path >>= decodeRTFFile
 
 writeRTF :: MonadIO m => FilePath -> Text -> m ()
 writeRTF path text = do
   validateFilePath path extensionRTF
   liftIO $ B.writeFile path $ encodeUtf8 text
-
-writeRTFD :: MonadIO m => FilePath -> Text -> m ()
-writeRTFD path text = do
-  validateFilePath path extensionRTFD
-  let rtfPath = path </> fileRTFDTXT
-  writeRTF rtfPath text
 
 decodeRTFFile :: forall m. MonadIO m => B.ByteString -> m Text
 decodeRTFFile dat = liftIO $ catch asUTF8 $ \case
@@ -71,4 +56,3 @@ decodeRTFFile dat = liftIO $ catch asUTF8 $ \case
  where
   asUTF8 = evaluate $ decodeUtf8 dat
   asLatin1 = evaluate $ decodeLatin1 dat
-

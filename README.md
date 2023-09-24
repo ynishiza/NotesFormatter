@@ -1,3 +1,5 @@
+# Batch RTF formatter
+
 # Resources
 
 ## Specs

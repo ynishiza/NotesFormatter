@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 {-# HLINT ignore "Use $>" #-}
 
 module Notes.RTFDoc.ToRTFDoc (

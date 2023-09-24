@@ -13,6 +13,8 @@ module Notes.Utils (
   defaultShowt,
   (</>),
   runAppLogger,
+  formatTimestamp,
+  getZonedTime,
 ) where
 
 import Control.Lens hiding (from, to)
@@ -25,6 +27,7 @@ import Data.Function as X
 import Data.Functor as X
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Time
 import Data.Typeable
 import GHC.Generics
 import Language.Haskell.TH
@@ -58,3 +61,6 @@ runAppLogger minLevel logPath app = liftBaseOp (withFile logPath WriteMode) runA
 
 defaultShowt :: Show a => a -> Text
 defaultShowt = T.pack . show
+
+formatTimestamp :: FormatTime t => t -> String
+formatTimestamp = formatTime defaultTimeLocale "%m%d%Y_%H%M"

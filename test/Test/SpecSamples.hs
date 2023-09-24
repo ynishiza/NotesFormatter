@@ -27,7 +27,7 @@ rtfFilePaths :: [FilePath]
 rtfFilePaths =
   $( do
       contents <-
-        runIO $ listFilesRecursive (\v _ -> isRTF v) (not . isRTFD) $ basePath </> "data" </> "database"
+        runIO $ listFilesRecursive (\v _ -> isRTF v) (not . isRTFD) $ dataPath </> "database"
       [|contents|]
    )
 
@@ -35,7 +35,7 @@ rtfdFilePaths :: [FilePath]
 rtfdFilePaths =
   $( do
       contents <-
-        runIO $ listFilesRecursive (\v _ -> isRTFD v) (const True) $ basePath </> "data" </> "database"
+        runIO $ listFilesRecursive (\v _ -> isRTFD v) (const True) $ dataPath </> "database"
       [|contents|]
    )
 
