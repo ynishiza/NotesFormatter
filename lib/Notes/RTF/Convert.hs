@@ -39,6 +39,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (takeWhile)
+import Data.Set qualified as S
 
 type Parser = Parsec Void Text
 
@@ -84,7 +85,16 @@ parseRTFContent =
     <?> "RTFContent"
  where
   symbol =
-    try (char charControl *> (rtfControlSymbol <$> satisfy (notInClass charExtendedControlName)))
+    (do
+      -- Note: wrap in 
+      c <- try $ char charControl >> satisfy (notInClass charExtendedControlName)
+      o <- getOffset
+      case rtfControlSymbol c of
+        Right v -> return v
+        Left e -> do 
+          let err = FancyError (o - 1) $ S.singleton $ ErrorFail e
+          parseError err
+    )
       <?> "RTFControlSymbol"
   wordName =
     takeWhile1P (Just "name character") (inClass charExtendedControlName)

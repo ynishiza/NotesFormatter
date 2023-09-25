@@ -43,6 +43,12 @@ data TextMap = TextMap
   }
   deriving stock (Show, Eq, Generic)
 
+data FontMap = FontMap
+  { fromFontName :: Text
+  , toFontName :: Text
+  }
+  deriving stock (Show, Eq, Generic)
+
 $(makeLensesWith dataLensRules ''Config)
 $(makePrisms ''Config)
 

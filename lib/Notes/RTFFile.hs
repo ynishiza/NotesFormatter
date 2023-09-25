@@ -18,13 +18,15 @@ module Notes.RTFFile (
   copyRTFFile,
   RTFSym0,
   RTFDSym0,
+  _RTFFileBase,
 ) where
 
+import Control.Lens
 import Control.Monad.IO.Class
 import Data.Kind (Type)
 import Data.Singletons.TH
-import Data.Text (Text)
 import Notes.File.RTF
+import Notes.Utils
 import System.Directory (copyFile)
 
 data FileType = RTF | RTFD deriving stock (Eq, Show)
@@ -34,6 +36,9 @@ genSingletons [''FileType]
 type RTFFile :: FileType -> Type
 data RTFFile filetype where
   RTFFileBase :: SFileType filetype -> FilePath -> RTFFile filetype
+
+$(makePrisms ''RTFFile)
+$(makeLensesWith dataLensRules ''RTFFile)
 
 pattern RTFFile :: () => (filetype ~ 'RTF) => FilePath -> RTFFile filetype
 pattern RTFFile path = RTFFileBase SRTF path

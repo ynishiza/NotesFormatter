@@ -22,7 +22,8 @@ spec = describe "RTF Parsers" $ do
           T.strip (T.pack e) `shouldBe` T.strip expected
         Right _ -> expectationFailure $ "Failed to test: " <> T.unpack expected
 
-  describe "RTF.ContentParser" $ do
+  specConvert
+  describe "Notes.RTF.ContentParser" $ do
     it "[error message] multiple errors" $ do
       let withError p = do
             o <- getOffset
@@ -150,12 +151,35 @@ expecting RTFControlWord * b (RTFControlParam *)
 |]
 
     describe "RTFControlSymbol" $ do
-      let pAtMark = rtfSymbol_ '#'
+      let pHash = rtfSymbol_ '#'
+
+      it "[error message] non-symbol character" $ do
+        -- case: wrong symbol
+        testError
+          pHash
+          "\\0 abc"
+          [multiline|
+RTFContent:1:2:
+  |
+1 | \0 abc
+  |  ^
+Invalid symbol '0'
+|]
+        testError
+          (rtfText_ "abc" *> pHash)
+          "abc\\0 abc"
+          [multiline|
+RTFContent:1:5:
+  |
+1 | abc\0 abc
+  |     ^
+Invalid symbol '0'
+|]
 
       it "[error message] wrong symbol" $ do
         -- case: wrong symbol
         testError
-          pAtMark
+          pHash
           "\\@ abc"
           [multiline|
 RTF:1:1:
@@ -169,7 +193,7 @@ expecting RTFControlSymbol '#'
       it "[error message] not a symbol" $ do
         -- case: wrong type
         testError
-          pAtMark
+          pHash
           "\\a abc"
           [multiline|
 RTF:1:1:
@@ -182,7 +206,7 @@ expecting RTFControlSymbol
 
       it "[error message] location in a sequence" $ do
         testError
-          (count 10 pAtMark)
+          (count 10 pHash)
           "\\#\\#\\@ abc"
           [multiline|
 RTF:1:43:
@@ -489,4 +513,34 @@ RTFGroup [RTFControlWord NoPrefix "colortbl" SpaceSuffix,RTFText "abc",RTFText "
   |                                                ^^^^^^^^^^^^^
 unexpected RTFText "abc"
 expecting RTFControlWord, RTFText ";", or end of input
+|]
+
+specConvert :: SpecWith ()
+specConvert = describe "Notes.RTF.Convert" $ do
+  let testError p text expected = case runParser p "" text of
+        Left e -> T.strip (T.pack $ errorBundlePretty e) `shouldBe` T.strip expected
+        Right _ -> expectationFailure "Expected failure"
+
+  describe "[parseRTFContents]" $ do
+    it "[error message] invalid symbol" $ do
+      testError
+        parseRTFContents
+        "\\9"
+        [multiline|
+1:2:
+  |
+1 | \9
+  |  ^
+Invalid symbol '9'
+ |]
+
+      testError
+        parseRTFContents
+        "abc\\9"
+        [multiline|
+1:5:
+  |
+1 | abc\9
+  |     ^
+Invalid symbol '9'
 |]

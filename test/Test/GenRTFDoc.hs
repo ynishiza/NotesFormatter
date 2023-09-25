@@ -68,7 +68,7 @@ genRTFNonTextContent =
   choice
     [ genControlWord
     , frequency
-        [ (1, rtfControlSymbol <$> element ['\\', '{', '}'])
+        [ (1, Prelude.either error  id . rtfControlSymbol <$> element ['\\', '{', '}'])
         , (9, genControlSymbol)
         ]
     ]
@@ -92,7 +92,7 @@ genControlWord :: Gen RTFContent
 genControlWord = genControlWordWithName genName
 
 genControlSymbol :: Gen RTFContent
-genControlSymbol = rtfControlSymbol <$> element charSymbol
+genControlSymbol = Prelude.either error id . rtfControlSymbol <$> element charSymbol
 
 genControlWordWithName :: Gen Text -> Gen RTFContent
 genControlWordWithName n =

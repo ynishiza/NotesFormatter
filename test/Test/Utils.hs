@@ -6,8 +6,8 @@ module Test.Utils (
   runAppTest,
   dataPath,
   prependToFileName,
-  makePathRelativeTo,
-  makeRTFFilePathRelativeTo,
+  changePathBase,
+  changeRTFFilePathBase,
   module X,
 ) where
 
@@ -18,7 +18,6 @@ import Notes.RTFDoc as X
 import System.FilePath
 import Test.Hspec
 import Notes.RTFFile
-import Data.List.Extra (replace)
 
 runAppTest :: App a -> IO a
 runAppTest app = do
@@ -46,12 +45,12 @@ prependToFileName timestamp path = joinPath [takeDirectory path, newFileName]
  where
   newFileName = timestamp <> "_" <> takeFileName path
 
-makePathRelativeTo :: FilePath -> FilePath -> FilePath
-makePathRelativeTo base = replace base ""
+changePathBase :: FilePath -> FilePath -> FilePath -> FilePath
+changePathBase oldBase newBase path = newBase </> makeRelative oldBase path
 
-makeRTFFilePathRelativeTo :: FilePath -> RTFFile filetype -> RTFFile filetype
-makeRTFFilePathRelativeTo base (RTFFile path) = RTFFile (makePathRelativeTo base path)
-makeRTFFilePathRelativeTo base (RTFDFile path) = RTFDFile (makePathRelativeTo base path)
+changeRTFFilePathBase :: FilePath -> FilePath -> RTFFile filetype -> RTFFile filetype
+changeRTFFilePathBase oldBase newBase (RTFFile path) = RTFFile (changePathBase oldBase newBase path) 
+changeRTFFilePathBase oldBase newBase (RTFDFile path) = RTFDFile (changePathBase oldBase newBase path) 
 
 rtfPath :: FilePath
 rtfPath = dataPath </> "rtf"

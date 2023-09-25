@@ -72,11 +72,11 @@ getRtfControlSymbol :: RTFContent -> Maybe Char
 getRtfControlSymbol (RTFControlSymbol s) = Just s
 getRtfControlSymbol _ = Nothing
 
-rtfControlSymbol :: Char -> RTFContent
+rtfControlSymbol :: Char -> Either String RTFContent
 rtfControlSymbol c =
   if c `elem` charSymbol
-    then RTFControlSymbol c
-    else error $ "Invalid symbol " <> ['\'', c, '\'']
+    then Right $ RTFControlSymbol c
+    else Left $ "Invalid symbol " <> ['\'', c, '\'']
 
 {-|
   RTF specs in the README
