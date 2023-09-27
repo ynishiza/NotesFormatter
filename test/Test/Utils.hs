@@ -15,9 +15,9 @@ import Data.Text qualified as T
 import Language.Haskell.TH.Quote
 import Notes.App
 import Notes.RTFDoc as X
+import Notes.RTFFile
 import System.FilePath
 import Test.Hspec
-import Notes.RTFFile
 
 runAppTest :: App a -> IO a
 runAppTest app = do
@@ -38,6 +38,7 @@ runAppTest app = do
       , cfgTextMap =
           [ TextMap "==============================================================" "*****************************************************************************"
           ]
+      , cfgFontMap = []
       }
 
 prependToFileName :: String -> FilePath -> FilePath
@@ -49,8 +50,8 @@ changePathBase :: FilePath -> FilePath -> FilePath -> FilePath
 changePathBase oldBase newBase path = newBase </> makeRelative oldBase path
 
 changeRTFFilePathBase :: FilePath -> FilePath -> RTFFile filetype -> RTFFile filetype
-changeRTFFilePathBase oldBase newBase (RTFFile path) = RTFFile (changePathBase oldBase newBase path) 
-changeRTFFilePathBase oldBase newBase (RTFDFile path) = RTFDFile (changePathBase oldBase newBase path) 
+changeRTFFilePathBase oldBase newBase (RTFFile path) = RTFFile (changePathBase oldBase newBase path)
+changeRTFFilePathBase oldBase newBase (RTFDFile path) = RTFDFile (changePathBase oldBase newBase path)
 
 rtfPath :: FilePath
 rtfPath = dataPath </> "rtf"

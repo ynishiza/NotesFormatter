@@ -32,6 +32,7 @@ import Notes.RTFDoc.ToRTFDoc
 import Notes.RTFFile
 import System.Directory
 import System.FilePath
+import Debug.Trace (trace)
 
 type Env m = (MonadIO m, MonadLogger m, MonadReader AppOptions m, MonadBaseControl IO m, MonadCatch m)
 
@@ -46,6 +47,7 @@ data AppOptions = AppOptions
 data ProcessResult = ProcessResult
   { resultMapColor :: [(ColorMap, [Int])]
   , resultMapText :: [(TextMap, Int)]
+  , resultMapFont :: [(FontMap, [Int])]
   }
   deriving stock (Eq, Show)
 
@@ -162,8 +164,10 @@ applyConfig Config{..} doc =
   let
     (doc', colorResult) = mapAllColors doc
     (doc'', textResult) = mapAllTexts doc'
-   in
-    (doc'', ProcessResult colorResult textResult)
+    (doc''', fontResult) = mapAllFonts doc''
+   in trace (show doc''' <> show fontResult) 
+    (doc''', ProcessResult colorResult textResult fontResult)
  where
-  mapAllColors d = foldr (\c (d', res) -> second (: res) (applyColorMap c d')) (d, []) cfgColorMap
-  mapAllTexts d = foldr (\c (d', res) -> second (: res) (applyTextMap c d')) (d, []) cfgTextMap
+  mapAllColors d = foldr (\cfg (d', result) -> second (: result) (applyColorMap cfg d')) (d, []) cfgColorMap
+  mapAllTexts d = foldr (\cfg (d', result) -> second (: result) (applyTextMap cfg d')) (d, []) cfgTextMap
+  mapAllFonts d = foldr (\cfg (d', result) -> second (: result) (applyFontMap cfg d')) (d, []) cfgFontMap

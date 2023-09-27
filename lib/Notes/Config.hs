@@ -1,18 +1,29 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Notes.Config (
   Config (..),
   ColorMap (..),
   TextMap (..),
+  FontMap (..),
   --
   _Config,
   _cfgColorMap,
   _cfgTextMap,
+  _cfgFontMap,
   decodeFileStrict',
   eitherDecode',
   FromJSON (..),
   emptyConfig,
+  -- Lens
+  _fromColor,
+  _toColor,
+  _toColorSpace,
+  _pattern,
+  _replacement,
+  _fromFontName,
+  _toFontName,
 ) where
 
-import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types
@@ -24,11 +35,12 @@ import Notes.RTFDoc hiding (Parser)
 data Config = Config
   { cfgColorMap :: [ColorMap]
   , cfgTextMap :: [TextMap]
+  , cfgFontMap :: [FontMap]
   }
   deriving stock (Show, Eq, Generic)
 
 emptyConfig :: Config
-emptyConfig = Config [] []
+emptyConfig = Config [] [] []
 
 data ColorMap = ColorMap
   { fromColor :: RTFColor
@@ -51,6 +63,9 @@ data FontMap = FontMap
 
 $(makeLensesWith dataLensRules ''Config)
 $(makePrisms ''Config)
+$(makeLensesWith dataLensRules ''TextMap)
+$(makeLensesWith dataLensRules ''ColorMap)
+$(makeLensesWith dataLensRules ''FontMap)
 
 instance FromJSON Config where
   parseJSON = genericParseJSON opts
@@ -64,37 +79,78 @@ instance FromJSON Config where
 
 instance FromJSON ColorMap where
   parseJSON = withObject "ColorMap" $ \obj -> do
-    fromColor <- obj .: "from" >>= colorObj
-    toColors <- obj .: "to"
-    ColorMap fromColor
-      <$> colorObj toColors
-      <*> colorspaceObj toColors
+    fromColor <- (obj .: "from") >>= inPath (Key "from") colorObj
+    toObj <- obj .: "to"
+    ( ColorMap fromColor
+        <$> colorObj toObj
+        <*> colorspaceObj toObj
+      )
+      <?> Key "to"
    where
-    colorspaceObj = withObject "ColorSpace obj" $ \obj -> obj .: "colorSpace" >>= colorspace
-    colorObj = withObject "RTFColor obj" $ \obj -> obj .: "color" >>= rtfColor
-    colorspace = withObject "" $ \obj ->
-      (obj .: "csgray" >>= csgray)
-        <|> (obj .: "cssrgb" >>= cssrgb)
-        <|> (obj .: "csgenericrgb" >>= csgeneric)
-    rtfColor = parseList "RTFColor" $ \case
-      [r, g, b] ->
-        Just $
-          RTFColor
-            <$> optional (parseIntegral "red" r)
-            <*> optional (parseIntegral "green" g)
-            <*> optional (parseIntegral "blue" b)
-      _ -> Nothing
-    csgray v = CSGray <$> parseIntegral "CSGray" v
-    cssrgb = parseList "CSSRGB" $ \case
-      [r, g, b] ->
-        Just $ CSSRGB <$> parseIntegral "c" r <*> parseIntegral "c" g <*> parseIntegral "c" b
-      _ -> Nothing
-    csgeneric = parseList "CSGenericRGB" $ \case
-      [r, g, b] ->
-        Just $ CSGenericRGB <$> parseIntegral "c" r <*> parseIntegral "c" g <*> parseIntegral "c" b
-      _ -> Nothing
+    colorspaceObj = withObject "ColorSpace obj" (\obj -> obj .: "colorSpace" >>= inPath (Key "colorSpace") colorspace)
+    colorObj = withObject "RTFColor obj" (\obj -> obj .: "color" >>= inPath (Key "color") rtfColor)
+    colorspace =
+      withObject
+        "colorSpace"
+        ( \obj -> do
+            vgray <- obj .:? "csgray"
+            vsrgb <- obj .:? "cssrgb"
+            vgeneric <- obj .:? "csgenericrgb"
+            case vgray of
+              Just x -> csgray x <?> Key "csgray"
+              Nothing -> case vsrgb of
+                Just x -> cssrgb x <?> Key "cssrgb"
+                Nothing -> case vgeneric of
+                  Just x -> csgeneric x <?> Key "csgenericrgb"
+                  Nothing -> fail "colorspace"
+        )
+    rtfColor =
+      parseList
+        "RTFColor"
+        ( \case
+            [r, g, b] ->
+              Just $
+                RTFColor
+                  <$> (nullOrIntegral (parseIntegral "red") r <?> Index 0)
+                  <*> (nullOrIntegral (parseIntegral "green") g <?> Index 1)
+                  <*> (nullOrIntegral (parseIntegral "blue") b <?> Index 2)
+            _ -> Nothing
+        )
+    csgray v = CSGray <$> (parseIntegral "CSGray" v <?> Index 0)
+    cssrgb =
+      parseList
+        "CSSRGB"
+        ( \case
+            [r, g, b] ->
+              Just $
+                CSSRGB
+                  <$> (parseIntegral "c" r <?> Index 0)
+                  <*> (parseIntegral "c" g <?> Index 1)
+                  <*> (parseIntegral "c" b <?> Index 2)
+            _ -> Nothing
+        )
+    csgeneric =
+      parseList
+        "CSGenericRGB"
+        ( \case
+            [r, g, b] ->
+              Just $
+                CSGenericRGB
+                  <$> (parseIntegral "c" r <?> Index 0)
+                  <*> (parseIntegral "c" g <?> Index 1)
+                  <*> (parseIntegral "c" b <?> Index 2)
+            _ -> Nothing
+        )
+    nullOrIntegral :: (Value -> Parser a) -> Value -> Parser (Maybe a)
+    nullOrIntegral _ Null = return Nothing
+    nullOrIntegral p v = Just <$> p v
 
 instance FromJSON TextMap
+
+instance FromJSON FontMap
+
+inPath :: JSONPathElement -> (Value -> Parser a) -> Value -> Parser a
+inPath path p = (<?> path) . p
 
 parseIntegral :: Integral a => String -> Value -> Parser a
 parseIntegral name = withScientific name $ \v -> case floatingOrInteger @Double v of
