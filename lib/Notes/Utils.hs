@@ -15,6 +15,7 @@ module Notes.Utils (
   runAppLogger,
   formatTimestamp,
   getZonedTime,
+  LogLevel (..),
 ) where
 
 import Control.Lens hiding (from, to)

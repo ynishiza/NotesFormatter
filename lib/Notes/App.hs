@@ -32,14 +32,14 @@ import Notes.RTFDoc.ToRTFDoc
 import Notes.RTFFile
 import System.Directory
 import System.FilePath
-import Debug.Trace (trace)
 
 type Env m = (MonadIO m, MonadLogger m, MonadReader AppOptions m, MonadBaseControl IO m, MonadCatch m)
 
 type App = LoggingT (ReaderT AppOptions IO)
 
 data AppOptions = AppOptions
-  { appBackupDir :: FilePath
+  { appLogLevel :: LogLevel
+  , appBackupDir :: FilePath
   , appTime :: ZonedTime
   , appConfig :: Config
   }
@@ -51,10 +51,16 @@ data ProcessResult = ProcessResult
   }
   deriving stock (Eq, Show)
 
-mkAppOtions :: FilePath -> Config -> IO AppOptions
-mkAppOtions backupPath config = do
+mkAppOtions :: LogLevel -> FilePath -> Config -> IO AppOptions
+mkAppOtions minLevel backupPath config = do
   timestamp <- getZonedTime
-  return $ AppOptions backupPath timestamp config
+  return $
+    AppOptions
+      { appLogLevel = minLevel
+      , appBackupDir = backupPath
+      , appTime = timestamp
+      , appConfig = config
+      }
 
 runApp :: FilePath -> AppOptions -> App a -> IO a
 runApp logPath appOptions@(AppOptions{..}) p = do
@@ -165,7 +171,7 @@ applyConfig Config{..} doc =
     (doc', colorResult) = mapAllColors doc
     (doc'', textResult) = mapAllTexts doc'
     (doc''', fontResult) = mapAllFonts doc''
-   in trace (show doc''' <> show fontResult) 
+   in
     (doc''', ProcessResult colorResult textResult fontResult)
  where
   mapAllColors d = foldr (\cfg (d', result) -> second (: result) (applyColorMap cfg d')) (d, []) cfgColorMap

@@ -21,7 +21,7 @@ import Test.Hspec
 
 runAppTest :: App a -> IO a
 runAppTest app = do
-  appConfig <- mkAppOtions backupPath testConfig
+  appConfig <- mkAppOtions LevelDebug backupPath testConfig
   runApp logPath appConfig app
  where
   logPath = "testlog.txt"

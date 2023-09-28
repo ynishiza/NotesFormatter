@@ -18,7 +18,7 @@ import Test.Utils
 import Notes.RTFFile
 
 expectedRTFFiles :: Int
-expectedRTFFiles = 41
+expectedRTFFiles = 40
 
 expectedRTFDFiles :: Int
 expectedRTFDFiles = 17

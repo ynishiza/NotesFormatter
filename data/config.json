@@ -3,8 +3,8 @@
     {
       "from": { "color": [226, 226, 226] },
       "to":  {
-        "color": [200, 200, 200],
-        "colorSpace": { "csgray": 300 }
+        "color": [107, 0, 108],
+        "colorSpace": { "csgenericrgb": [41819, 0, 42431] }
       }
     }
   ],
@@ -13,5 +13,6 @@
       "pattern": "====",
       "replacement": "****"
     }
-  ]
+  ],
+  "fontMap": [{ "fromFontName": "Papyrus", "toFontName": "HelveticaNeue" } ]
 }

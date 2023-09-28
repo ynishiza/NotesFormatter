@@ -1,24 +1,15 @@
--- import B.Lib qualified
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 {-# HLINT ignore "Use newtype instead of data" #-}
 
--- import Data.Text.IO qualified as T
-
--- import Notes.Process
 import Notes.App
-
--- import Notes.RTFDoc hiding (Parser)
 import Options.Applicative
-
--- import System.IO (IOMode (..), withFile)
 import Notes.RTFFile
 
 main :: IO ()
 main = do
   Options{..} <- execParser parseOpts
   (Just config) <- decodeFileStrict' @Config configPath
-  appConfig <- mkAppOtions backupPath config
+  appConfig <- mkAppOtions LevelDebug backupPath config
   let timestamp = formatTimestamp $ appTime appConfig
       logPath = timestamp <> "_" <> "rtf.log"
 

@@ -16,7 +16,6 @@ import Notes.Config as X
 import Notes.File.RTF
 import Notes.RTFDoc.Render
 import Notes.RTFDoc.Types as X
-import Debug.Trace (trace)
 
 applyColorMap :: ColorMap -> RTFDoc -> (RTFDoc, (ColorMap, [Int]))
 applyColorMap c@ColorMap{..} = second (c,) . mapColor fromColor (toColor, Just toColorSpace)
@@ -51,7 +50,7 @@ mapPlainText pattern replacement doc@(RTFDoc{..}) = (doc{rtfDocContent = newCont
   mapContent (count, []) = (count, [])
 
 mapFontName :: Text -> Text -> RTFDoc -> (RTFDoc, [Int])
-mapFontName oldName newName doc@(RTFDoc{..}) = trace (show newFonts) 
+mapFontName oldName newName doc@(RTFDoc{..}) =
   ( doc{rtfDocHeader = rtfDocHeader{rtfFontTbl = FontTbl newFonts}}
   , mappedIndexes
   )
@@ -60,7 +59,7 @@ mapFontName oldName newName doc@(RTFDoc{..}) = trace (show newFonts)
    where
     f Nothing = Nothing
     f (Just fontInfo) =
-      trace (show fontInfo <> show (oldName == fontName fontInfo) <> T.unpack newName) $ Just $
+      Just $
         if fontName fontInfo == oldName
           then Just fontInfo{fontName = newName}
           else Just fontInfo
