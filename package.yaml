@@ -139,7 +139,7 @@ library:
   source-dirs: ./lib
 
 executables:
-  NotesFormatter:
+  notesFormatter:
     main:               Main.hs
     source-dirs:        ./src
     dependencies: 

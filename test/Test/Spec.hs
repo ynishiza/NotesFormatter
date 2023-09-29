@@ -324,7 +324,9 @@ processSpec =
               testSpaceBackupDir = testSpaceDir </> "bak"
               logPath = testSpaceDir </> "log.txt"
 
-          appOptions <- mkAppOtions LevelInfo testSpaceBackupDir testConfig
+          appOptions <-
+            emptyAppOptions
+              <&> \opts -> opts{appLogLevel = LevelInfo, appBackupDir = testSpaceBackupDir, appConfig = testConfig}
           let timestamp = formatTimestamp (appTime appOptions)
 
           shelly $ do
@@ -391,7 +393,9 @@ processSpec =
               testSpaceBackupDir = testSpaceDir </> "bak"
               logPath = testSpaceDir </> "log.txt"
 
-          appOptions <- mkAppOtions LevelInfo testSpaceBackupDir testConfig
+          appOptions <-
+            emptyAppOptions
+              <&> \opts -> opts{appLogLevel = LevelInfo, appBackupDir = testSpaceBackupDir, appConfig = testConfig}
           let timestamp = formatTimestamp (appTime appOptions)
 
           shelly $ do

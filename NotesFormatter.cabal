@@ -120,7 +120,7 @@ library
     , vector >=0.1 && <1
   default-language: Haskell2010
 
-executable NotesFormatter
+executable notesFormatter
   main-is: Main.hs
   other-modules:
       Paths_NotesFormatter

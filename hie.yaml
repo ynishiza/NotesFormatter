@@ -3,6 +3,6 @@ cradle:
     - path: "./lib/"
       component: NotesFormatter:lib
     - path: "./src/"
-      component: NotesFormatter:exe:main
+      component: NotesFormatter:exe:notesFormatter
     - path: "./test/"
       component: NotesFormatter:test:main-test

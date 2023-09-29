@@ -1,0 +1,17 @@
+{
+  "colorMap": [
+    {
+      "from": { "color": [226, 226, 226] },
+      "to":  {
+        "colorSpace": { "csgenericrgb": [41819, 0, 42431] }
+      }
+    }
+  ],
+  "textMap": [
+    {
+      "pattern": "====",
+      "replacement": "****"
+    }
+  ],
+  "fontMap": [{ "fromFontName": "Papyrus", "toFontName": "HelveticaNeue" } ]
+}
