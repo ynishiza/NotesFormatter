@@ -7,6 +7,7 @@ module Notes.RTFFile (
   pattern RTFDFile,
   pattern AnyRTFFile,
   SomeRTFFile (..),
+  withSomeRTFFile,
   rtfFromPath,
   rtfFile,
   rtfdFile,
@@ -59,6 +60,9 @@ instance Eq (RTFFile filetype) where
   (AnyRTFFile p1) == (AnyRTFFile p2) = p1 == p2
 
 data SomeRTFFile = forall filetype. SomeRTFFile (RTFFile filetype)
+
+withSomeRTFFile :: (forall t. RTFFile t -> a) -> SomeRTFFile -> a
+withSomeRTFFile f (SomeRTFFile file) = f file
 
 instance Show SomeRTFFile where show (SomeRTFFile f) = "SomeRTFFile " <> show f
 

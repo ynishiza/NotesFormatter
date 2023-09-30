@@ -11,7 +11,6 @@ import Notes.Process
 import Notes.RTF.ContentParser
 import Notes.RTFDoc
 import Test.Hspec hiding (runIO)
-import Test.Utils
 import Text.Megaparsec
 
 spec :: Spec

@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: colonnade-1.2.0.2@sha256:5ace17fac5a758a1a0f3a4b36f016ecb641a710dc13769608e94a278c8534510,2099
+    pantry-tree:
+      sha256: 056c2c7c652f0c2c5811131552ab7cd6ffe7705282b1303b1d186ede2de57918
+      size: 327
+  original:
+    hackage: colonnade-1.2.0.2
 snapshots:
 - completed:
     sha256: dee08c78a10d2e8433969c40e996374717317fcde826cf3f4b8a1e0063307c3e

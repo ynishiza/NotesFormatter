@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Notes.App (
   applyConfig,
   processDoc,
@@ -11,10 +13,12 @@ module Notes.App (
   ProcessResult (..),
   App,
   AppOptions (..),
+  resultTable,
   emptyAppOptions,
   module X,
 ) where
 
+import Colonnade
 import Control.Arrow (second)
 import Control.Exception.Safe
 import Control.Lens
@@ -23,6 +27,7 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Control
 import Data.Foldable (traverse_)
 import Data.List (intercalate)
+import Data.List.Extra (trim)
 import Data.Maybe (catMaybes)
 import Data.Text qualified as T
 import Data.Time
@@ -34,7 +39,6 @@ import Notes.RTFFile
 import System.Directory
 import System.FilePath
 import Text.Regex.TDFA
-import Data.List.Extra (trim)
 
 type Env m = (MonadIO m, MonadLogger m, MonadReader AppOptions m, MonadBaseControl IO m, MonadCatch m)
 
@@ -77,7 +81,7 @@ emptyAppOptions = do
 runApp :: FilePath -> AppOptions -> App a -> IO a
 runApp logPath appOptions@(AppOptions{..}) p = do
   createDirectoryIfMissing True appBackupDir
-  runAppLogger LevelDebug logPath p
+  runAppLogger appLogLevel logPath p
     & flip runReaderT appOptions
 
 processDirAll :: Env m => FilePath -> m [(SomeRTFFile, FilePath, ProcessResult)]
@@ -209,3 +213,34 @@ applyConfig Config{..} doc =
   mapAllColors d = foldr (\cfg (d', result) -> second (: result) (applyColorMap cfg d')) (d, []) cfgColorMap
   mapAllTexts d = foldr (\cfg (d', result) -> second (: result) (applyTextMap cfg d')) (d, []) cfgTextMap
   mapAllFonts d = foldr (\cfg (d', result) -> second (: result) (applyFontMap cfg d')) (d, []) cfgFontMap
+
+resultTable :: [(SomeRTFFile, FilePath, ProcessResult)] -> String
+resultTable = ascii processResultColumns
+
+processResultColumns :: Colonnade Headed (SomeRTFFile, FilePath, ProcessResult) String
+processResultColumns =
+  mconcat
+    [ headed "Source RTF" (views _1 (withSomeRTFFile rtfFilePath))
+    , headed "Backup" (views _2 id)
+    , headed "ColorMap" (views _3 columnTextColorMap)
+    , headed "FontMap" (views _3 columnTextFontMap)
+    , headed "TextMap" (views _3 columnTextTextMap)
+    ]
+
+columnTextColorMap :: ProcessResult -> String
+columnTextColorMap (ProcessResult{resultMapColor}) =
+  resultMapColor
+    <&> length . snd
+    & show . sum
+
+columnTextTextMap :: ProcessResult -> String
+columnTextTextMap (ProcessResult{resultMapText}) =
+  resultMapText
+    <&> snd
+    & show . sum
+
+columnTextFontMap :: ProcessResult -> String
+columnTextFontMap (ProcessResult{resultMapFont}) =
+  resultMapFont
+    <&> length . snd
+    & show . sum

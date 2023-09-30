@@ -1,5 +1,4 @@
 module Test.Utils (
-  multiline,
   rtfPath,
   normalizeRTFForTest,
   expectToRTFDocSuccess,
@@ -12,7 +11,6 @@ module Test.Utils (
 ) where
 
 import Data.Text qualified as T
-import Language.Haskell.TH.Quote
 import Notes.App
 import Notes.RTFDoc as X
 import Notes.RTFFile
@@ -60,15 +58,6 @@ rtfPath = dataPath </> "rtf"
 
 dataPath :: FilePath
 dataPath = basePath </> "data"
-
-multiline :: QuasiQuoter
-multiline =
-  QuasiQuoter
-    { quoteExp = \s -> [|T.pack s|]
-    , quoteDec = undefined
-    , quoteType = undefined
-    , quotePat = undefined
-    }
 
 -- Note: newlines are insignificant in RTF.
 -- Hence, normalize the RTF text by removing new lines.

@@ -16,6 +16,7 @@ module Notes.Utils (
   formatTimestamp,
   getZonedTime,
   LogLevel (..),
+  multiline,
 ) where
 
 import Control.Lens hiding (from, to)
@@ -30,8 +31,10 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time
 import Data.Typeable
+import GHC.Exts (fromString)
 import GHC.Generics
 import Language.Haskell.TH
+import Language.Haskell.TH.Quote (QuasiQuoter (..))
 import System.Directory
 import System.FilePath
 import System.IO
@@ -65,3 +68,12 @@ defaultShowt = T.pack . show
 
 formatTimestamp :: FormatTime t => t -> String
 formatTimestamp = formatTime defaultTimeLocale "%m%d%Y_%H%M"
+
+multiline :: QuasiQuoter
+multiline =
+  QuasiQuoter
+    { quoteExp = \s -> [|fromString s|]
+    , quoteDec = undefined
+    , quoteType = undefined
+    , quotePat = undefined
+    }

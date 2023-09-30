@@ -4,4 +4,8 @@ compiler: ghc-9.2.5
 packages:
 - .
 
-extra-deps: []
+allow-newer: true
+
+extra-deps: 
+- colonnade-1.2.0.2
+
