@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Notes.App (
   applyConfig,
@@ -227,20 +228,27 @@ processResultColumns =
     , headed "TextMap" (views _3 columnTextTextMap)
     ]
 
+columnTextMany :: (a -> Maybe String) -> [a] -> String
+columnTextMany f list =
+  list
+    <&> f
+    & catMaybes
+    & intercalate ":"
+
 columnTextColorMap :: ProcessResult -> String
-columnTextColorMap (ProcessResult{resultMapColor}) =
-  resultMapColor
-    <&> length . snd
-    & show . sum
+columnTextColorMap (ProcessResult{resultMapColor}) = columnTextMany single resultMapColor
+ where
+  single (ColorMap{..}, indexes@(not . null -> True)) = Just $ T.unpack $ render fromColor <> " -> " <> render toColor <> " " <> showt (length indexes)
+  single _ = Nothing
 
 columnTextTextMap :: ProcessResult -> String
-columnTextTextMap (ProcessResult{resultMapText}) =
-  resultMapText
-    <&> snd
-    & show . sum
+columnTextTextMap (ProcessResult{resultMapText}) = columnTextMany single resultMapText
+ where
+  single (TextMap{..}, count@((> 0) -> True)) = Just $ T.unpack $ pattern <> " -> " <> replacement <> " " <> showt count
+  single _ = Nothing
 
 columnTextFontMap :: ProcessResult -> String
-columnTextFontMap (ProcessResult{resultMapFont}) =
-  resultMapFont
-    <&> length . snd
-    & show . sum
+columnTextFontMap (ProcessResult{resultMapFont}) = columnTextMany single resultMapFont
+ where
+  single (FontMap{..}, indexes@(not . null -> True)) = Just $ T.unpack $ fromFontName <> " -> " <> fmFontName toFont <> " " <> showt (length indexes)
+  single _ = Nothing

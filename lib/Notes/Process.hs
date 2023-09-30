@@ -50,7 +50,7 @@ mapPlainText pattern replacement doc@(RTFDoc{..}) = (doc{rtfDocContent = newCont
   mapContent (count, []) = (count, [])
 
 mapFontName :: Text -> FontMapFont -> RTFDoc -> (RTFDoc, [Int])
-mapFontName oldName (FontMapFont {..}) doc@(RTFDoc{..}) =
+mapFontName oldName (FontMapFont{..}) doc@(RTFDoc{..}) =
   ( doc{rtfDocHeader = rtfDocHeader{rtfFontTbl = FontTbl newFonts}}
   , mappedIndexes
   )
@@ -59,9 +59,9 @@ mapFontName oldName (FontMapFont {..}) doc@(RTFDoc{..}) =
    where
     f Nothing = Nothing
     f (Just fontInfo) =
-        if fontName fontInfo == oldName
-           then Just $ Just fontInfo{fontFamily = fmFamily, fontCharset = fmCharset, fontName = fmFontName}
-          else Nothing
+      if fontName fontInfo == oldName
+        then Just $ Just fontInfo{fontFamily = fmFamily, fontName = fmFontName}
+        else Nothing
 
 mapMatches' :: (a -> Maybe a) -> [a] -> ([a], [Int])
 mapMatches' f list = (snd <$> result, indexes)

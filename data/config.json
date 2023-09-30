@@ -12,7 +12,16 @@
     {
       "pattern": "====",
       "replacement": "****"
+    },
+    {
+      "pattern": "is",
+      "replacement": "to"
     }
   ],
-  "fontMap": [{ "fromFontName": "Papyrus", "toFontName": "HelveticaNeue" } ]
+  "fontMap": [
+    {
+      "fromFontName": "HelveticaNeue",
+      "toFont": { "family": "nil", "fontName": "Verdana" }
+    }
+  ]
 }

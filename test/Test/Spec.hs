@@ -34,7 +34,7 @@ configSpec =
         ( Config
             { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3)]
             , cfgTextMap = [TextMap "====" "****"]
-            , cfgFontMap = [FontMap "" (FontMapFont FNil (Just 0) "Papyrus")]
+            , cfgFontMap = [FontMap "" (FontMapFont FNil "Papyrus")]
             }
         )
         [multiline|
@@ -45,7 +45,7 @@ configSpec =
   "textMap": [
     { "pattern": "====", "replacement": "****" }
   ],
-  "fontMap": [{ "fromFontName": "", "toFont": {"family": "nil", "charset": 0, "fontName": "Papyrus"}}]
+  "fontMap": [{ "fromFontName": "", "toFont": {"family": "nil", "fontName": "Papyrus"}}]
 }
             |]
 
@@ -91,8 +91,7 @@ configSpec =
     it "[error message] FontMap" $ do
       testJSONParseFail @FontMap "Error in $: parsing Notes.Config.FontMap(FontMap) failed, key \"toFont\" not found" [multiline|{ "fromFontName": "Arial"  } |]
       testJSONParseFail @FontMap "Error in $.toFont: parsing Notes.Config.FontMapFont(FontMapFont) failed, key \"family\" not found" [multiline|{ "fromFontName": "Arial", "toFont" : {}  } |]
-      testJSONParseFail @FontMap "Error in $.toFont.charset: parsing Int failed, expected Number, but encountered String" [multiline|{ "fromFontName": "Arial", "toFont" : { "family": "roman", "charset": "a" }  } |]
-      testJSONParseFail @FontMap "Error in $.toFont: parsing Notes.Config.FontMapFont(FontMapFont) failed, unknown fields: [\"a\"]" [multiline|{ "fromFontName": "Arial", "toFont" : { "family": "roman", "charset": 0, "fontName": "HelveticaNeue", "a": 0 }  } |]
+      testJSONParseFail @FontMap "Error in $.toFont: parsing Notes.Config.FontMapFont(FontMapFont) failed, unknown fields: [\"a\"]" [multiline|{ "fromFontName": "Arial", "toFont" : { "family": "roman", "fontName": "HelveticaNeue", "a": 0 }  } |]
 
 rtfSpec :: Spec
 rtfSpec = describe "ToRTFDoc" $ do

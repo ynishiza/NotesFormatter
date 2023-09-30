@@ -17,8 +17,10 @@ module Notes.Utils (
   getZonedTime,
   LogLevel (..),
   multiline,
+  inverseMap,
 ) where
 
+import Control.Applicative
 import Control.Lens hiding (from, to)
 import Control.Monad
 import Control.Monad.Base
@@ -77,3 +79,10 @@ multiline =
     , quoteType = undefined
     , quotePat = undefined
     }
+
+-- Bidirectional parsing: https://kowainik.github.io/posts/haskell-mini-patterns
+inverseMap :: forall v s. (Bounded v, Enum v, Eq s) => (v -> s) -> s -> Maybe v
+inverseMap showValue s = foldr (\v result -> result <|> valueIfShowMatch v) Nothing allValues
+ where
+  allValues = [minBound @v .. maxBound]
+  valueIfShowMatch v = if showValue v == s then Just v else Nothing

@@ -4,9 +4,9 @@ import Test.Hspec
 import Test.PropertiesRawParse qualified
 import Test.PropertiesToRTFDoc qualified
 import Test.Spec qualified
+import Test.SpecApp qualified
 import Test.SpecRTFParser qualified
 import Test.SpecSamples qualified
-import Test.SpecApp qualified
 import Test.Tasty
 import Test.Tasty.Hedgehog
 import Test.Tasty.Hspec

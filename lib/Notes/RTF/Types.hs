@@ -1,4 +1,4 @@
-{-|
+{- |
   See README for references
 -}
 module Notes.RTF.Types (
@@ -40,17 +40,17 @@ charReserved = "\\{}"
 charOptionalDestination :: Char
 charOptionalDestination = '*'
 
-{-|
+{- |
   Officially, RTF names are all lower case.
   However, Apple's extended RTF may include upper case.
 
   e.g. \NeXTGraphic
 -}
 charExtendedControlName :: String
-charExtendedControlName = charControlName <> ['A'..'Z']
+charExtendedControlName = charControlName <> ['A' .. 'Z']
 
 charControlName :: String
-charControlName = ['a' .. 'z'] 
+charControlName = ['a' .. 'z']
 
 charNewline :: String
 charNewline = ['\n', '\r', '\f']
@@ -78,7 +78,7 @@ rtfControlSymbol c =
     then Right $ RTFControlSymbol c
     else Left $ "Invalid symbol " <> ['\'', c, '\'']
 
-{-|
+{- |
   RTF specs in the README
 -}
 data RTFContent
