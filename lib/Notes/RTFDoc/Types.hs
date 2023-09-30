@@ -7,6 +7,7 @@ module Notes.RTFDoc.Types (
   FontInfo (..),
   Charset (..),
   RTFDoc (..),
+  allFontFamilies,
   -- Lens
   _rtfCharset,
   _rtfCocoaControls,
@@ -68,6 +69,9 @@ data FontInfo = FontInfo
 
 data FontFamily = FNil | FRoman | FSwiss | FModern | FScript | FDecor | FTech | FBidi
   deriving stock (Eq, Show, Enum, Bounded, Generic)
+
+allFontFamilies :: [FontFamily]
+allFontFamilies = [minBound .. maxBound]
 
 newtype Charset = Ansi Int
   deriving stock (Eq, Show, Generic)

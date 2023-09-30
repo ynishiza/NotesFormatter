@@ -228,6 +228,7 @@ test-suite main-test
       Test.PropertiesRawParse
       Test.PropertiesToRTFDoc
       Test.Spec
+      Test.SpecApp
       Test.SpecRTFParser
       Test.SpecSamples
       Test.Utils

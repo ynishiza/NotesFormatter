@@ -15,7 +15,6 @@ main = do
   cliOpts@CLIOptions{..} <- execParser parseOpts
   when debugMode $ putStrLn $ "Options:" <> show cliOpts
   unless recursive $ do
-    when interactive $ throwM $ userError "--interactive is only supported for --recursive"
     when (isJust pattern) $ throwM $ userError "--pattern is only supported for --recursive"
 
   eitherDecodeFileStrict' @Config configPath >>= \case
@@ -47,8 +46,9 @@ main = do
     let msg = "Processed files:" <> show (length result)
         table = resultTable result
 
-    appendFile logPath $ table <> "\n" <> msg
-    putStrLn $ table <> "\n" <> msg
+    appendFile logPath $ show result
+    appendFile logPath $ unlines [table, msg]
+    putStrLn $ unlines [table, msg, "Log in " <> logPath]
 
 data CLIOptions = CLIOptions
   { debugMode :: Bool

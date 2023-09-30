@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Notes.Config (
   Config (..),
   ColorMap (..),
   TextMap (..),
   FontMap (..),
+  FontMapFont (..),
   --
   _Config,
   _cfgColorMap,
@@ -21,16 +23,20 @@ module Notes.Config (
   _pattern,
   _replacement,
   _fromFontName,
-  _toFontName,
+  _toFont,
 ) where
 
+import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Char (toLower)
 import Data.Scientific
-import Data.Vector
+import Data.Text qualified as T
+import Data.Vector qualified as V
+import GHC.Exts (IsString)
 import Notes.RTFDoc hiding (Parser)
+import Data.List (intercalate)
 
 data Config = Config
   { cfgColorMap :: [ColorMap]
@@ -55,9 +61,16 @@ data TextMap = TextMap
   }
   deriving stock (Show, Eq, Generic)
 
+data FontMapFont = FontMapFont
+  { fmFamily :: FontFamily
+  , fmCharset :: Maybe Int
+  , fmFontName :: Text
+  }
+  deriving stock (Show, Eq, Generic)
+
 data FontMap = FontMap
   { fromFontName :: Text
-  , toFontName :: Text
+  , toFont :: FontMapFont
   }
   deriving stock (Show, Eq, Generic)
 
@@ -65,6 +78,7 @@ $(makeLensesWith dataLensRules ''Config)
 $(makePrisms ''Config)
 $(makeLensesWith dataLensRules ''TextMap)
 $(makeLensesWith dataLensRules ''ColorMap)
+$(makeLensesWith dataLensRules ''FontMapFont)
 $(makeLensesWith dataLensRules ''FontMap)
 
 instance FromJSON Config where
@@ -147,6 +161,34 @@ instance FromJSON ColorMap where
 
 instance FromJSON TextMap
 
+instance FromJSON FontFamily where
+  parseJSON = withText "Font family" $ \str -> case inverseMap showFontMapFamily str of
+    Just v -> return v
+    Nothing -> fail $ "Unknown font family " <> T.unpack str <> ". Should be one of " <> intercalate "," (show <$> allFontFamilies)
+
+inverseMap :: forall v s. (Bounded v, Enum v, Eq s) => (v -> s) -> s -> Maybe v
+inverseMap showValue s = foldr (\v result -> result <|> checkValue v) Nothing allValues
+ where
+  allValues = [minBound @v .. maxBound]
+  checkValue v = if showValue v == s then Just v else Nothing
+
+showFontMapFamily :: IsString s => FontFamily -> s
+showFontMapFamily FNil = "nil"
+showFontMapFamily FRoman = "roman"
+showFontMapFamily FSwiss = "swiss"
+showFontMapFamily FModern = "modern"
+showFontMapFamily FScript = "script"
+showFontMapFamily FDecor = "decor"
+showFontMapFamily FTech = "tech"
+showFontMapFamily FBidi = "bidi"
+
+instance FromJSON FontMapFont where
+  parseJSON = genericParseJSON options
+   where
+    options = defaultOptions{fieldLabelModifier = unCap . drop 2, rejectUnknownFields = True}
+    unCap "" = ""
+    unCap (a : as) = toLower a : as
+
 instance FromJSON FontMap
 
 inPath :: JSONPathElement -> (Value -> Parser a) -> Value -> Parser a
@@ -158,6 +200,6 @@ parseIntegral name = withScientific name $ \v -> case floatingOrInteger @Double 
   Left x -> fail $ "[" <> name <> "] not an integer" <> show x
 
 parseList :: String -> ([Value] -> Maybe (Parser a)) -> Value -> Parser a
-parseList name f = withArray name $ \arr -> case f (toList arr) of
+parseList name f = withArray name $ \arr -> case f (V.toList arr) of
   Just p -> p
   Nothing -> fail $ "Failed to parse array for " <> name

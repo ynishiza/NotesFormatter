@@ -24,7 +24,7 @@ applyTextMap :: TextMap -> RTFDoc -> (RTFDoc, (TextMap, Int))
 applyTextMap t@TextMap{..} = second (t,) . mapPlainText pattern replacement
 
 applyFontMap :: FontMap -> RTFDoc -> (RTFDoc, (FontMap, [Int]))
-applyFontMap t@FontMap{..} = second (t,) . mapFontName fromFontName toFontName
+applyFontMap t@FontMap{..} = second (t,) . mapFontName fromFontName toFont
 
 mapColor :: RTFColor -> (RTFColor, Maybe ColorSpace) -> RTFDoc -> (RTFDoc, [Int])
 mapColor colorToMatch newColorSpec doc@(RTFDoc{..}) = (doc{rtfDocHeader = rtfDocHeader{rtfColors = newColors}}, replacedColorIndexes)
@@ -49,8 +49,8 @@ mapPlainText pattern replacement doc@(RTFDoc{..}) = (doc{rtfDocContent = newCont
   mapContent (count, x : rest) = second (x :) $ mapContent (count, rest)
   mapContent (count, []) = (count, [])
 
-mapFontName :: Text -> Text -> RTFDoc -> (RTFDoc, [Int])
-mapFontName oldName newName doc@(RTFDoc{..}) =
+mapFontName :: Text -> FontMapFont -> RTFDoc -> (RTFDoc, [Int])
+mapFontName oldName (FontMapFont {..}) doc@(RTFDoc{..}) =
   ( doc{rtfDocHeader = rtfDocHeader{rtfFontTbl = FontTbl newFonts}}
   , mappedIndexes
   )
@@ -59,10 +59,9 @@ mapFontName oldName newName doc@(RTFDoc{..}) =
    where
     f Nothing = Nothing
     f (Just fontInfo) =
-      Just $
         if fontName fontInfo == oldName
-          then Just fontInfo{fontName = newName}
-          else Just fontInfo
+           then Just $ Just fontInfo{fontFamily = fmFamily, fontCharset = fmCharset, fontName = fmFontName}
+          else Nothing
 
 mapMatches' :: (a -> Maybe a) -> [a] -> ([a], [Int])
 mapMatches' f list = (snd <$> result, indexes)
