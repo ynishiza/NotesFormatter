@@ -54,6 +54,8 @@ data ColorMap = ColorMap
   }
   deriving stock (Show, Eq, Generic)
 
+-- TODO: replace symbol
+-- e.g.  \'85 = …
 data TextMap = TextMap
   { pattern :: Text
   , replacement :: Text

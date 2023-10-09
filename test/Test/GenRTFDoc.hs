@@ -4,10 +4,11 @@ module Test.GenRTFDoc (
   genFontInfo,
   genColorSpace,
   genRTFHeader,
-  genRTFElementsBase,
   genRTFElements,
   genRTFNonTextContent,
+  genRTFDocContents,
   genRTFDoc,
+  genEscapedSymbol,
 ) where
 
 import Data.Char (isPrint)
@@ -24,7 +25,7 @@ commonFont =
   ]
 
 genRTFDoc :: Gen RTFDoc
-genRTFDoc = RTFDoc <$> genRTFHeader <*> genRTFElements
+genRTFDoc = RTFDoc <$> genRTFHeader <*> genRTFDocContents
 
 genRTFHeader :: Gen RTFHeader
 genRTFHeader =
@@ -37,6 +38,44 @@ genRTFHeader =
   charset = Ansi <$> int (linear 0 10)
   color = (,) <$> genRTFColor <*> G.maybe genColorSpace
 
+genRTFDocContents :: Gen [RTFDocContent]
+genRTFDocContents =
+  recursive
+    choice
+    [ genRTFDocContensBase
+    ]
+    [subterm genRTFDocContensBase (\x -> [ContentGroup x])]
+
+-- note: contents except a group
+genRTFDocContensBase :: Gen [RTFDocContent]
+genRTFDocContensBase =
+  list
+    (linear 1 200)
+    ( choice
+        [ nonText
+        , rtfElementToDocContent <$> plainText
+        , genEscapedSymbol
+        ]
+    )
+    <&> cleanRTFDocContents
+ where
+  nonText = rtfElementToDocContent <$> G.filter nonEscapedSymbol genRTFNonTextContent
+  nonEscapedSymbol (RTFControlSymbol c) = c /= '\''
+  nonEscapedSymbol _ = True
+
+cleanRTFDocContents :: [RTFDocContent] -> [RTFDocContent]
+-- case: combine adjacent texts
+cleanRTFDocContents ((ContentText t1) : (ContentText t2) : rest) = cleanRTFDocContents $ ContentText (t1 <> " " <> t2) : rest
+-- case: make sure text begins with a non-alphabet delimiter
+cleanRTFDocContents ((ContentControlWord prefix n NoSuffix) : (ContentText t) : rest) = ContentControlWord prefix n NoSuffix : cleanRTFDocContents (ContentText ("!" <> t) : rest)
+-- case: make sure text begins with a non-number delimiter
+cleanRTFDocContents ((ContentControlWord prefix n p@(RTFControlParam _)) : (ContentText t) : rest) = ContentControlWord prefix n p : cleanRTFDocContents (ContentText ("a" <> t) : rest)
+cleanRTFDocContents (x : xs) = x : cleanRTFDocContents xs
+cleanRTFDocContents [] = []
+
+genEscapedSymbol :: Gen RTFDocContent
+genEscapedSymbol = ContentEscapedSequence <$> word8 constantBounded
+
 genRTFElements :: Gen [RTFElement]
 genRTFElements =
   recursive
@@ -46,30 +85,39 @@ genRTFElements =
     [ subterm genRTFElements (\x -> [RTFGroup x])
     ]
 
+-- note: contents except a group
 genRTFElementsBase :: Gen [RTFElement]
 genRTFElementsBase =
   list (linear 1 200) (choice [genRTFNonTextContent, plainText])
-    <&> clean
+    <&> cleanRTFElements
+
+plainText :: Gen RTFElement
+plainText = RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
  where
-  plainText = RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
   isPlainChar c = (c `notElem` charReserved) && isPrint c
 
-clean :: [RTFElement] -> [RTFElement]
-clean ((RTFText t1) : (RTFText t2) : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
--- make sure text begins with a non-alphabet delimiter
-clean ((RTFControlWord prefix n NoSuffix) : (RTFText t) : rest) = RTFControlWord prefix n NoSuffix : clean (RTFText ("!" <> t) : rest)
--- make sure text begins with a non-number delimiter
-clean ((RTFControlWord prefix n p@(RTFControlParam _)) : (RTFText t) : rest) = RTFControlWord prefix n p : clean (RTFText ("a" <> t) : rest)
-clean (x : xs) = x : clean xs
-clean [] = []
+cleanRTFElements :: [RTFElement] -> [RTFElement]
+-- case: combine adjacent texts
+cleanRTFElements ((RTFText t1) : (RTFText t2) : rest) = cleanRTFElements $ RTFText (t1 <> " " <> t2) : rest
+-- case: make sure text begins with a non-alphabet delimiter
+cleanRTFElements ((RTFControlWord prefix n NoSuffix) : (RTFText t) : rest) = RTFControlWord prefix n NoSuffix : cleanRTFElements (RTFText ("!" <> t) : rest)
+-- case: make sure text begins with a non-number delimiter
+cleanRTFElements ((RTFControlWord prefix n p@(RTFControlParam _)) : (RTFText t) : rest) = RTFControlWord prefix n p : cleanRTFElements (RTFText ("a" <> t) : rest)
+cleanRTFElements (x : xs) = x : cleanRTFElements xs
+cleanRTFElements [] = []
 
 genRTFNonTextContent :: Gen RTFElement
 genRTFNonTextContent =
   choice
     [ genControlWord
     , frequency
-        [ (1, Prelude.either error  id . rtfControlSymbol <$> element ['\\', '{', '}'])
-        , (9, genControlSymbol)
+        [ -- case: escaped key characters
+          -- e.g.
+          --      \rtf      '\' as a keyword
+          --      \\        '\' escaped as a literal
+          (1, Prelude.either error id . rtfControlSymbol <$> element ['\\', '{', '}'])
+        , -- case: normal symbol
+          (9, genControlSymbol)
         ]
     ]
 

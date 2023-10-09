@@ -164,5 +164,6 @@ rtfSpec = describe "ToRTFDoc" $ do
                   , (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))
                   ]
               }
-        , rtfDocContent = [RTFText " a"]
+        -- , rtfDocContent = [RTFText " a"]
+        , rtfDocContent = [ContentText " a"]
         }

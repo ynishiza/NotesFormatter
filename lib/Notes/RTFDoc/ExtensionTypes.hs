@@ -32,9 +32,12 @@ data ColorSpace
     CSGray CSValue
   | -- sRGB
     --  e.g. \cssrgb\c20000\c20000\c20000;
+    --
+    --  TODO: alpha
     CSSRGB CSValue CSValue CSValue
   | -- GenericRGB
     --  e.g. csgenericrgb\c88766\c88766\c88766
+    --  TODO: alpha
     CSGenericRGB CSValue CSValue CSValue
   deriving stock (Eq, Show, Generic)
 

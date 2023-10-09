@@ -67,7 +67,7 @@ parseOpts = info (helper <*> parseSimple) (fullDesc <> progDesc "")
 parseSimple :: Parser CLIOptions
 parseSimple =
   CLIOptions
-    <$> switch (long "--debug" <> short 'd')
+    <$> switch (long "debug" <> short 'd')
     <*> strOption (long "config" <> short 'c' <> metavar "CONFIGPATH" <> help "Path to configuration")
     <*> switch (long "recursive" <> short 'r' <> help "Process directory")
     <*> switch (long "interactive" <> short 'i' <> help "Ask before processing each file")

@@ -100,12 +100,72 @@ prop_rtfheader = property_ $ do
   testEquality x
   isEqualToParseable x
 
+prop_escapedSymbol :: Property
+prop_escapedSymbol = property_ $ do
+  symbol@(ContentEscapedSequence _) <- forAll genEscapedSymbol
+  content <- forAll genRTFDocContents
+  let symbolText = render symbol
+      contentText = render content
+      allText = render (symbol : content)
+
+  -- test: must always be fixed length
+  -- In particular, should pad 1 digit numbers
+  -- e.g.
+  --    GOOD    \'01
+  --    BAD     \'1
+  T.length symbolText === 4
+  T.length allText === (T.length symbolText + T.length contentText)
+
+  -- test: first digit
+  traverse_
+    ( \c ->
+        cover
+          1
+          (fromString $ c : "*")
+          $ T.unpack symbolText !! 2 == c
+    )
+    ("0123456789abcdef" :: String)
+  -- test: second digit
+  traverse_
+    ( \c ->
+        cover
+          1
+          (fromString $ "*" <> [c])
+          $ T.unpack symbolText !! 3 == c
+    )
+    ("0123456789abcdef" :: String)
+
+prop_rtfdocContent :: Property
+prop_rtfdocContent = property_ $ do
+  content <- forAll genRTFDocContents
+  testEquality content
+
 prop_rtfdoc :: Property
 prop_rtfdoc = property_ $ do
-  (RTFDoc _ contents) <- forAll genRTFDoc
-  let fullText = T.intercalate "" $ toListOf (traverse . _RTFText) contents
+  d@(RTFDoc _ contents) <- forAll genRTFDoc
+  let fullText = T.intercalate "" $ toListOf (traverse . _ContentText) contents
+
   cover 1 "long text" $ T.length fullText > 100
   cover 1 "short text" $ T.length fullText < 10
+  cover 20 "ContentControlWord" $ has (traverse . _ContentControlWord) contents
+  cover 20 "ContentControlSymbol" $ has (traverse . _ContentControlSymbol) contents
+  cover 20 "ContentEscapedSequence" $ has (traverse . _ContentEscapedSequence) contents
+  cover 20 "ContentGroup" $ has (traverse . _ContentGroup) contents
+
+  -- test: escaping key characters
+  -- i.e. some characters have special meaning so they need to be escaped in order
+  -- e.g.
+  --      \rtf      '\' as a keyword
+  --      \\        '\' escaped as a literal
+  traverse_
+    ( \c ->
+        cover
+          1
+          (fromString $ "escaped key character:" <> [c])
+          $ any (\v -> preview _ContentControlSymbol v == Just c) contents
+    )
+    ("\\{}" :: String)
+  testEquality d
 
 coverEnum :: (MonadTest f, Show a, Eq a, Bounded a, Enum a) => a -> f ()
 coverEnum v = traverse_ (\x -> cover minCover (labelName v) (x == v)) values

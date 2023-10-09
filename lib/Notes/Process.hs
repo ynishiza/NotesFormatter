@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
 module Notes.Process (
   mapColor,
   mapPlainText,
@@ -5,10 +7,12 @@ module Notes.Process (
   applyTextMap,
   applyColorMap,
   applyFontMap,
+  ProcessError (..),
   module X,
 ) where
 
 import Control.Arrow (second)
+import Control.Exception (Exception)
 import Control.Lens (view)
 import Control.Monad.Reader
 import Data.Text qualified as T
@@ -16,6 +20,10 @@ import Notes.Config as X
 import Notes.File.RTF
 import Notes.RTFDoc.Render
 import Notes.RTFDoc.Types as X
+
+data ProcessError = TextMapError String
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (Exception)
 
 applyColorMap :: ColorMap -> RTFDoc -> (RTFDoc, (ColorMap, [Int]))
 applyColorMap c@ColorMap{..} = second (c,) . mapColor fromColor (toColor, Just toColorSpace)
@@ -40,12 +48,14 @@ mapPlainText :: Text -> Text -> RTFDoc -> (RTFDoc, Int)
 mapPlainText pattern replacement doc@(RTFDoc{..}) = (doc{rtfDocContent = newContent}, mappedCount)
  where
   (mappedCount, newContent) = mapContent (0, rtfDocContent)
-  mapContent :: (Int, [RTFElement]) -> (Int, [RTFElement])
-  mapContent (count :: Int, RTFText text : rest) =
+  -- mapContent :: (Int, [RTFElement]) -> (Int, [RTFElement])
+  -- mapContent (count :: Int, RTFText text : rest) =
+  mapContent :: (Int, [RTFDocContent]) -> (Int, [RTFDocContent])
+  mapContent (count :: Int, ContentText text : rest) =
     let
       (count', text') = if T.isInfixOf pattern text then (count + 1, T.replace pattern replacement text) else (count, text)
      in
-      second (RTFText text' :) $ mapContent (count', rest)
+      second (ContentText text' :) $ mapContent (count', rest)
   mapContent (count, x : rest) = second (x :) $ mapContent (count, rest)
   mapContent (count, []) = (count, [])
 

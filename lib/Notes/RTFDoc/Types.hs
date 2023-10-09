@@ -7,6 +7,12 @@ module Notes.RTFDoc.Types (
   FontInfo (..),
   Charset (..),
   RTFDoc (..),
+  RTFDocContent (..),
+  rtfElementToDocContent,
+  rtfElementToDocContent_,
+  escapedSequenceChar,
+  escapedSequenceRenderHex,
+  escapedSequenceReadHex,
   allFontFamilies,
   -- Lens
   _rtfCharset,
@@ -26,18 +32,27 @@ module Notes.RTFDoc.Types (
   _ExpandedColorTbl,
   _RTFDoc,
   _RTFHeader,
+  _ContentControlSymbol,
+  _ContentControlWord,
+  _ContentGroup,
+  _ContentText,
+  _ContentEscapedSequence,
   --
   module X,
 ) where
 
+import Data.Char (toLower)
+import Data.Text qualified as T
 import Data.Word
 import Notes.RTF.Types as X
 import Notes.RTFDoc.ExtensionTypes as X
 import Notes.Utils as X
+import Numeric (readHex)
+import Text.Printf (printf)
 
 data RTFDoc = RTFDoc
   { rtfDocHeader :: RTFHeader
-  , rtfDocContent :: [RTFElement]
+  , rtfDocContent :: [RTFDocContent]
   }
   deriving stock (Eq, Show, Generic)
 
@@ -76,6 +91,36 @@ allFontFamilies = [minBound .. maxBound]
 newtype Charset = Ansi Int
   deriving stock (Eq, Show, Generic)
 
+data RTFDocContent
+  = ContentControlSymbol Char
+  | ContentControlWord RTFControlPrefix Text RTFControlSuffix
+  | ContentGroup [RTFDocContent]
+  | ContentText Text
+  | ContentEscapedSequence Word8
+  deriving stock (Eq, Show, Generic)
+
+escapedSequenceChar :: Char
+escapedSequenceChar = '\''
+
+escapedSequenceRenderHex :: Word8 -> String
+escapedSequenceRenderHex = (toLower <$>) . printf "%02x"
+
+escapedSequenceReadHex :: Text -> Maybe (Word8, Text)
+escapedSequenceReadHex text = case readHex @Word8 (T.unpack hexText) of
+  [(n, "")] -> Just (n, rest)
+  _ -> Nothing
+ where
+  (hexText, rest) = T.splitAt 2 text
+
+rtfElementToDocContent :: RTFElement -> RTFDocContent
+rtfElementToDocContent = rtfElementToDocContent_ rtfElementToDocContent
+
+rtfElementToDocContent_ :: (RTFElement -> RTFDocContent) -> RTFElement -> RTFDocContent
+rtfElementToDocContent_ _ (RTFText t) = ContentText t
+rtfElementToDocContent_ _ (RTFControlSymbol c) = ContentControlSymbol c
+rtfElementToDocContent_ _ (RTFControlWord prefix name suffix) = ContentControlWord prefix name suffix
+rtfElementToDocContent_ f (RTFGroup x) = ContentGroup $ f <$> x
+
 $(makeLensesWith dataLensRules ''FontInfo)
 $(makeLensesWith dataLensRules ''RTFHeader)
 $(makeLensesWith dataLensRules ''RTFDoc)
@@ -85,3 +130,4 @@ $(makePrisms ''FontFamily)
 $(makePrisms ''FontTbl)
 $(makePrisms ''ColorTbl)
 $(makePrisms ''ExpandedColorTbl)
+$(makePrisms ''RTFDocContent)

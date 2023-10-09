@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use $>" #-}
 
 module Notes.RTFDoc.ToRTFDoc (
@@ -15,9 +16,11 @@ module Notes.RTFDoc.ToRTFDoc (
 import Control.Lens
 import Control.Monad
 import Data.List (intersperse)
+import Data.List.NonEmpty qualified as N
+import Data.Set qualified as S
 import Data.Text qualified as T
-import Notes.RTF.ElementParser
 import Notes.RTF.Convert
+import Notes.RTF.ElementParser
 import Notes.RTFDoc.Types
 import Text.Megaparsec
 
@@ -49,7 +52,46 @@ class ToRTFDoc c where
   toRTFDoc :: ElementParser c
 
 instance ToRTFDoc RTFDoc where
-  toRTFDoc = rtfGroup "RTFDoc" $ RTFDoc <$> toRTFDoc @RTFHeader <*> takeRest
+  toRTFDoc = rtfGroup "RTFDoc" (RTFDoc <$> toRTFDoc @RTFHeader <*> toRTFDoc)
+
+instance ToRTFDoc [RTFDocContent] where
+  toRTFDoc = some toRTFDoc
+
+instance ToRTFDoc RTFDocContent where
+  toRTFDoc = try $ escape <|> anySymbol <|> anyWord <|> anyText <|> anyGroup
+   where
+    anySymbol =
+      rtfSymbol
+        (\c -> if c /= '\'' then Right (ContentControlSymbol c) else Left (Label $ N.fromList "Non-escape symbol"))
+        <?> "ContentControlSymbol"
+    anyWord = rtfControlWord (\x y z -> Right $ ContentControlWord x y z) <?> "ContentWord"
+    anyText = ContentText <$> rtfText Right <?> "ContentText"
+    anyGroup = ContentGroup <$> rtfGroup "ContentGroup" (some $ toRTFDoc @RTFDocContent) <?> "ContentGroup"
+    escape = do
+      _ <- rtfSymbol_ '\''
+
+      -- note: need to get the state since we need to peek the next RTFText and take only the hex part,
+      -- and put the rest back
+      State{..} <- getParserState
+      let
+        err = TrivialError stateOffset Nothing (S.singleton $ Label $ N.fromList "bad")
+        handleError = registerParseError err >> parseError err
+      case stateInput of
+        (RTFText text : rest) -> case readEscapedSequence text of
+          Nothing -> handleError
+          Just (escaped, Just text') -> do
+              updateParserState (\s -> s{stateInput = text' : rest})
+              return escaped
+          Just (escaped, Nothing) -> do
+              updateParserState (\s -> s{stateInput = rest, stateOffset = stateOffset + 1})
+              return escaped
+        _ -> handleError
+
+    readEscapedSequence :: Text -> Maybe (RTFDocContent, Maybe RTFElement)
+    readEscapedSequence text = case escapedSequenceReadHex text of
+      Just (n, text') -> 
+          Just (ContentEscapedSequence n, if T.null text' then Nothing else Just (RTFText text'))
+      Nothing -> Nothing
 
 instance ToRTFDoc RTFHeader where
   toRTFDoc =

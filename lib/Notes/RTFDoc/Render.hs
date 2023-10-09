@@ -24,8 +24,18 @@ instance Renderable RTFDoc where
     "{"
       <> render rtfDocHeader
       <> "\n"
-      <> T.intercalate "" (renderRTFElement <$> rtfDocContent)
+      <> render rtfDocContent
       <> "}"
+
+instance Renderable n => Renderable [n] where
+  render content = T.intercalate "" $ render <$> content
+
+instance Renderable RTFDocContent where
+  render (ContentEscapedSequence n) = T.pack $ "\\" <> [escapedSequenceChar] <> escapedSequenceRenderHex n
+  render (ContentControlSymbol c) = renderRTFElement (RTFControlSymbol c)
+  render (ContentControlWord prefix name suffix) = renderRTFElement (RTFControlWord prefix name suffix)
+  render (ContentText text) = renderRTFElement (RTFText text)
+  render (ContentGroup g) = renderRTFGroup $ T.intercalate "" (render <$> g) 
 
 instance Renderable RTFHeader where
   render (RTFHeader{..}) =

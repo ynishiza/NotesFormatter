@@ -169,7 +169,7 @@ processDocFromData name x = do
 processDoc :: Env m => Text -> RTFDoc -> m (RTFDoc, ProcessResult)
 processDoc name doc = do
   config <- asks appConfig
-  let (doc', result) = applyConfig config doc
+  (doc', result) <- applyConfig config doc
   logResult name result
   return (doc', result)
 
@@ -177,39 +177,42 @@ logResult :: forall m. Env m => Text -> ProcessResult -> m ()
 logResult name ProcessResult{..} = do
   traverse_ logColorMap resultMapColor
   traverse_ logTextMap resultMapText
+  traverse_ logFontMap resultMapFont
  where
   nameTag = "[" <> name <> "]"
   logColorMap :: (ColorMap, [Int]) -> m ()
-  logColorMap (ColorMap{..}, num) =
+  logColorMap (ColorMap{..}, num) = logCounts "ColorMap" (show fromColor) (show (toColor, toColorSpace)) num
+  logTextMap :: (TextMap, Int) -> m ()
+  logTextMap (TextMap{..}, num) = logCounts "TextMap" (T.unpack pattern) (T.unpack replacement) num
+  logFontMap (FontMap{..}, num) = logCounts "FontMap" (T.unpack fromFontName) (T.unpack $ fmFontName toFont) num
+  logCounts :: Show a => String -> String -> String -> a -> m ()
+  logCounts configName fromValue toProperty count =
     $(logDebug) $
       nameTag
         <> T.pack
-          ( "[ColorMap] "
-              <> show fromColor
+          ( "["
+              <> configName
+              <> "] "
+              <> fromValue
               <> " -> "
-              <> show (toColor, toColorSpace)
+              <> toProperty
               <> "\t\tcount:"
-              <> show num
+              <> show count
           )
-  logTextMap :: (TextMap, Int) -> m ()
-  logTextMap (TextMap{..}, num) =
-    $(logDebug) $
-      nameTag
-        <> "[TextMap] "
-        <> pattern
-        <> " -> "
-        <> replacement
-        <> "\t\tcount:"
-        <> showt num
 
-applyConfig :: Config -> RTFDoc -> (RTFDoc, ProcessResult)
+applyConfig :: MonadCatch m => Config -> RTFDoc -> m (RTFDoc, ProcessResult)
 applyConfig Config{..} doc =
   let
-    (doc', colorResult) = mapAllColors doc
-    (doc'', textResult) = mapAllTexts doc'
-    (doc''', fontResult) = mapAllFonts doc''
+    res :: Either ProcessError (RTFDoc, ProcessResult)
+    res = do 
+      (doc', colorResult) <- pure $ mapAllColors doc
+      (doc'', textResult) <- pure $ mapAllTexts doc'
+      (doc''', fontResult) <- pure $ mapAllFonts doc''
+      return (doc''', ProcessResult colorResult textResult fontResult)
    in
-    (doc''', ProcessResult colorResult textResult fontResult)
+    case res of 
+      Right v -> return v
+      Left e -> throwM e
  where
   mapAllColors d = foldr (\cfg (d', result) -> second (: result) (applyColorMap cfg d')) (d, []) cfgColorMap
   mapAllTexts d = foldr (\cfg (d', result) -> second (: result) (applyTextMap cfg d')) (d, []) cfgTextMap

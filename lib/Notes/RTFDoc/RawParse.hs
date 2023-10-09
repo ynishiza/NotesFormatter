@@ -25,14 +25,6 @@ import Prelude hiding (takeWhile)
 class Generic c => Parseable c where
   parse :: Parser c
 
-instance Parseable RTFDoc where
-  parse =
-    trimNewLines
-      ( parseRTFGroupWith $
-          RTFDoc <$> trimNewLines (parse @RTFHeader) <*> parseRTFElements
-      )
-      <?> "RTFDoc"
-
 instance Parseable RTFHeader where
   parse =
     parseControlWord_ "rtf1"
