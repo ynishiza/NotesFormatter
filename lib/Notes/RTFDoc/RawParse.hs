@@ -29,7 +29,7 @@ instance Parseable RTFDoc where
   parse =
     trimNewLines
       ( parseRTFGroupWith $
-          RTFDoc <$> trimNewLines (parse @RTFHeader) <*> parseRTFContents
+          RTFDoc <$> trimNewLines (parse @RTFHeader) <*> parseRTFElements
       )
       <?> "RTFDoc"
 
@@ -158,7 +158,7 @@ parseControlWordWithValue p f = do
 parseControlWordWithValue_ :: Text -> (Text -> Int -> a) -> Parser a
 parseControlWordWithValue_ name f = parseControlWordWithValue (parseText name) f
 
-parseControlWord_ :: Text -> Parser RTFContent
+parseControlWord_ :: Text -> Parser RTFElement
 parseControlWord_ name = trimNewLines $ parseRTFControlWordBase $ parseText name
 
 parseGroupItem :: Parseable c => Parser (Maybe c)

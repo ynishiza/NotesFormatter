@@ -4,8 +4,8 @@ module Test.GenRTFDoc (
   genFontInfo,
   genColorSpace,
   genRTFHeader,
-  genRTFContentsBase,
-  genRTFContents,
+  genRTFElementsBase,
+  genRTFElements,
   genRTFNonTextContent,
   genRTFDoc,
 ) where
@@ -24,7 +24,7 @@ commonFont =
   ]
 
 genRTFDoc :: Gen RTFDoc
-genRTFDoc = RTFDoc <$> genRTFHeader <*> genRTFContents
+genRTFDoc = RTFDoc <$> genRTFHeader <*> genRTFElements
 
 genRTFHeader :: Gen RTFHeader
 genRTFHeader =
@@ -37,24 +37,24 @@ genRTFHeader =
   charset = Ansi <$> int (linear 0 10)
   color = (,) <$> genRTFColor <*> G.maybe genColorSpace
 
-genRTFContents :: Gen [RTFContent]
-genRTFContents =
+genRTFElements :: Gen [RTFElement]
+genRTFElements =
   recursive
     choice
-    [ genRTFContentsBase
+    [ genRTFElementsBase
     ]
-    [ subterm genRTFContents (\x -> [RTFGroup x])
+    [ subterm genRTFElements (\x -> [RTFGroup x])
     ]
 
-genRTFContentsBase :: Gen [RTFContent]
-genRTFContentsBase =
+genRTFElementsBase :: Gen [RTFElement]
+genRTFElementsBase =
   list (linear 1 200) (choice [genRTFNonTextContent, plainText])
     <&> clean
  where
   plainText = RTFText <$> G.text (R.constant 1 200) (G.filter isPlainChar unicodeAll)
   isPlainChar c = (c `notElem` charReserved) && isPrint c
 
-clean :: [RTFContent] -> [RTFContent]
+clean :: [RTFElement] -> [RTFElement]
 clean ((RTFText t1) : (RTFText t2) : rest) = clean $ RTFText (t1 <> " " <> t2) : rest
 -- make sure text begins with a non-alphabet delimiter
 clean ((RTFControlWord prefix n NoSuffix) : (RTFText t) : rest) = RTFControlWord prefix n NoSuffix : clean (RTFText ("!" <> t) : rest)
@@ -63,7 +63,7 @@ clean ((RTFControlWord prefix n p@(RTFControlParam _)) : (RTFText t) : rest) = R
 clean (x : xs) = x : clean xs
 clean [] = []
 
-genRTFNonTextContent :: Gen RTFContent
+genRTFNonTextContent :: Gen RTFElement
 genRTFNonTextContent =
   choice
     [ genControlWord
@@ -88,13 +88,13 @@ genRTFColor =
 genName :: Gen Text
 genName = G.text (R.constant 1 32) (G.element charExtendedControlName)
 
-genControlWord :: Gen RTFContent
+genControlWord :: Gen RTFElement
 genControlWord = genControlWordWithName genName
 
-genControlSymbol :: Gen RTFContent
+genControlSymbol :: Gen RTFElement
 genControlSymbol = Prelude.either error id . rtfControlSymbol <$> element charSymbol
 
-genControlWordWithName :: Gen Text -> Gen RTFContent
+genControlWordWithName :: Gen Text -> Gen RTFElement
 genControlWordWithName n =
   RTFControlWord
     <$> prefix

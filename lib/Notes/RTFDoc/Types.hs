@@ -37,7 +37,7 @@ import Notes.Utils as X
 
 data RTFDoc = RTFDoc
   { rtfDocHeader :: RTFHeader
-  , rtfDocContent :: [RTFContent]
+  , rtfDocContent :: [RTFElement]
   }
   deriving stock (Eq, Show, Generic)
 

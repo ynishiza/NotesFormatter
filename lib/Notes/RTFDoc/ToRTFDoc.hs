@@ -16,37 +16,37 @@ import Control.Lens
 import Control.Monad
 import Data.List (intersperse)
 import Data.Text qualified as T
-import Notes.RTF.ContentParser
+import Notes.RTF.ElementParser
 import Notes.RTF.Convert
 import Notes.RTFDoc.Types
 import Text.Megaparsec
 
 data ContentParseResult a
   = FileParseError (ParseErrorBundle Text Void)
-  | ContentParseError (ParseErrorBundle [RTFContent] RTFParseError)
+  | ContentParseError (ParseErrorBundle [RTFElement] RTFParseError)
   | Success a
   deriving (Eq, Show)
 
-parseDoc_ :: ContentParser c -> Text -> Either String c
+parseDoc_ :: ElementParser c -> Text -> Either String c
 parseDoc_ p d = case parseDoc p d of
   FileParseError e -> Left $ errorBundlePretty e
   ContentParseError e -> Left $ errorBundlePretty e
   Success doc -> Right doc
 
-parseDoc :: ContentParser c -> Text -> ContentParseResult c
-parseDoc p d = case runParser parseRTFContents "RTFContent" d of
+parseDoc :: ElementParser c -> Text -> ContentParseResult c
+parseDoc p d = case runParser parseRTFElements "RTFElement" d of
   Left e -> FileParseError e
   Right contents -> case runParser p "RTFDoc" contents of
     Left e -> ContentParseError e
     Right doc -> Success doc
 
-parseDocTest :: Show c => ContentParser c -> Text -> IO ()
+parseDocTest :: Show c => ElementParser c -> Text -> IO ()
 parseDocTest p d = case parseDoc_ p d of
   Left e -> putStrLn e
   Right doc -> print doc
 
 class ToRTFDoc c where
-  toRTFDoc :: ContentParser c
+  toRTFDoc :: ElementParser c
 
 instance ToRTFDoc RTFDoc where
   toRTFDoc = rtfGroup "RTFDoc" $ RTFDoc <$> toRTFDoc @RTFHeader <*> takeRest
@@ -140,7 +140,7 @@ instance ToRTFDoc FontInfo where
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
 
-rtfGroupWithDelims :: Text -> ContentParser c -> ContentParser c
+rtfGroupWithDelims :: Text -> ElementParser c -> ElementParser c
 rtfGroupWithDelims msg p =
   updateParserState (over _stateInput prepareGroup) >> rtfGroup msg p
  where
@@ -150,7 +150,7 @@ rtfGroupWithDelims msg p =
 charItemDelim :: Text
 charItemDelim = ";"
 
-groupItemDelimiter :: ContentParser ()
+groupItemDelimiter :: ElementParser ()
 groupItemDelimiter = rtfText_ charItemDelim *> pure ()
 
 {- |
@@ -166,7 +166,7 @@ groupItemDelimiter = rtfText_ charItemDelim *> pure ()
 
     "abc;;;"   --split-->   ["abc;", ";", ";"]
 -}
-separateDelimitedGroupItems :: Text -> [RTFContent] -> [RTFContent]
+separateDelimitedGroupItems :: Text -> [RTFElement] -> [RTFElement]
 separateDelimitedGroupItems delimiter (RTFText text : rest) =
   let
     isEmptyTerm t = t == "\n" || t == ""

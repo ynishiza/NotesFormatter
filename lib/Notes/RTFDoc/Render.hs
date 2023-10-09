@@ -24,7 +24,7 @@ instance Renderable RTFDoc where
     "{"
       <> render rtfDocHeader
       <> "\n"
-      <> T.intercalate "" (renderRTFContent <$> rtfDocContent)
+      <> T.intercalate "" (renderRTFElement <$> rtfDocContent)
       <> "}"
 
 instance Renderable RTFHeader where
@@ -72,7 +72,7 @@ instance Renderable FontInfo where
       <> name
 
 instance Renderable FontFamily where
-  render f = renderRTFContent $ RTFControlWord NoPrefix (fontFamilyText f) NoSuffix
+  render f = renderRTFElement $ RTFControlWord NoPrefix (fontFamilyText f) NoSuffix
 
 fontFamilyText :: FontFamily -> Text
 fontFamilyText = T.toLower . T.pack . show
@@ -95,10 +95,10 @@ renderControlWithLabel_ :: Text -> Text
 renderControlWithLabel_ name = renderControlWithLabel NoPrefix name NoSuffix
 
 renderControlWithLabel :: RTFControlPrefix -> Text -> RTFControlSuffix -> Text
-renderControlWithLabel prefix name suffix = renderRTFContent $ RTFControlWord prefix name suffix
+renderControlWithLabel prefix name suffix = renderRTFElement $ RTFControlWord prefix name suffix
 
 renderControlWithValue :: Integral v => Text -> v -> Text
-renderControlWithValue name v = renderRTFContent $ RTFControlWord NoPrefix name $ RTFControlParam $ fromIntegral v
+renderControlWithValue name v = renderRTFElement $ RTFControlWord NoPrefix name $ RTFControlParam $ fromIntegral v
 
 appendBlockEnd :: Text -> Text
 appendBlockEnd text = text <> charBlockEnd

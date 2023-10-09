@@ -8,21 +8,21 @@ import Control.Monad.Combinators
 import Data.Set qualified as S
 import Data.Text qualified as T
 import Notes.Process
-import Notes.RTF.ContentParser
+import Notes.RTF.ElementParser
 import Notes.RTFDoc
 import Test.Hspec hiding (runIO)
 import Text.Megaparsec
 
 spec :: Spec
 spec = describe "RTF Parsers" $ do
-  let testError :: ContentParser p -> Text -> Text -> Expectation
+  let testError :: ElementParser p -> Text -> Text -> Expectation
       testError p b expected = case parseDoc_ p b of
         Left e -> do
           T.strip (T.pack e) `shouldBe` T.strip expected
         Right _ -> expectationFailure $ "Failed to test: " <> T.unpack expected
 
   specConvert
-  describe "Notes.RTF.ContentParser" $ do
+  describe "Notes.RTF.ElementParser" $ do
     it "[error message] multiple errors" $ do
       let withError p = do
             o <- getOffset
@@ -158,7 +158,7 @@ expecting RTFControlWord * b (RTFControlParam *)
           pHash
           "\\0 abc"
           [multiline|
-RTFContent:1:2:
+RTFElement:1:2:
   |
 1 | \0 abc
   |  ^
@@ -168,7 +168,7 @@ Invalid symbol '0'
           (rtfText_ "abc" *> pHash)
           "abc\\0 abc"
           [multiline|
-RTFContent:1:5:
+RTFElement:1:5:
   |
 1 | abc\0 abc
   |     ^
@@ -520,10 +520,10 @@ specConvert = describe "Notes.RTF.Convert" $ do
         Left e -> T.strip (T.pack $ errorBundlePretty e) `shouldBe` T.strip expected
         Right _ -> expectationFailure "Expected failure"
 
-  describe "[parseRTFContents]" $ do
+  describe "[parseRTFElements]" $ do
     it "[error message] invalid symbol" $ do
       testError
-        parseRTFContents
+        parseRTFElements
         "\\9"
         [multiline|
 1:2:
@@ -534,7 +534,7 @@ Invalid symbol '9'
  |]
 
       testError
-        parseRTFContents
+        parseRTFElements
         "abc\\9"
         [multiline|
 1:5:

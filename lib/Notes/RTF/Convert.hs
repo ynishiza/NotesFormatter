@@ -13,10 +13,10 @@ module Notes.RTF.Convert (
   parseRTFControlWord,
   parseRTFControlWordBase,
   parseRTFGroupWith,
-  parseRTFContent,
-  parseRTFContents,
+  parseRTFElement,
+  parseRTFElements,
   renderRTFGroup,
-  renderRTFContent,
+  renderRTFElement,
   parseText,
   (<??>),
   skipNewLines,
@@ -49,11 +49,11 @@ controlWith = (T.pack [charControl] <>)
 (<??>) :: Parser a -> Text -> Parser a
 a <??> b = a <?> T.unpack b
 
-renderRTFContent :: RTFContent -> Text
-renderRTFContent (RTFControlSymbol symbol) = T.pack [charControl, symbol]
-renderRTFContent (RTFControlWord prefix name suffix) = renderPrefix prefix <> controlWith name <> renderSuffix suffix
-renderRTFContent (RTFGroup content) = renderRTFGroup $ T.intercalate "" $ renderRTFContent <$> content
-renderRTFContent (RTFText text) = text
+renderRTFElement :: RTFElement -> Text
+renderRTFElement (RTFControlSymbol symbol) = T.pack [charControl, symbol]
+renderRTFElement (RTFControlWord prefix name suffix) = renderPrefix prefix <> controlWith name <> renderSuffix suffix
+renderRTFElement (RTFGroup content) = renderRTFGroup $ T.intercalate "" $ renderRTFElement <$> content
+renderRTFElement (RTFText text) = text
 
 renderPrefix :: RTFControlPrefix -> Text
 renderPrefix NoPrefix = ""
@@ -67,22 +67,22 @@ renderSuffix (RTFControlParam n) = showt n
 renderRTFGroup :: Text -> Text
 renderRTFGroup t = "{" <> t <> "}"
 
-parseRTFContents :: Parser [RTFContent]
-parseRTFContents =
+parseRTFElements :: Parser [RTFElement]
+parseRTFElements =
   -- Note: newline is ignored in RTF
-  filter notNewLine <$> many (trimNewLines parseRTFContent)
+  filter notNewLine <$> many (trimNewLines parseRTFElement)
 
-notNewLine :: RTFContent -> Bool
+notNewLine :: RTFElement -> Bool
 notNewLine (RTFText "\n") = False
 notNewLine _ = True
 
-parseRTFContent :: Parser RTFContent
-parseRTFContent =
+parseRTFElement :: Parser RTFElement
+parseRTFElement =
   group
     <|> parseRTFControlWord wordName
     <|> symbol
     <|> text
-    <?> "RTFContent"
+    <?> "RTFElement"
  where
   symbol =
     (do
@@ -100,7 +100,7 @@ parseRTFContent =
     takeWhile1P (Just "name character") (inClass charExtendedControlName)
       <?> "RTFControlWord"
   group =
-    RTFGroup <$> parseRTFGroupWith (many parseRTFContent)
+    RTFGroup <$> parseRTFGroupWith (many parseRTFElement)
       <?> "RTFGroup"
   text =
     RTFText
@@ -116,10 +116,10 @@ parseRTFGroupWith :: Parser a -> Parser a
 parseRTFGroupWith p =
   try $ trimNewLines $ between (char '{') (char '}') $ trimNewLines p
 
-parseRTFControlWord :: Parser Text -> Parser RTFContent
+parseRTFControlWord :: Parser Text -> Parser RTFElement
 parseRTFControlWord name = trimNewLines $ parseRTFControlWordBase name
 
-parseRTFControlWordBase :: Parser Text -> Parser RTFContent
+parseRTFControlWordBase :: Parser Text -> Parser RTFElement
 parseRTFControlWordBase name =
   try $
     RTFControlWord

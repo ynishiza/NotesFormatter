@@ -90,11 +90,11 @@ prop_rtfHeader = property_ $ do
 prop_rtfContentOther :: Property
 prop_rtfContentOther = property_ $ do
   x <- forAll $ G.list (R.linearFrom 5 0 100) genRTFNonTextContent
-  tripping x (T.intercalate "" . (renderRTFContent <$>)) (M.parse (many parseRTFContent) "RTFContent")
+  tripping x (T.intercalate "" . (renderRTFElement <$>)) (M.parse (many parseRTFElement) "RTFElement")
 
 prop_rtfContent :: Property
 prop_rtfContent = property_ $ do
-  x <- forAll genRTFContents
+  x <- forAll genRTFElements
 
   cover 20 "Control word with trailing space" $ has (traverse . _RTFControlWord . _3 . _SpaceSuffix) x
   cover 20 "Control word with trailing symbol" $ has (traverse . _RTFControlWord . _3 . _NoSuffix) x
@@ -102,7 +102,7 @@ prop_rtfContent = property_ $ do
   cover 10 "Group" $ has (traverse . _RTFGroup) x
   cover 10 "Symbol" $ has (traverse . _RTFControlSymbol) x
   cover 10 "Text" $ has (traverse . _RTFText) x
-  tripping x (T.intercalate "" . (renderRTFContent <$>)) (M.parse (many parseRTFContent) "RTFContent")
+  tripping x (T.intercalate "" . (renderRTFElement <$>)) (M.parse (many parseRTFElement) "RTFElement")
 
 testParse :: (Show a, Eq a, Renderable a, Parseable a, Monad m) => String -> a -> PropertyT m ()
 testParse name x = tripping x render p

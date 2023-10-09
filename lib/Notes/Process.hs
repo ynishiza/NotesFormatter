@@ -40,7 +40,7 @@ mapPlainText :: Text -> Text -> RTFDoc -> (RTFDoc, Int)
 mapPlainText pattern replacement doc@(RTFDoc{..}) = (doc{rtfDocContent = newContent}, mappedCount)
  where
   (mappedCount, newContent) = mapContent (0, rtfDocContent)
-  mapContent :: (Int, [RTFContent]) -> (Int, [RTFContent])
+  mapContent :: (Int, [RTFElement]) -> (Int, [RTFElement])
   mapContent (count :: Int, RTFText text : rest) =
     let
       (count', text') = if T.isInfixOf pattern text then (count + 1, T.replace pattern replacement text) else (count, text)

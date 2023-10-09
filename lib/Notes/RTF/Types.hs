@@ -8,7 +8,7 @@ module Notes.RTF.Types (
   _RTFControlParam,
   _NoSuffix,
   --
-  RTFContent (..),
+  RTFElement (..),
   Word8,
   Text,
   RTFControlPrefix (..),
@@ -68,11 +68,11 @@ data RTFControlPrefix = StarPrefix | NoPrefix
 data RTFControlSuffix = RTFControlParam Int | SpaceSuffix | NoSuffix
   deriving stock (Eq, Show, Generic)
 
-getRtfControlSymbol :: RTFContent -> Maybe Char
+getRtfControlSymbol :: RTFElement -> Maybe Char
 getRtfControlSymbol (RTFControlSymbol s) = Just s
 getRtfControlSymbol _ = Nothing
 
-rtfControlSymbol :: Char -> Either String RTFContent
+rtfControlSymbol :: Char -> Either String RTFElement
 rtfControlSymbol c =
   if c `elem` charSymbol
     then Right $ RTFControlSymbol c
@@ -81,12 +81,12 @@ rtfControlSymbol c =
 {- |
   RTF specs in the README
 -}
-data RTFContent
+data RTFElement
   = RTFControlSymbol Char
   | RTFControlWord RTFControlPrefix Text RTFControlSuffix
-  | RTFGroup [RTFContent]
+  | RTFGroup [RTFElement]
   | RTFText Text
   deriving stock (Eq, Show, Generic)
 
-$(makePrisms ''RTFContent)
+$(makePrisms ''RTFElement)
 $(makePrisms ''RTFControlSuffix)

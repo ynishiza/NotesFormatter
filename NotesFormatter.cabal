@@ -32,8 +32,8 @@ library
       Notes.File.Base
       Notes.File.RTF
       Notes.Process
-      Notes.RTF.ContentParser
       Notes.RTF.Convert
+      Notes.RTF.ElementParser
       Notes.RTF.Types
       Notes.RTFDoc
       Notes.RTFDoc.ExtensionTypes
@@ -213,8 +213,8 @@ test-suite main-test
       Notes.File.Base
       Notes.File.RTF
       Notes.Process
-      Notes.RTF.ContentParser
       Notes.RTF.Convert
+      Notes.RTF.ElementParser
       Notes.RTF.Types
       Notes.RTFDoc
       Notes.RTFDoc.ExtensionTypes
