@@ -1,4 +1,8 @@
+# Haddock documentation
 docs
+
+# Files created by tests
+database
 file_*
-*.log
 test_workspace
+*.log

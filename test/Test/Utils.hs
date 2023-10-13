@@ -4,6 +4,8 @@ module Test.Utils (
   expectToRTFDocSuccess,
   runAppTest,
   dataPath,
+  dataBasePath,
+  dataBaseExists,
   prependToFileName,
   changePathBase,
   changeRTFFilePathBase,
@@ -11,11 +13,13 @@ module Test.Utils (
 ) where
 
 import Data.Text qualified as T
+import Language.Haskell.TH
 import Notes.App
 import Notes.RTFDoc as X
 import Notes.RTFFile
+import System.Directory
 import System.FilePath
-import Test.Hspec
+import Test.Hspec hiding (runIO)
 
 runAppTest :: App a -> IO a
 runAppTest app = do
@@ -32,7 +36,7 @@ runAppTest app = do
           [ ColorMap
               { fromColor = RTFColor (Just 226) (Just 226) (Just 226)
               , toColor = RTFColor (Just 107) (Just 0) (Just 108)
-              , toColorSpace = CSGenericRGB 41819 0 42431
+              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
               }
           ]
       , cfgTextMap =
@@ -58,6 +62,16 @@ rtfPath = dataPath </> "rtf"
 
 dataPath :: FilePath
 dataPath = basePath </> "data"
+
+dataBasePath :: FilePath
+dataBasePath = dataPath </> "database"
+
+dataBaseExists :: Bool
+dataBaseExists =
+  $( do
+      x <- runIO (doesDirectoryExist $ basePath </> "data" </> "database")
+      if x then [|True|] else [|False|]
+   )
 
 -- Note: newlines are insignificant in RTF.
 -- Hence, normalize the RTF text by removing new lines.

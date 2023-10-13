@@ -148,9 +148,9 @@ instance ToRTFDoc ColorSpace where
     gray =
       rtfControlWordLabel_ "csgray" *> (CSGray <$> value)
     cssrgb =
-      rtfControlWordLabel_ "cssrgb" *> (CSSRGB <$> value <*> value <*> value)
+      rtfControlWordLabel_ "cssrgb" *> (CSSRGB <$> value <*> value <*> value <*> optional value)
     genericrgb =
-      rtfControlWordLabel_ "csgenericrgb" *> (CSGenericRGB <$> value <*> value <*> value)
+      rtfControlWordLabel_ "csgenericrgb" *> (CSGenericRGB <$> value <*> value <*> value <*> optional value)
     value = rtfControlWordValue_ "c" id
 
 instance ToRTFDoc FontTbl where

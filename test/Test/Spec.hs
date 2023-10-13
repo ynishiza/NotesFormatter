@@ -32,7 +32,7 @@ configSpec =
     it "should parse Config" $ do
       testJSONParse
         ( Config
-            { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3)]
+            { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3 Nothing)]
             , cfgTextMap = [TextMap "====" "****"]
             , cfgFontMap = [FontMap "" (FontMapFont FNil "Papyrus")]
             }
@@ -52,8 +52,8 @@ configSpec =
     it "should parse ColorMap" $ do
       let fromColor = RTFColor Nothing (Just 0) (Just 255)
           toColor = RTFColor (Just 1) (Just 2) (Just 3)
-      testJSONParse (ColorMap fromColor toColor (CSSRGB 1 2 3)) [multiline|{ "from": { "color": [null, 0, 255] }, "to":  { "color": [1, 2, 3], "colorSpace": { "cssrgb": [1,2,3] } } } |]
-      testJSONParse (ColorMap fromColor toColor (CSGenericRGB 1 2 3)) [multiline|{ "from": { "color": [null, 0, 255] }, "to":  { "color": [1, 2, 3], "colorSpace": { "csgenericrgb": [1,2,3] } } } |]
+      testJSONParse (ColorMap fromColor toColor (CSSRGB 1 2 3 Nothing)) [multiline|{ "from": { "color": [null, 0, 255] }, "to":  { "color": [1, 2, 3], "colorSpace": { "cssrgb": [1,2,3] } } } |]
+      testJSONParse (ColorMap fromColor toColor (CSGenericRGB 1 2 3 Nothing)) [multiline|{ "from": { "color": [null, 0, 255] }, "to":  { "color": [1, 2, 3], "colorSpace": { "csgenericrgb": [1,2,3] } } } |]
       testJSONParse (ColorMap fromColor toColor (CSGray 1)) [multiline|{ "from": { "color": [null, 0, 255] }, "to":  { "color": [1, 2, 3], "colorSpace": { "csgray": 1 } } } |]
 
     it "should parse FontFamily" $ do
@@ -121,11 +121,11 @@ rtfSpec = describe "ToRTFDoc" $ do
         , rtfColors =
             [ (RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing)
             , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing)
-            , (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0))
+            , (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0 Nothing))
             , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000))
             , (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525))
-            , (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766))
-            , (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))
+            , (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766 Nothing))
+            , (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000 Nothing))
             ]
         }
 
@@ -157,13 +157,12 @@ rtfSpec = describe "ToRTFDoc" $ do
               , rtfColors =
                   [ (RTFColor{red = Nothing, green = Nothing, blue = Nothing}, Nothing)
                   , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Nothing)
-                  , (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0))
+                  , (RTFColor{red = Just 0, green = Just 0, blue = Just 0}, Just (CSSRGB 0 0 0 Nothing))
                   , (RTFColor{red = Just 255, green = Just 255, blue = Just 255}, Just (CSGray 100000))
                   , (RTFColor{red = Just 191, green = Just 191, blue = Just 191}, Just (CSGray 79525))
-                  , (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766))
-                  , (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000))
+                  , (RTFColor{red = Just 226, green = Just 226, blue = Just 226}, Just (CSGenericRGB 88766 88766 88766 Nothing))
+                  , (RTFColor{red = Just 0, green = Just 0, blue = Just 255}, Just (CSSRGB 1680 19835 100000 Nothing))
                   ]
               }
-        -- , rtfDocContent = [RTFText " a"]
         , rtfDocContent = [ContentText " a"]
         }

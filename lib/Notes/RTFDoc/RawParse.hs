@@ -135,10 +135,10 @@ instance Parseable ColorSpace where
       parseControlWord_ "csgray" *> (CSGray <$> value)
         <?> "CSGray"
     cssrgb =
-      parseControlWord_ "cssrgb" *> (CSSRGB <$> value <*> value <*> value)
+      parseControlWord_ "cssrgb" *> (CSSRGB <$> value <*> value <*> value <*> optional value)
         <?> "CSSRGB"
     genericrgb =
-      parseControlWord_ "csgenericrgb" *> (CSGenericRGB <$> value <*> value <*> value)
+      parseControlWord_ "csgenericrgb" *> (CSGenericRGB <$> value <*> value <*> value <*> optional value)
         <?> "CSGenericRGB"
     value = parseControlWordWithValue_ "c" $ \_ v -> v
 

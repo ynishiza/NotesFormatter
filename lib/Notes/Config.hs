@@ -141,6 +141,7 @@ instance FromJSON ColorMap where
                   <$> (parseIntegral "c" r <?> Index 0)
                   <*> (parseIntegral "c" g <?> Index 1)
                   <*> (parseIntegral "c" b <?> Index 2)
+                  <*> pure Nothing
             _ -> Nothing
         )
     csgeneric =
@@ -153,6 +154,7 @@ instance FromJSON ColorMap where
                   <$> (parseIntegral "c" r <?> Index 0)
                   <*> (parseIntegral "c" g <?> Index 1)
                   <*> (parseIntegral "c" b <?> Index 2)
+                  <*> pure Nothing
             _ -> Nothing
         )
     nullOrIntegral :: (Value -> Parser a) -> Value -> Parser (Maybe a)

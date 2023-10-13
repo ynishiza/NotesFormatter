@@ -79,6 +79,11 @@ prop_colorSpace = property_ $ do
     , ("CSGenericRGB B", _CSGenericRGB . _3)
     ]
 
+  cover 1 "CSSRGB without alpha" $ has (_CSSRGB . _4 . _Nothing) x
+  cover 1 "CSSRGB with alpha" $ has (_CSSRGB . _4 . _Just) x
+  cover 1 "CSGenericRGB without alpha" $ has (_CSGenericRGB . _4 . _Nothing) x
+  cover 1 "CSGenericRGB with alpha" $ has (_CSGenericRGB . _4 . _Just) x
+
   testEquality x
   isEqualToParseable x
 

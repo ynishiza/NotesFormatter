@@ -183,8 +183,8 @@ genColorSpace :: Gen ColorSpace
 genColorSpace =
   G.choice
     [ CSGray <$> value
-    , CSSRGB <$> value <*> value <*> value
-    , CSGenericRGB <$> value <*> value <*> value
+    , CSSRGB <$> value <*> value <*> value <*> G.maybe alphaValue
+    , CSGenericRGB <$> value <*> value <*> value <*> G.maybe alphaValue
     ]
  where
   value =
@@ -193,3 +193,4 @@ genColorSpace =
       , (2, return csValueMax)
       , (2, return 0)
       ]
+  alphaValue = int (R.constant 0 1000)

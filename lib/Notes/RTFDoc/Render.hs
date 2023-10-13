@@ -96,8 +96,8 @@ instance Renderable RTFColor where
 instance Renderable ColorSpace where
   render word = case word of
     CSGray v -> renderControlWithLabel_ "csgray" <> value v
-    CSSRGB r g b -> renderControlWithLabel_ "cssrgb" <> value r <> value g <> value b
-    CSGenericRGB r g b -> renderControlWithLabel_ "csgenericrgb" <> value r <> value g <> value b
+    CSSRGB r g b a -> renderControlWithLabel_ "cssrgb" <> value r <> value g <> value b <> maybe "" value a
+    CSGenericRGB r g b a -> renderControlWithLabel_ "csgenericrgb" <> value r <> value g <> value b <> maybe "" value a
    where
     value = renderControlWithValue "c"
 
