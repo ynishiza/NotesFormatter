@@ -6,12 +6,12 @@ import Data.Foldable
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text qualified as T
 import GHC.Exts (fromString)
-import Test.GenRTFDoc
 import Hedgehog
 import Hedgehog.Gen qualified as G
 import Hedgehog.Range qualified as R
 import Notes.RTFDoc
 import Notes.RTFDoc.RawParse
+import Test.GenRTFDoc
 import Text.Megaparsec qualified as M
 
 testCount :: TestLimit

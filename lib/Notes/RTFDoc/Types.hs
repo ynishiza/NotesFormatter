@@ -106,9 +106,13 @@ escapedSequenceRenderHex :: Word8 -> String
 escapedSequenceRenderHex = (toLower <$>) . printf "%02x"
 
 escapedSequenceReadHex :: Text -> Maybe (Word8, Text)
-escapedSequenceReadHex text = case readHex @Word8 (T.unpack hexText) of
-  [(n, "")] -> Just (n, rest)
-  _ -> Nothing
+escapedSequenceReadHex text =
+  if T.length text >= 2
+    then case readHex @Word8 (T.unpack hexText) of
+      [(n, "")] -> Just (n, rest)
+      _ -> Nothing
+    -- case: too short. Must be exactly two digits
+    else Nothing
  where
   (hexText, rest) = T.splitAt 2 text
 

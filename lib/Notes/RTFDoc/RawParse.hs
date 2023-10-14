@@ -16,11 +16,14 @@ import Control.Applicative hiding (many, some)
 import Control.Monad
 import Data.Functor
 import Data.Text qualified as T
-import Notes.RTF.Convert as X
+import Data.Void
+import Notes.ParserUtils
 import Notes.RTFDoc.Types as X
 import Text.Megaparsec hiding (parse)
 import Text.Megaparsec.Char
 import Prelude hiding (takeWhile)
+
+type Parser = Parsec Void Text
 
 class Generic c => Parseable c where
   parse :: Parser c
@@ -58,7 +61,7 @@ instance Parseable CocoaControl where
 
 instance Parseable FontTbl where
   parse =
-    parseRTFGroupWith content
+    trimNewLines (parseRTFGroupWith content)
       <?> "FontTbl"
    where
     content =
@@ -67,7 +70,7 @@ instance Parseable FontTbl where
 
 instance Parseable ColorTbl where
   parse =
-    parseRTFGroupWith content
+    trimNewLines (parseRTFGroupWith content)
       <?> "ColorTbl"
    where
     content =
@@ -76,7 +79,7 @@ instance Parseable ColorTbl where
 
 instance Parseable ExpandedColorTbl where
   parse =
-    parseRTFGroupWith content
+    trimNewLines (parseRTFGroupWith content)
       <?> "ExpandedColorTbl"
    where
     content =
@@ -151,7 +154,7 @@ parseControlWordWithValue_ :: Text -> (Text -> Int -> a) -> Parser a
 parseControlWordWithValue_ name f = parseControlWordWithValue (parseText name) f
 
 parseControlWord_ :: Text -> Parser RTFElement
-parseControlWord_ name = trimNewLines $ parseRTFControlWordBase $ parseText name
+parseControlWord_ name = trimNewLines $ parseRTFControlWordBase $ string name
 
 parseGroupItem :: Parseable c => Parser (Maybe c)
 parseGroupItem = (groupItemDelim >> return Nothing) <|> (Just <$> parse <* groupItemDelim)
@@ -161,3 +164,52 @@ groupItemDelim = void $ char ';' >> skipNewLines
 
 manyControls :: Parser a -> Parser [a]
 manyControls p = many (trimNewLines p)
+
+parseRTFGroupWith :: Parser a -> Parser a
+parseRTFGroupWith p =
+  trimNewLines
+    $ between
+      (char '{')
+      (char '}')
+    $ trimNewLines p
+
+parseRTFControlWord :: Parser Text -> Parser RTFElement
+parseRTFControlWord name = trimNewLines $ parseRTFControlWordBase name
+
+parseRTFControlWordBase :: Parser Text -> Parser RTFElement
+parseRTFControlWordBase name =
+  ( do
+      prefixPart <- optional prefix
+      case prefixPart of
+        -- case: with prefix
+        -- A prefix must be followed by a name so no backtrack.
+        Just x -> RTFControlWord x <$> wordName
+        -- case: without prefix
+        -- If the parser fails,
+        Nothing -> RTFControlWord NoPrefix <$> wordName
+  )
+    <*> ( trailingSpace
+            <|> (RTFControlParam <$> decimal <?> "RTFControlParam")
+            <|> return NoSuffix
+        )
+ where
+  -- )
+
+  prefix =
+    (parseControl (char '*') *> return StarPrefix)
+      <?> "RTFControlPrefix"
+  wordName = parseControl name <?> "RTFControlWord name"
+  trailingSpace =
+    char ' ' >> return SpaceSuffix
+      <?> "SpaceSuffix"
+
+-- Note: need to backtrack (i.e. try) on failure since
+-- there are multiple control types
+-- i.e. multiple terms beginning with '\'
+--
+--    \{          control symbol
+--    \froman     control word
+--    \'8e        escape sequence
+--
+parseControl :: Parser a -> Parser a
+parseControl p = try $ char charControl *> p

@@ -31,6 +31,7 @@ library
       Notes.Config
       Notes.File.Base
       Notes.File.RTF
+      Notes.ParserUtils
       Notes.Process
       Notes.RTF.Convert
       Notes.RTF.ElementParser
@@ -212,6 +213,7 @@ test-suite main-test
       Notes.Config
       Notes.File.Base
       Notes.File.RTF
+      Notes.ParserUtils
       Notes.Process
       Notes.RTF.Convert
       Notes.RTF.ElementParser

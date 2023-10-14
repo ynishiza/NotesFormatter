@@ -5,4 +5,5 @@ docs
 database
 file_*
 test_workspace
+_*.rtf
 *.log

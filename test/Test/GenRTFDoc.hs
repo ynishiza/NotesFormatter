@@ -183,8 +183,8 @@ genColorSpace :: Gen ColorSpace
 genColorSpace =
   G.choice
     [ CSGray <$> value
-    , CSSRGB <$> value <*> value <*> value <*> G.maybe alphaValue
-    , CSGenericRGB <$> value <*> value <*> value <*> G.maybe alphaValue
+    , CSSRGB <$> value <*> value <*> value <*> genMaybe alphaValue
+    , CSGenericRGB <$> value <*> value <*> value <*> genMaybe alphaValue
     ]
  where
   value =
@@ -194,3 +194,9 @@ genColorSpace =
       , (2, return 0)
       ]
   alphaValue = int (R.constant 0 1000)
+  -- note: by default maybe is
+  --    Nothing:Just = 2:1+size
+  -- i.e. mostly Justs
+  -- If size 5, then
+  --    Nothing:Just = 2:8 = 20% Nothing
+  genMaybe = G.resize 5 . G.maybe

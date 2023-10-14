@@ -4,7 +4,7 @@
 {-# HLINT ignore "Use $>" #-}
 {-# HLINT ignore "Eta reduce" #-}
 
-{-|
+{- |
   See README for RTF specs
 -}
 module Notes.RTF.Convert (
@@ -19,10 +19,6 @@ module Notes.RTF.Convert (
   renderRTFElement,
   parseText,
   (<??>),
-  skipNewLines,
-  trimNewLines,
-  notNewLine,
-  inClass,
   module X,
   Parser,
 ) where
@@ -31,23 +27,20 @@ import Control.Applicative hiding (many, some)
 import Control.Monad
 import Data.ByteString (ByteString)
 import Data.Functor
+import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Void (Void)
+import Notes.ParserUtils
 import Notes.RTF.Types as X
 import Notes.Utils as X
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (takeWhile)
-import Data.Set qualified as S
 
 type Parser = Parsec Void Text
 
 controlWith :: Text -> Text
 controlWith = (T.pack [charControl] <>)
-
-(<??>) :: Parser a -> Text -> Parser a
-a <??> b = a <?> T.unpack b
 
 renderRTFElement :: RTFElement -> Text
 renderRTFElement (RTFControlSymbol symbol) = T.pack [charControl, symbol]
@@ -69,8 +62,9 @@ renderRTFGroup t = "{" <> t <> "}"
 
 parseRTFElements :: Parser [RTFElement]
 parseRTFElements =
-  -- Note: newline is ignored in RTF
-  filter notNewLine <$> many (trimNewLines parseRTFElement)
+  trimNewLines $
+    -- Note: newline is ignored in RTF
+    filter notNewLine <$> many (trimNewLines parseRTFElement)
 
 notNewLine :: RTFElement -> Bool
 notNewLine (RTFText "\n") = False
@@ -85,22 +79,22 @@ parseRTFElement =
     <?> "RTFElement"
  where
   symbol =
-    (do
-      -- Note: wrap in 
-      c <- try $ char charControl >> satisfy (notInClass charExtendedControlName)
-      o <- getOffset
-      case rtfControlSymbol c of
-        Right v -> return v
-        Left e -> do 
-          let err = FancyError (o - 1) $ S.singleton $ ErrorFail e
-          parseError err
+    ( do
+        -- Note: Backtrack
+        c <- parseControl $ satisfy (notInClass charExtendedControlName)
+        o <- getOffset
+        case rtfControlSymbol c of
+          Right v -> return v
+          Left e -> do
+            let err = FancyError (o - 1) $ S.singleton $ ErrorFail e
+            parseError err
     )
       <?> "RTFControlSymbol"
   wordName =
     takeWhile1P (Just "name character") (inClass charExtendedControlName)
       <?> "RTFControlWord"
   group =
-    RTFGroup <$> parseRTFGroupWith (many parseRTFElement)
+    RTFGroup <$> parseRTFGroupWith parseRTFElements
       <?> "RTFGroup"
   text =
     RTFText
@@ -114,54 +108,48 @@ parseRTFElement =
 
 parseRTFGroupWith :: Parser a -> Parser a
 parseRTFGroupWith p =
-  try $ trimNewLines $ between (char '{') (char '}') $ trimNewLines p
+  between
+    (char '{')
+    (char '}')
+    $ trimNewLines p
 
 parseRTFControlWord :: Parser Text -> Parser RTFElement
 parseRTFControlWord name = trimNewLines $ parseRTFControlWordBase name
 
 parseRTFControlWordBase :: Parser Text -> Parser RTFElement
 parseRTFControlWordBase name =
-  try $
-    RTFControlWord
-      <$> prefix
-      <*> (char charControl *> name <?> "name")
-      <*> ( trailingSpace
-              <|> (RTFControlParam <$> decimal <?> "RTFControlParam")
-              <|> return NoSuffix
-          )
+  ( do
+      prefixPart <- optional prefix
+      case prefixPart of
+        -- case: with prefix
+        -- A prefix must be followed by a name so no backtrack.
+        Just x -> RTFControlWord x <$> wordName
+        -- case: without prefix
+        -- If the parser fails,
+        Nothing -> RTFControlWord NoPrefix <$> wordName
+  )
+    <*> ( trailingSpace
+            <|> (RTFControlParam <$> decimal <?> "RTFControlParam")
+            <|> return NoSuffix
+        )
  where
+  -- )
+
   prefix =
-    (string' (controlWith "*") *> return StarPrefix) <|> return NoPrefix
+    (parseControl (char '*') *> return StarPrefix)
       <?> "RTFControlPrefix"
+  wordName = parseControl name <?> "RTFControlWord name"
   trailingSpace =
     char ' ' >> return SpaceSuffix
       <?> "SpaceSuffix"
 
--- New lines are ignored in RTF
--- A new line plain text uses a RTF symbol instead
+-- Note: need to backtrack (i.e. try) on failure since
+-- there are multiple control types
+-- i.e. multiple terms beginning with '\'
 --
--- e.g.
---        \n        ignored
---        \\n       symbol \n
+--    \{          control symbol
+--    \froman     control word
+--    \'8e        escape sequence
 --
--- See README for the RTF specs.
-skipNewLines :: Parser ()
-skipNewLines = void $ takeWhileP (Just "newline") (inClass charNewline)
-
-trimNewLines :: Parser a -> Parser a
-trimNewLines p = skipNewLines *> p <* skipNewLines
-
-charBlockEnd :: Text
-charBlockEnd = ";"
-
-parseText :: Text -> Parser Text
-parseText value = string value
-
-inClass :: String -> Char -> Bool
-inClass = flip elem
-
-decimal :: Num a => Parser a
-decimal = L.signed (return ()) L.decimal
-
-notInClass :: String -> Char -> Bool
-notInClass x = not . inClass x
+parseControl :: Parser a -> Parser a
+parseControl p = try $ char charControl *> p

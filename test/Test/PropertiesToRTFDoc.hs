@@ -1,5 +1,6 @@
 module Test.PropertiesToRTFDoc (
   properties,
+  prop_rtfheader,
 ) where
 
 import Control.Lens
@@ -25,6 +26,7 @@ labelName = fromString . show
 isEqualToParseable :: forall a. (Eq a, Show a, Renderable a, ToRTFDoc a, Parseable a) => a -> PropertyT IO ()
 isEqualToParseable x = do
   let text = render x
+  annotate $ T.unpack text
   case M.parse (parse @a) "" text of
     Left e -> fail $ show e
     Right v -> case parseDoc_ (toRTFDoc @a) text of
@@ -79,10 +81,10 @@ prop_colorSpace = property_ $ do
     , ("CSGenericRGB B", _CSGenericRGB . _3)
     ]
 
-  cover 1 "CSSRGB without alpha" $ has (_CSSRGB . _4 . _Nothing) x
-  cover 1 "CSSRGB with alpha" $ has (_CSSRGB . _4 . _Just) x
-  cover 1 "CSGenericRGB without alpha" $ has (_CSGenericRGB . _4 . _Nothing) x
-  cover 1 "CSGenericRGB with alpha" $ has (_CSGenericRGB . _4 . _Just) x
+  cover 2 "CSSRGB without alpha" $ has (_CSSRGB . _4 . _Nothing) x
+  cover 2 "CSSRGB with alpha" $ has (_CSSRGB . _4 . _Just) x
+  cover 2 "CSGenericRGB without alpha" $ has (_CSGenericRGB . _4 . _Nothing) x
+  cover 2 "CSGenericRGB with alpha" $ has (_CSGenericRGB . _4 . _Just) x
 
   testEquality x
   isEqualToParseable x
@@ -102,8 +104,8 @@ prop_rtfheader = property_ $ do
   cover 1 "default font" $ not $ null $ toListOf (_rtfFontTbl . _FontTbl . each . _Nothing) x
   cover 1 "non default font" $ not $ null $ toListOf (_rtfFontTbl . _FontTbl . each . _Just) x
 
-  testEquality x
   isEqualToParseable x
+  testEquality x
 
 prop_escapedSymbol :: Property
 prop_escapedSymbol = property_ $ do
@@ -150,8 +152,8 @@ prop_rtfdoc = property_ $ do
   d@(RTFDoc _ contents) <- forAll genRTFDoc
   let fullText = T.intercalate "" $ toListOf (traverse . _ContentText) contents
 
-  cover 1 "long text" $ T.length fullText > 100
-  cover 1 "short text" $ T.length fullText < 10
+  cover 1 "long text (> 100 chars)" $ T.length fullText > 100
+  cover 1 "short text (< 10 chars)" $ T.length fullText < 10
   cover 20 "ContentControlWord" $ has (traverse . _ContentControlWord) contents
   cover 20 "ContentControlSymbol" $ has (traverse . _ContentControlSymbol) contents
   cover 20 "ContentEscapedSequence" $ has (traverse . _ContentEscapedSequence) contents

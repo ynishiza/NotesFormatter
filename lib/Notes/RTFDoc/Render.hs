@@ -12,6 +12,7 @@ import Control.Applicative
 import Control.Monad
 import Data.Functor
 import Data.Text qualified as T
+import GHC.Exts (IsString)
 import Notes.RTF.Convert as X
 import Notes.RTFDoc.Types as X
 import Prelude hiding (takeWhile)
@@ -19,11 +20,13 @@ import Prelude hiding (takeWhile)
 class Renderable c where
   render :: c -> Text
 
+endWithNewLine :: (IsString s, Monoid s) => s -> s
+endWithNewLine = (<> "\n")
+
 instance Renderable RTFDoc where
   render RTFDoc{..} =
     "{"
-      <> render rtfDocHeader
-      <> "\n"
+      <> endWithNewLine (render rtfDocHeader)
       <> render rtfDocContent
       <> "}"
 
@@ -35,16 +38,16 @@ instance Renderable RTFDocContent where
   render (ContentControlSymbol c) = renderRTFElement (RTFControlSymbol c)
   render (ContentControlWord prefix name suffix) = renderRTFElement (RTFControlWord prefix name suffix)
   render (ContentText text) = renderRTFElement (RTFText text)
-  render (ContentGroup g) = renderRTFGroup $ T.intercalate "" (render <$> g) 
+  render (ContentGroup g) = renderRTFGroup $ T.intercalate "" (render <$> g)
 
 instance Renderable RTFHeader where
   render (RTFHeader{..}) =
     renderControlWithLabel_ "rtf1"
       <> render rtfCharset
       <> T.intercalate "" (render <$> rtfCocoaControls)
-      <> render rtfFontTbl
-      <> render (ColorTbl (fst <$> rtfColors))
-      <> render (ExpandedColorTbl (snd <$> rtfColors))
+      <> endWithNewLine (render rtfFontTbl)
+      <> endWithNewLine (render (ColorTbl (fst <$> rtfColors)))
+      <> endWithNewLine (render (ExpandedColorTbl (snd <$> rtfColors)))
 
 instance Renderable Charset where
   render (Ansi n) =

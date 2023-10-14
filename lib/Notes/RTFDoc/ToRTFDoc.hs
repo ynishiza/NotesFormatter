@@ -19,6 +19,7 @@ import Data.List (intersperse)
 import Data.List.NonEmpty qualified as N
 import Data.Set qualified as S
 import Data.Text qualified as T
+import Notes.ParserUtils
 import Notes.RTF.Convert
 import Notes.RTF.ElementParser
 import Notes.RTFDoc.Types
@@ -58,11 +59,11 @@ instance ToRTFDoc [RTFDocContent] where
   toRTFDoc = some toRTFDoc
 
 instance ToRTFDoc RTFDocContent where
-  toRTFDoc = try $ escape <|> anySymbol <|> anyWord <|> anyText <|> anyGroup
+  toRTFDoc = escape <|> anySymbol <|> anyWord <|> anyText <|> anyGroup
    where
     anySymbol =
       rtfSymbol
-        (\c -> if c /= '\'' then Right (ContentControlSymbol c) else Left (Label $ N.fromList "Non-escape symbol"))
+        (\c -> if c /= '\'' then Right (ContentControlSymbol c) else Left (errorLabel "Non-escape symbol"))
         <?> "ContentControlSymbol"
     anyWord = rtfControlWord (\x y z -> Right $ ContentControlWord x y z) <?> "ContentWord"
     anyText = ContentText <$> rtfText Right <?> "ContentText"
@@ -74,24 +75,27 @@ instance ToRTFDoc RTFDocContent where
       -- and put the rest back
       State{..} <- getParserState
       let
-        err = TrivialError stateOffset Nothing (S.singleton $ Label $ N.fromList "bad")
-        handleError = registerParseError err >> parseError err
+        errorMessage = ("ContentEscapedSequence: " <>)
       case stateInput of
         (RTFText text : rest) -> case readEscapedSequence text of
-          Nothing -> handleError
+          Nothing -> parseError $ FancyError stateOffset $ S.singleton $ ErrorFail $ errorMessage $ take 2 (T.unpack text) <> " is not a valid hex"
           Just (escaped, Just text') -> do
-              updateParserState (\s -> s{stateInput = text' : rest})
-              return escaped
+            updateParserState (\s -> s{stateInput = text' : rest})
+            return escaped
           Just (escaped, Nothing) -> do
-              updateParserState (\s -> s{stateInput = rest, stateOffset = stateOffset + 1})
-              return escaped
-        _ -> handleError
+            updateParserState (\s -> s{stateInput = rest, stateOffset = stateOffset + 1})
+            return escaped
+        x : _ -> failure (Just $ Tokens $ N.singleton x) $ S.singleton $ errorLabel $ errorMessage "hex text"
+        [] -> fancyFailure $ S.singleton $ ErrorFail $ errorMessage "missing hex"
 
     readEscapedSequence :: Text -> Maybe (RTFDocContent, Maybe RTFElement)
     readEscapedSequence text = case escapedSequenceReadHex text of
-      Just (n, text') -> 
-          Just (ContentEscapedSequence n, if T.null text' then Nothing else Just (RTFText text'))
+      Just (n, text') ->
+        Just (ContentEscapedSequence n, if T.null text' then Nothing else Just (RTFText text'))
       Nothing -> Nothing
+
+errorLabel :: String -> ErrorItem t
+errorLabel = Label . N.fromList
 
 instance ToRTFDoc RTFHeader where
   toRTFDoc =
@@ -128,7 +132,7 @@ instance ToRTFDoc ExpandedColorTbl where
    where
     content =
       rtfControlWordLabel_ "expandedcolortbl"
-        *> (ExpandedColorTbl <$> many (try $ optional toRTFDoc <* groupItemDelimiter))
+        *> (ExpandedColorTbl <$> many (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc ColorTbl where
   toRTFDoc = ColorTbl <$> rtfGroupWithDelims "ColorTbl" content
@@ -143,7 +147,7 @@ instance ToRTFDoc RTFColor where
     blue = optional $ rtfControlWordValue_ "blue" (fromIntegral @Int @Word8)
 
 instance ToRTFDoc ColorSpace where
-  toRTFDoc = try $ gray <|> cssrgb <|> genericrgb
+  toRTFDoc = gray <|> cssrgb <|> genericrgb
    where
     gray =
       rtfControlWordLabel_ "csgray" *> (CSGray <$> value)
@@ -159,16 +163,15 @@ instance ToRTFDoc FontTbl where
    where
     content =
       rtfControlWordLabel_ "fonttbl"
-        *> (FontTbl <$> many (try $ optional toRTFDoc <* groupItemDelimiter))
+        *> (FontTbl <$> many (optional toRTFDoc <* groupItemDelimiter))
 
 instance ToRTFDoc FontFamily where
   toRTFDoc = choice (parseFamily <$> allColors)
    where
     allColors = [minBound .. maxBound :: FontFamily]
     parseFamily t =
-      try $
-        rtfControlWordLabel_ name
-          >> return t
+      rtfControlWordLabel_ name
+        >> return t
      where
       name = fontFamilyText t
 

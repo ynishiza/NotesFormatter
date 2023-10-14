@@ -360,6 +360,44 @@ expecting RTFText "Hello"
 |]
 
   describe "RTFDoc" $ do
+    describe "RTFDocContent" $ do
+      it "[error message] " $ do
+        -- case: non-hex text
+        testError
+          (toRTFDoc @RTFDocContent)
+          "\\'y"
+          [multiline|
+RTF:1:23:
+  |
+1 | RTFControlSymbol '\'',RTFText "y"
+  |                       ^
+ContentEscapedSequence: y is not a valid hex
+|]
+
+        -- case: too short
+        testError
+          (toRTFDoc @RTFDocContent)
+          "\\'a"
+          [multiline|
+RTF:1:23:
+  |
+1 | RTFControlSymbol '\'',RTFText "a"
+  |                       ^
+ContentEscapedSequence: a is not a valid hex
+|]
+        -- case: too short
+        testError
+          (toRTFDoc @RTFDocContent)
+          "\\'\\abc"
+          [multiline|
+RTF:1:23:
+  |
+1 | RTFControlSymbol '\'',RTFControlWord NoPrefix "abc" NoSuffix
+  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+unexpected RTFControlWord NoPrefix "abc" NoSuffix
+expecting ContentEscapedSequence: hex text
+|]
+
     describe "ColorSpace" $ do
       it "[error message] not a ColorSpace" $ do
         testError
@@ -514,16 +552,73 @@ unexpected RTFText "abc"
 expecting RTFControlWord, RTFText ";", or end of input
 |]
 
-specConvert :: SpecWith ()
+specConvert :: Spec
 specConvert = describe "Notes.RTF.Convert" $ do
-  let testError p text expected = case runParser p "" text of
-        Left e -> T.strip (T.pack $ errorBundlePretty e) `shouldBe` T.strip expected
-        Right _ -> expectationFailure "Expected failure"
+  let
+    parser = parseRTFElements <* eof
+    testError :: Parser a -> Text -> Text -> Expectation
+    testError p text expected = case runParser p "" text of
+      Left e -> T.strip (T.pack $ errorBundlePretty e) `shouldBe` T.strip expected
+      Right _ -> expectationFailure "Expected failure"
 
   describe "[parseRTFElements]" $ do
-    it "[error message] invalid symbol" $ do
+    it "[error message] word with prefix" $ do
+      -- case: no name
       testError
-        parseRTFElements
+        parser
+        "\\* abc"
+        [multiline|
+1:3:
+  |
+1 | \* abc
+  |   ^
+unexpected space
+expecting RTFControlWord name
+  |]
+
+      -- case: bad name
+      testError
+        parser
+        "\\*\\1 \\abc"
+        [multiline|
+1:4:
+  |
+1 | \*\1 \abc
+  |    ^
+unexpected '1'
+expecting RTFControlWord name
+  |]
+
+    it "[error message] invalid group" $ do
+      -- case: symbol at beginning
+      testError
+        parser
+        "{ abc"
+        [multiline|
+1:6:
+  |
+1 | { abc
+  |      ^
+unexpected end of input
+expecting '}', RTFElement, newline, or text content
+ |]
+
+      testError
+        parser
+        " abc}"
+        [multiline|
+1:5:
+  |
+1 |  abc}
+  |     ^
+unexpected '}'
+expecting RTFElement, end of input, newline, or text content
+ |]
+
+    it "[error message] invalid symbol" $ do
+      -- case: symbol at beginning
+      testError
+        parser
         "\\9"
         [multiline|
 1:2:
@@ -533,13 +628,14 @@ specConvert = describe "Notes.RTF.Convert" $ do
 Invalid symbol '9'
  |]
 
+      -- case: symbol in middle
       testError
-        parseRTFElements
-        "abc\\9"
+        parser
+        "abc\\9def"
         [multiline|
 1:5:
   |
-1 | abc\9
+1 | abc\9def
   |     ^
 Invalid symbol '9'
 |]

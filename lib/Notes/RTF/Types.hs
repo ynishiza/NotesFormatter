@@ -27,7 +27,6 @@ module Notes.RTF.Types (
   charOptionalDestination,
 ) where
 
-import Data.Char (toUpper)
 import Data.Word
 import Notes.Utils
 
@@ -56,7 +55,7 @@ charNewline :: String
 charNewline = ['\n', '\r', '\f']
 
 charNonSymbol :: String
-charNonSymbol = ['0' .. '9'] <> [charOptionalDestination] <> charExtendedControlName <> (toUpper <$> charExtendedControlName)
+charNonSymbol = ['0' .. '9'] <> [charOptionalDestination] <> charExtendedControlName
 
 -- 8 bits
 charSymbol :: String

@@ -14,9 +14,6 @@ module Notes.RTF.ElementParser (
   rtfControlWordValue,
   rtfControlWordValue_,
   rtfGroup,
-  errorToken,
-  errorLabelString,
-  errorLabelText,
   Void,
   -- lens
   _stateInput,
@@ -32,6 +29,7 @@ import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Void (Void)
 import Debug.Trace (trace)
+import Notes.ParserUtils
 import Notes.RTF.Convert
 import Text.Megaparsec
 
@@ -168,16 +166,6 @@ valueOrError _ (Right v) = return v
 valueOrError unexpectedTerm (Left e) = do
   o <- getOffset
   parseError $ TrivialError (o - 1) (Just $ errorToken unexpectedTerm) (S.singleton e)
-
-errorLabelString :: String -> ErrorItem t
-errorLabelString "" = error "errorLabelString: error label must not be empty"
-errorLabelString s = Label $ N.fromList s
-
-errorLabelText :: Text -> ErrorItem t
-errorLabelText = errorLabelString . T.unpack
-
-errorToken :: t -> ErrorItem t
-errorToken = Tokens . N.singleton
 
 satisfyWith :: Text -> (RTFElement -> Bool) -> ElementParser RTFElement
 satisfyWith expected = region mapError . satisfy
