@@ -758,6 +758,7 @@ spec =
           , ContentControlWord NoPrefix "cf" (RTFControlParam 0)
           , ContentText " "
           , ContentControlSymbol '\n'
+          -- 日本語
           , ContentEscapedSequence 147
           , ContentEscapedSequence 250
           , ContentEscapedSequence 150
@@ -770,6 +771,7 @@ spec =
           , ContentControlSymbol '\n'
           , ContentControlWord NoPrefix "f" (RTFControlParam 0)
           , ContentText " "
+          -- あいうえお
           , ContentEscapedSequence 130
           , ContentEscapedSequence 160
           , ContentEscapedSequence 130
@@ -780,6 +782,8 @@ spec =
           , ContentEscapedSequence 166
           , ContentEscapedSequence 130
           , ContentEscapedSequence 168
+          , ContentControlSymbol '\n'
+          -- かきくけこ
           , ContentEscapedSequence 130
           , ContentEscapedSequence 169
           , ContentEscapedSequence 130
@@ -838,7 +842,7 @@ spec =
               ]
           }
       )
-      "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset128 HiraginoSans-W3;\\f1\\froman\\fcharset0 TimesNewRomanPSMT;}\n{\\colortbl;\\red255\\green255\\blue255;}\n{\\*\\expandedcolortbl;;}\n\n{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \\\n\\'93\\'fa\\'96\\'7b\\'8c\\'ea\n\\f1 \\\n\\f0 \\'82\\'a0\\'82\\'a2\\'82\\'a4\\'82\\'a6\\'82\\'a8\\'82\\'a9\\'82\\'ab\\'82\\'ad\\'82\\'af\\'82\\'b1\\\n}"
+      "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset128 HiraginoSans-W3;\\f1\\froman\\fcharset0 TimesNewRomanPSMT;}\n{\\colortbl;\\red255\\green255\\blue255;}\n{\\*\\expandedcolortbl;;}\n\n{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \\\n\\'93\\'fa\\'96\\'7b\\'8c\\'ea\n\\f1 \\\n\\f0 \\'82\\'a0\\'82\\'a2\\'82\\'a4\\'82\\'a6\\'82\\'a8\\\n\\'82\\'a9\\'82\\'ab\\'82\\'ad\\'82\\'af\\'82\\'b1\\\n}"
 
     testApplyConfig
       "Table.rtf"

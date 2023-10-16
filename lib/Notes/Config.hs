@@ -5,6 +5,7 @@ module Notes.Config (
   Config (..),
   ColorMap (..),
   TextMap (..),
+  ContentMap (..),
   FontMap (..),
   FontMapFont (..),
   --
@@ -22,20 +23,25 @@ module Notes.Config (
   _toColorSpace,
   _pattern,
   _replacement,
+  _fromContents,
+  _toContents,
   _fromFontName,
   _toFont,
 ) where
 
 import Control.Lens
+import Control.Monad.Combinators (many)
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Char (toLower)
 import Data.List (intercalate)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Scientific
 import Data.Text qualified as T
 import Data.Vector qualified as V
 import GHC.Exts (IsString)
 import Notes.RTFDoc hiding (Parser)
+import Text.Megaparsec (eof)
 
 data Config = Config
   { cfgColorMap :: [ColorMap]
@@ -62,6 +68,12 @@ data TextMap = TextMap
   }
   deriving stock (Show, Eq, Generic)
 
+data ContentMap = ContentMap
+  { fromContents :: NonEmpty RTFDocContent
+  , toContents :: NonEmpty RTFDocContent
+  }
+  deriving stock (Show, Eq, Generic)
+
 data FontMapFont = FontMapFont
   { fmFamily :: FontFamily
   , fmFontName :: Text
@@ -74,12 +86,13 @@ data FontMap = FontMap
   }
   deriving stock (Show, Eq, Generic)
 
-$(makeLensesWith dataLensRules ''Config)
 $(makePrisms ''Config)
+$(makeLensesWith dataLensRules ''Config)
 $(makeLensesWith dataLensRules ''TextMap)
 $(makeLensesWith dataLensRules ''ColorMap)
 $(makeLensesWith dataLensRules ''FontMapFont)
 $(makeLensesWith dataLensRules ''FontMap)
+$(makeLensesWith dataLensRules ''ContentMap)
 
 instance FromJSON Config where
   parseJSON = genericParseJSON opts
@@ -162,6 +175,18 @@ instance FromJSON ColorMap where
     nullOrIntegral p v = Just <$> p v
 
 instance FromJSON TextMap
+
+instance FromJSON ContentMap where
+  parseJSON = withObject "" $ \obj -> do
+    ContentMap
+      <$> (((obj .: "fromContents") >>= f) <?> Key "fromContents")
+      <*> (((obj .: "toContents") >>= f) <?> Key "toContents")
+   where
+    f :: Value -> Parser (NonEmpty RTFDocContent)
+    f = withText "" $ \text -> case parseDoc_ (many (toRTFDoc @RTFDocContent) <* eof) text of
+      Right (v : rest) -> return $ v :| rest
+      Right [] -> fail "Empty"
+      Left e -> fail e
 
 instance FromJSON FontFamily where
   parseJSON = withText "Font family" $ \str -> case inverseMap showFontMapFamily str of

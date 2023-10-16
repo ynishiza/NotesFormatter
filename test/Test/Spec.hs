@@ -7,6 +7,7 @@ module Test.Spec (
 ) where
 
 import Data.ByteString.Char8 qualified as B
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text.Encoding
 import Notes.App
 import Test.Hspec hiding (runIO)
@@ -92,6 +93,51 @@ configSpec =
       testJSONParseFail @FontMap "Error in $: parsing Notes.Config.FontMap(FontMap) failed, key \"toFont\" not found" [multiline|{ "fromFontName": "Arial"  } |]
       testJSONParseFail @FontMap "Error in $.toFont: parsing Notes.Config.FontMapFont(FontMapFont) failed, key \"family\" not found" [multiline|{ "fromFontName": "Arial", "toFont" : {}  } |]
       testJSONParseFail @FontMap "Error in $.toFont: parsing Notes.Config.FontMapFont(FontMapFont) failed, unknown fields: [\"a\"]" [multiline|{ "fromFontName": "Arial", "toFont" : { "family": "roman", "fontName": "HelveticaNeue", "a": 0 }  } |]
+
+    it "should parse ContentMap" $ do
+      testJSONParse
+        ( ContentMap
+            { fromContents = ContentText "abc" :| []
+            , toContents = ContentText "def" :| []
+            }
+        )
+        [multiline|{ "fromContents": "abc", "toContents": "def" } |]
+
+      testJSONParse
+        ( ContentMap
+            { fromContents =
+                ContentEscapedSequence 130
+                  :| [ ContentEscapedSequence 160
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 162
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 164
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 166
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 168
+                     ]
+            , toContents =
+                ContentEscapedSequence 130
+                  :| [ ContentEscapedSequence 169
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 171
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 173
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 175
+                     , ContentEscapedSequence 130
+                     , ContentEscapedSequence 177
+                     ]
+            }
+        )
+        -- あいうえお   -->     かきくけこ
+        [multiline|{ "fromContents": "\\'82\\'a0\\'82\\'a2\\'82\\'a4\\'82\\'a6\\'82\\'a8", "toContents": "\\'82\\'a9\\'82\\'ab\\'82\\'ad\\'82\\'af\\'82\\'b1" } |]
+
+    it "[error message] ContentMap" $ do
+      testJSONParseFail @ContentMap "Error in $.fromContents: Empty" [multiline|{ "fromContents": "", "toContents": ""  } |]
+      testJSONParseFail @ContentMap "Error in $.toContents: Empty" [multiline|{ "fromContents": "a", "toContents": ""  } |]
+      testJSONParseFail @ContentMap "Error in $.fromContents: RTFElement:1:4:\n  |\n1 | {\\a\n  |    ^\nunexpected end of input\nexpecting '}', RTFControlParam, RTFElement, SpaceSuffix, name character, or newline\n" [multiline|{ "fromContents": "{\\a", "toContents": ""  } |]
 
 rtfSpec :: Spec
 rtfSpec = describe "ToRTFDoc" $ do
