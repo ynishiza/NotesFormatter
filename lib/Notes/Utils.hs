@@ -85,4 +85,6 @@ inverseMap :: forall v s. (Bounded v, Enum v, Eq s) => (v -> s) -> s -> Maybe v
 inverseMap showValue s = foldr (\v result -> result <|> valueIfShowMatch v) Nothing allValues
  where
   allValues = [minBound @v .. maxBound]
-  valueIfShowMatch v = if showValue v == s then Just v else Nothing
+  valueIfShowMatch v
+    | showValue v == s = Just v
+    | otherwise = Nothing

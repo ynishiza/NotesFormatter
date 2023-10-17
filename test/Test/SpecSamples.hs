@@ -18,7 +18,7 @@ import Test.Hspec hiding (runIO)
 import Test.Utils
 
 expectedRTFFiles :: Int
-expectedRTFFiles = 55
+expectedRTFFiles = 49
 
 expectedRTFDFiles :: Int
 expectedRTFDFiles = 17

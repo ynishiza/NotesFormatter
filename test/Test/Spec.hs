@@ -7,7 +7,6 @@ module Test.Spec (
 ) where
 
 import Data.ByteString.Char8 qualified as B
-import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text.Encoding
 import Notes.App
 import Test.Hspec hiding (runIO)
@@ -35,6 +34,7 @@ configSpec =
         ( Config
             { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3 Nothing)]
             , cfgTextMap = [TextMap "====" "****"]
+            , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
             , cfgFontMap = [FontMap "" (FontMapFont FNil "Papyrus")]
             }
         )
@@ -45,6 +45,9 @@ configSpec =
   ],
   "textMap": [
     { "pattern": "====", "replacement": "****" }
+  ],
+  "contentMap": [
+    { "fromContents": "\\'85", "toContents": "..." }
   ],
   "fontMap": [{ "fromFontName": "", "toFont": {"family": "nil", "fontName": "Papyrus"}}]
 }

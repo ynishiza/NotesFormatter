@@ -1,12 +1,15 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use newtype instead of data" #-}
 module Notes.Process (
   mapColor,
   mapPlainText,
+  mapContents,
   mapFontName,
   applyTextMap,
   applyColorMap,
   applyFontMap,
+  applyContentMap,
   ProcessError (..),
   module X,
 ) where
@@ -15,6 +18,9 @@ import Control.Arrow (second)
 import Control.Exception (Exception)
 import Control.Lens (view)
 import Control.Monad.Reader
+import Data.List (intercalate)
+import Data.List.Extra (splitOn)
+import Data.List.NonEmpty qualified as N
 import Data.Text qualified as T
 import Notes.Config as X
 import Notes.File.RTF
@@ -31,6 +37,9 @@ applyColorMap c@ColorMap{..} = second (c,) . mapColor fromColor (toColor, Just t
 applyTextMap :: TextMap -> RTFDoc -> (RTFDoc, (TextMap, Int))
 applyTextMap t@TextMap{..} = second (t,) . mapPlainText pattern replacement
 
+applyContentMap :: ContentMap -> RTFDoc -> (RTFDoc, (ContentMap, Int))
+applyContentMap m@ContentMap{..} = second (m,) . mapContents fromContents toContents
+
 applyFontMap :: FontMap -> RTFDoc -> (RTFDoc, (FontMap, [Int]))
 applyFontMap t@FontMap{..} = second (t,) . mapFontName fromFontName toFont
 
@@ -39,25 +48,32 @@ mapColor colorToMatch newColorSpec doc@(RTFDoc{..}) = (doc{rtfDocHeader = rtfDoc
  where
   (newColors, replacedColorIndexes) = mapMatches' f (rtfColors rtfDocHeader)
    where
-    f (color, _) =
-      if color == colorToMatch
-        then Just newColorSpec
-        else Nothing
+    f (color, _)
+      | color == colorToMatch = Just newColorSpec
+      | otherwise = Nothing
 
 mapPlainText :: Text -> Text -> RTFDoc -> (RTFDoc, Int)
 mapPlainText pattern replacement doc@(RTFDoc{..}) = (doc{rtfDocContent = newContent}, mappedCount)
  where
   (mappedCount, newContent) = mapContent (0, rtfDocContent)
-  -- mapContent :: (Int, [RTFElement]) -> (Int, [RTFElement])
-  -- mapContent (count :: Int, RTFText text : rest) =
   mapContent :: (Int, [RTFDocContent]) -> (Int, [RTFDocContent])
   mapContent (count :: Int, ContentText text : rest) =
     let
-      (count', text') = if T.isInfixOf pattern text then (count + 1, T.replace pattern replacement text) else (count, text)
+      (count', text')
+        | T.isInfixOf pattern text = (count + 1, T.replace pattern replacement text)
+        | otherwise = (count, text)
      in
       second (ContentText text' :) $ mapContent (count', rest)
   mapContent (count, x : rest) = second (x :) $ mapContent (count, rest)
   mapContent (count, []) = (count, [])
+
+mapContents :: NonEmpty RTFDocContent -> NonEmpty RTFDocContent -> RTFDoc -> (RTFDoc, Int)
+mapContents (x :| xs) toContents doc@RTFDoc{..} =
+  ( doc{rtfDocContent = intercalate (N.toList toContents) sp}
+  , length sp - 1
+  )
+ where
+  sp = splitOn (x : xs) rtfDocContent
 
 mapFontName :: Text -> FontMapFont -> RTFDoc -> (RTFDoc, [Int])
 mapFontName oldName (FontMapFont{..}) doc@(RTFDoc{..}) =

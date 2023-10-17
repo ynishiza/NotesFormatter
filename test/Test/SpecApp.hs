@@ -57,6 +57,7 @@ spec =
           ( Config
               { cfgColorMap = [ColorMap (RTFColor (Just 226) (Just 226) (Just 226)) (RTFColor (Just 230) (Just 230) (Just 230)) (CSSRGB 1 2 3 Nothing)]
               , cfgTextMap = [TextMap "a" "b"]
+              , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
               , cfgFontMap = [FontMap "HelveticaNeue" (FontMapFont FRoman "TimesNewRomanPSMT")]
               }
           )
@@ -280,6 +281,7 @@ spec =
                 , [0]
                 )
               ]
+          , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
           }
       )
       "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\froman\\fcharset0 TimesNewRomanPSMT;\\f1\\fswiss\\fcharset0 ArialMT;\\f2\\fnil\\fcharset0 ComicSansMS;\\f3\\fmodern\\fcharset0 CourierNewPSMT;\\f4\\fswiss\\fcharset0 Helvetica;\\f5\\froman\\fcharset0 Times-Roman;\\f6\\froman\\fcharset0 TimesNewRomanPSMT;\\f7\\fnil\\fcharset0 Verdana;}\n{\\colortbl;\\red255\\green255\\blue255;}\n{\\*\\expandedcolortbl;;}\n\n{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\pardeftab720\\qc\\partightenfactor0\\f0\\fs28 \\cf0 \\ul \\ulc0 \\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f1\\fs48 \\cf0 \\ulnone Aribl \\\n\\f2 Comic sbns\n\\f0 \\\n\\f3 Courier New\\\n\\f4 Helveticb\\\n\\f0 Helveticb Neue\\\n\\f5 Times\n\\f0 \\\n\\f6 Times New Rombn\\\n\\f7 Verdbnb\n\\f0 \\\n\\\n\\\nAndble Mono\\\nMonbco}"
@@ -287,90 +289,140 @@ spec =
     testApplyConfig
       "Color.rtf"
       ( RTFDoc
-          (
-
-        RTFHeader {
-                   rtfCharset = Ansi 1252,
-                   rtfCocoaControls = [CocoaControl "rtf" (Just 2639), CocoaControl "textscaling" (Just 0), CocoaControl "platform" (Just 0)],
-                   rtfFontTbl = FontTbl [Just FontInfo {
-                   fontNum = 0,
-                   fontFamily = FRoman,
-                   fontCharset = Just 0,
-                   fontName = "TimesNewRomanPSMT"
-                 }, Just FontInfo {
-                   fontNum = 1,
-                   fontFamily = FNil,
-                   fontCharset = Just 0,
-                   fontName = "Monaco"
-                 }, Just FontInfo {
-                   fontNum = 2,
-                   fontFamily = FNil,
-                   fontCharset = Just 0,
-                   fontName = "HelveticaNeue-Bold"
-                 }],
-                   rtfColors = [(RTFColor {
-                   red = Nothing,
-                   green = Nothing,
-                   blue = Nothing
-                 }, Nothing), (RTFColor {
-                   red = Just 255,
-                   green = Just 255,
-                   blue = Just 255
-                 }, Nothing), (RTFColor {
-                   red = Just 0,
-                   green = Just 0,
-                   blue = Just 0
-                 }, Just (CSSRGB 0 0 0 Nothing)), (RTFColor {
-                   red = Just 255,
-                   green = Just 255,
-                   blue = Just 255
-                 }, Just (CSGray 100000)), (RTFColor {
-                   red = Just 230,
-                   green = Just 230,
-                   blue = Just 230
-                 }, Just (CSSRGB 1 2 3 Nothing)), (RTFColor {
-                   red = Just 217,
-                   green = Just 11,
-                   blue = Just 5
-                 }, Just (CSSRGB 88946 14202 0 Nothing)), (RTFColor {
-                   red = Just 217,
-                   green = Just 11,
-                   blue = Just 5
-                 }, Just (CSSRGB 88946 14202 0 (Just 50000)))]
-                 }
+          ( RTFHeader
+              { rtfCharset = Ansi 1252
+              , rtfCocoaControls = [CocoaControl "rtf" (Just 2639), CocoaControl "textscaling" (Just 0), CocoaControl "platform" (Just 0)]
+              , rtfFontTbl =
+                  FontTbl
+                    [ Just
+                        FontInfo
+                          { fontNum = 0
+                          , fontFamily = FRoman
+                          , fontCharset = Just 0
+                          , fontName = "TimesNewRomanPSMT"
+                          }
+                    , Just
+                        FontInfo
+                          { fontNum = 1
+                          , fontFamily = FNil
+                          , fontCharset = Just 0
+                          , fontName = "Monaco"
+                          }
+                    , Just
+                        FontInfo
+                          { fontNum = 2
+                          , fontFamily = FNil
+                          , fontCharset = Just 0
+                          , fontName = "HelveticaNeue-Bold"
+                          }
+                    ]
+              , rtfColors =
+                  [
+                    ( RTFColor
+                        { red = Nothing
+                        , green = Nothing
+                        , blue = Nothing
+                        }
+                    , Nothing
+                    )
+                  ,
+                    ( RTFColor
+                        { red = Just 255
+                        , green = Just 255
+                        , blue = Just 255
+                        }
+                    , Nothing
+                    )
+                  ,
+                    ( RTFColor
+                        { red = Just 0
+                        , green = Just 0
+                        , blue = Just 0
+                        }
+                    , Just (CSSRGB 0 0 0 Nothing)
+                    )
+                  ,
+                    ( RTFColor
+                        { red = Just 255
+                        , green = Just 255
+                        , blue = Just 255
+                        }
+                    , Just (CSGray 100000)
+                    )
+                  ,
+                    ( RTFColor
+                        { red = Just 230
+                        , green = Just 230
+                        , blue = Just 230
+                        }
+                    , Just (CSSRGB 1 2 3 Nothing)
+                    )
+                  ,
+                    ( RTFColor
+                        { red = Just 217
+                        , green = Just 11
+                        , blue = Just 5
+                        }
+                    , Just (CSSRGB 88946 14202 0 Nothing)
+                    )
+                  ,
+                    ( RTFColor
+                        { red = Just 217
+                        , green = Just 11
+                        , blue = Just 5
+                        }
+                    , Just (CSSRGB 88946 14202 0 (Just 50000))
+                    )
+                  ]
+              }
           )
-          
-              [ContentGroup [ContentControlWord NoPrefix "info" NoSuffix,ContentGroup [ContentControlWord NoPrefix "author" SpaceSuffix,ContentText "Yui Nishizawa"]],ContentControlWord NoPrefix "vieww" (RTFControlParam 11520),ContentControlWord NoPrefix "viewh" (RTFControlParam 8400),ContentControlWord NoPrefix "viewkind" (RTFControlParam 0),ContentControlWord NoPrefix "deftab" (RTFControlParam 720),ContentControlWord NoPrefix "pard" NoSuffix,ContentControlWord NoPrefix "pardeftab" (RTFControlParam 720),ContentControlWord NoPrefix "partightenfactor" (RTFControlParam 0),ContentControlWord NoPrefix "f" (RTFControlParam 0),ContentControlWord NoPrefix "fs" (RTFControlParam 28),ContentText " ",ContentControlWord NoPrefix "cf" (RTFControlParam 2),ContentText " ",ContentControlWord NoPrefix "cb" (RTFControlParam 3),ContentText " ",ContentControlWord NoPrefix "expnd" (RTFControlParam 0),ContentControlWord NoPrefix "expndtw" (RTFControlParam 0),ContentControlWord NoPrefix "kerning" (RTFControlParam 0),ContentControlSymbol '\n',ContentControlSymbol '\n',ContentControlWord NoPrefix "pard" NoSuffix,ContentControlWord NoPrefix "tx" (RTFControlParam 566),ContentControlWord NoPrefix "tx" (RTFControlParam 1133),ContentControlWord NoPrefix "tx" (RTFControlParam 1700),ContentControlWord NoPrefix "tx" (RTFControlParam 2267),ContentControlWord NoPrefix "tx" (RTFControlParam 2834),ContentControlWord NoPrefix "tx" (RTFControlParam 3401),ContentControlWord NoPrefix "tx" (RTFControlParam 3968),ContentControlWord NoPrefix "tx" (RTFControlParam 4535),ContentControlWord NoPrefix "tx" (RTFControlParam 5102),ContentControlWord NoPrefix "tx" (RTFControlParam 5669),ContentControlWord NoPrefix "tx" (RTFControlParam 6236),ContentControlWord NoPrefix "tx" (RTFControlParam 6803),ContentControlWord NoPrefix "pardeftab" (RTFControlParam 720),ContentControlWord NoPrefix "slleading" (RTFControlParam 24),ContentControlWord NoPrefix "pardirnatural" NoSuffix,ContentControlWord NoPrefix "partightenfactor" (RTFControlParam 0),ContentControlWord NoPrefix "f" (RTFControlParam 1),ContentText " ",ContentControlWord NoPrefix "cf" (RTFControlParam 2),ContentText " ",ContentControlWord NoPrefix "cb" (RTFControlParam 4),ContentText " ",ContentControlSymbol '\n',ContentText "Code block",ContentControlSymbol '\n',ContentControlSymbol '\n',ContentControlWord NoPrefix "f" (RTFControlParam 0),ContentText " ",ContentControlWord NoPrefix "cf" (RTFControlParam 0),ContentText " ",ContentControlWord NoPrefix "cb" (RTFControlParam 1),ContentText " ",ContentControlWord NoPrefix "kerning" (RTFControlParam 1),ContentControlWord NoPrefix "expnd" (RTFControlParam 0),ContentControlWord NoPrefix "expndtw" (RTFControlParam 0),ContentText " ",ContentControlSymbol '\n',ContentControlWord NoPrefix "cf" (RTFControlParam 5),ContentText " Red text",ContentControlSymbol '\n',ContentControlSymbol '\n',ContentControlWord NoPrefix "f" (RTFControlParam 2),ContentControlWord NoPrefix "b" SpaceSuffix,ContentControlWord NoPrefix "cf" (RTFControlParam 2),ContentText " ",ContentControlWord NoPrefix "cb" (RTFControlParam 6),ContentText " Red with blphb\n",ContentControlWord NoPrefix "f" (RTFControlParam 0),ContentControlWord NoPrefix "b" (RTFControlParam 0),ContentText " ",ContentControlWord NoPrefix "cf" (RTFControlParam 5),ContentText " ",ContentControlWord NoPrefix "cb" (RTFControlParam 1),ContentText " ",ContentControlSymbol '\n',ContentControlSymbol '\n',ContentControlWord NoPrefix "cf" (RTFControlParam 2),ContentText " ",ContentControlWord NoPrefix "cb" (RTFControlParam 5),ContentText " Red highlight text",ContentControlWord NoPrefix "cf" (RTFControlParam 0),ContentText " ",ContentControlWord NoPrefix "cb" (RTFControlParam 1),ContentText " ",ContentControlSymbol '\n',ContentControlSymbol '\n']
-          
-
-
+          [ContentGroup [ContentControlWord NoPrefix "info" NoSuffix, ContentGroup [ContentControlWord NoPrefix "author" SpaceSuffix, ContentText "Yui Nishizawa"]], ContentControlWord NoPrefix "vieww" (RTFControlParam 11520), ContentControlWord NoPrefix "viewh" (RTFControlParam 8400), ContentControlWord NoPrefix "viewkind" (RTFControlParam 0), ContentControlWord NoPrefix "deftab" (RTFControlParam 720), ContentControlWord NoPrefix "pard" NoSuffix, ContentControlWord NoPrefix "pardeftab" (RTFControlParam 720), ContentControlWord NoPrefix "partightenfactor" (RTFControlParam 0), ContentControlWord NoPrefix "f" (RTFControlParam 0), ContentControlWord NoPrefix "fs" (RTFControlParam 28), ContentText " ", ContentControlWord NoPrefix "cf" (RTFControlParam 2), ContentText " ", ContentControlWord NoPrefix "cb" (RTFControlParam 3), ContentText " ", ContentControlWord NoPrefix "expnd" (RTFControlParam 0), ContentControlWord NoPrefix "expndtw" (RTFControlParam 0), ContentControlWord NoPrefix "kerning" (RTFControlParam 0), ContentControlSymbol '\n', ContentControlSymbol '\n', ContentControlWord NoPrefix "pard" NoSuffix, ContentControlWord NoPrefix "tx" (RTFControlParam 566), ContentControlWord NoPrefix "tx" (RTFControlParam 1133), ContentControlWord NoPrefix "tx" (RTFControlParam 1700), ContentControlWord NoPrefix "tx" (RTFControlParam 2267), ContentControlWord NoPrefix "tx" (RTFControlParam 2834), ContentControlWord NoPrefix "tx" (RTFControlParam 3401), ContentControlWord NoPrefix "tx" (RTFControlParam 3968), ContentControlWord NoPrefix "tx" (RTFControlParam 4535), ContentControlWord NoPrefix "tx" (RTFControlParam 5102), ContentControlWord NoPrefix "tx" (RTFControlParam 5669), ContentControlWord NoPrefix "tx" (RTFControlParam 6236), ContentControlWord NoPrefix "tx" (RTFControlParam 6803), ContentControlWord NoPrefix "pardeftab" (RTFControlParam 720), ContentControlWord NoPrefix "slleading" (RTFControlParam 24), ContentControlWord NoPrefix "pardirnatural" NoSuffix, ContentControlWord NoPrefix "partightenfactor" (RTFControlParam 0), ContentControlWord NoPrefix "f" (RTFControlParam 1), ContentText " ", ContentControlWord NoPrefix "cf" (RTFControlParam 2), ContentText " ", ContentControlWord NoPrefix "cb" (RTFControlParam 4), ContentText " ", ContentControlSymbol '\n', ContentText "Code block", ContentControlSymbol '\n', ContentControlSymbol '\n', ContentControlWord NoPrefix "f" (RTFControlParam 0), ContentText " ", ContentControlWord NoPrefix "cf" (RTFControlParam 0), ContentText " ", ContentControlWord NoPrefix "cb" (RTFControlParam 1), ContentText " ", ContentControlWord NoPrefix "kerning" (RTFControlParam 1), ContentControlWord NoPrefix "expnd" (RTFControlParam 0), ContentControlWord NoPrefix "expndtw" (RTFControlParam 0), ContentText " ", ContentControlSymbol '\n', ContentControlWord NoPrefix "cf" (RTFControlParam 5), ContentText " Red text", ContentControlSymbol '\n', ContentControlSymbol '\n', ContentControlWord NoPrefix "f" (RTFControlParam 2), ContentControlWord NoPrefix "b" SpaceSuffix, ContentControlWord NoPrefix "cf" (RTFControlParam 2), ContentText " ", ContentControlWord NoPrefix "cb" (RTFControlParam 6), ContentText " Red with blphb\n", ContentControlWord NoPrefix "f" (RTFControlParam 0), ContentControlWord NoPrefix "b" (RTFControlParam 0), ContentText " ", ContentControlWord NoPrefix "cf" (RTFControlParam 5), ContentText " ", ContentControlWord NoPrefix "cb" (RTFControlParam 1), ContentText " ", ContentControlSymbol '\n', ContentControlSymbol '\n', ContentControlWord NoPrefix "cf" (RTFControlParam 2), ContentText " ", ContentControlWord NoPrefix "cb" (RTFControlParam 5), ContentText " Red highlight text", ContentControlWord NoPrefix "cf" (RTFControlParam 0), ContentText " ", ContentControlWord NoPrefix "cb" (RTFControlParam 1), ContentText " ", ContentControlSymbol '\n', ContentControlSymbol '\n']
       )
-      (ProcessResult {
-                   resultMapColor = [(ColorMap {
-                   fromColor = RTFColor {
-                   red = Just 226,
-                   green = Just 226,
-                   blue = Just 226
-                 },
-                   toColor = RTFColor {
-                   red = Just 230,
-                   green = Just 230,
-                   blue = Just 230
-                 },
-                   toColorSpace = CSSRGB 1 2 3 Nothing
-                 }, [4])],
-                   resultMapText = [(TextMap {
-                   pattern = "a",
-                   replacement = "b"
-                 }, 1)],
-                   resultMapFont = [(FontMap {
-                   fromFontName = "HelveticaNeue",
-                   toFont = FontMapFont {
-                   fmFamily = FRoman,
-                   fmFontName = "TimesNewRomanPSMT"
-                 }
-                 }, [0])]
-                 }
+      ( ProcessResult
+          { resultMapColor =
+              [
+                ( ColorMap
+                    { fromColor =
+                        RTFColor
+                          { red = Just 226
+                          , green = Just 226
+                          , blue = Just 226
+                          }
+                    , toColor =
+                        RTFColor
+                          { red = Just 230
+                          , green = Just 230
+                          , blue = Just 230
+                          }
+                    , toColorSpace = CSSRGB 1 2 3 Nothing
+                    }
+                , [4]
+                )
+              ]
+          , resultMapText =
+              [
+                ( TextMap
+                    { pattern = "a"
+                    , replacement = "b"
+                    }
+                , 1
+                )
+              ]
+          , resultMapFont =
+              [
+                ( FontMap
+                    { fromFontName = "HelveticaNeue"
+                    , toFont =
+                        FontMapFont
+                          { fmFamily = FRoman
+                          , fmFontName = "TimesNewRomanPSMT"
+                          }
+                    }
+                , [0]
+                )
+              ]
+          , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+          }
       )
       "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\froman\\fcharset0 TimesNewRomanPSMT;\\f1\\fnil\\fcharset0 Monaco;\\f2\\fnil\\fcharset0 HelveticaNeue-Bold;}\n{\\colortbl;\\red255\\green255\\blue255;\\red0\\green0\\blue0;\\red255\\green255\\blue255;\\red230\\green230\\blue230;\\red217\\green11\\blue5;\\red217\\green11\\blue5;}\n{\\*\\expandedcolortbl;;\\cssrgb\\c0\\c0\\c0;\\csgray\\c100000;\\cssrgb\\c1\\c2\\c3;\\cssrgb\\c88946\\c14202\\c0;\\cssrgb\\c88946\\c14202\\c0\\c50000;}\n\n{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\pardeftab720\\partightenfactor0\\f0\\fs28 \\cf2 \\cb3 \\expnd0\\expndtw0\\kerning0\\\n\\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f1 \\cf2 \\cb4 \\\nCode block\\\n\\\n\\f0 \\cf0 \\cb1 \\kerning1\\expnd0\\expndtw0 \\\n\\cf5 Red text\\\n\\\n\\f2\\b \\cf2 \\cb6 Red with blphb\n\\f0\\b0 \\cf5 \\cb1 \\\n\\\n\\cf2 \\cb5 Red highlight text\\cf0 \\cb1 \\\n\\\n}"
 
@@ -683,6 +735,7 @@ spec =
                 , [0]
                 )
               ]
+          , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
           }
       )
       "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\froman\\fcharset0 TimesNewRomanPSMT;\\f1\\fnil\\fcharset0 Monaco;\\f2\\fnil\\fcharset0 HelveticaNeue-Bold;}\n{\\colortbl;\\red255\\green255\\blue255;\\red0\\green0\\blue0;\\red255\\green255\\blue255;\\red230\\green230\\blue230;}\n{\\*\\expandedcolortbl;;\\cssrgb\\c0\\c0\\c0;\\csgray\\c100000;\\cssrgb\\c1\\c2\\c3;}\n\n{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\pardeftab720\\partightenfactor0\\f0\\fs28 \\cf2 \\cb3 \\expnd0\\expndtw0\\kerning0Normbl text\\\n\\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f1 \\cf2 \\cb4 \\\nCode block\\\n\\\n\\f0 \\cf0 \\cb1 \\kerning1\\expnd0\\expndtw0 \\\n\\\n\\f2\\b Bold text\n\\f0\\b0 \\\n\\ul Underline text\\\n\\ulnone \\strike \\strikec0 Strikethrough\\strike0\\striked0 \\\n\\\n\\fs96 size 48\\\n\\fs24 \\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\qj\\partightenfactor0\\cf0 justify\\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 left blign\\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\qc\\partightenfactor0\\cf0 center blign\\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\qr\\partightenfactor0\\cf0 right blign\n\\fs28 \\\n\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 \\\n}"
@@ -758,8 +811,8 @@ spec =
           , ContentControlWord NoPrefix "cf" (RTFControlParam 0)
           , ContentText " "
           , ContentControlSymbol '\n'
-          -- 日本語
-          , ContentEscapedSequence 147
+          , -- 日本語
+            ContentEscapedSequence 147
           , ContentEscapedSequence 250
           , ContentEscapedSequence 150
           , ContentEscapedSequence 123
@@ -771,8 +824,8 @@ spec =
           , ContentControlSymbol '\n'
           , ContentControlWord NoPrefix "f" (RTFControlParam 0)
           , ContentText " "
-          -- あいうえお
-          , ContentEscapedSequence 130
+          , -- あいうえお
+            ContentEscapedSequence 130
           , ContentEscapedSequence 160
           , ContentEscapedSequence 130
           , ContentEscapedSequence 162
@@ -783,8 +836,8 @@ spec =
           , ContentEscapedSequence 130
           , ContentEscapedSequence 168
           , ContentControlSymbol '\n'
-          -- かきくけこ
-          , ContentEscapedSequence 130
+          , -- かきくけこ
+            ContentEscapedSequence 130
           , ContentEscapedSequence 169
           , ContentEscapedSequence 130
           , ContentEscapedSequence 171
@@ -795,6 +848,10 @@ spec =
           , ContentEscapedSequence 130
           , ContentEscapedSequence 177
           , ContentControlSymbol '\n'
+          , -- ...
+            ContentControlWord NoPrefix "f" (RTFControlParam 1)
+          , ContentText "..."
+          , ContentText ";"
           ]
       )
       ( ProcessResult
@@ -840,9 +897,10 @@ spec =
                 , [1]
                 )
               ]
+          , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 1)]
           }
       )
-      "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset128 HiraginoSans-W3;\\f1\\froman\\fcharset0 TimesNewRomanPSMT;}\n{\\colortbl;\\red255\\green255\\blue255;}\n{\\*\\expandedcolortbl;;}\n\n{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \\\n\\'93\\'fa\\'96\\'7b\\'8c\\'ea\n\\f1 \\\n\\f0 \\'82\\'a0\\'82\\'a2\\'82\\'a4\\'82\\'a6\\'82\\'a8\\\n\\'82\\'a9\\'82\\'ab\\'82\\'ad\\'82\\'af\\'82\\'b1\\\n}"
+      "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset128 HiraginoSans-W3;\\f1\\froman\\fcharset0 TimesNewRomanPSMT;}\n{\\colortbl;\\red255\\green255\\blue255;}\n{\\*\\expandedcolortbl;;}\n\n{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \\\n\\'93\\'fa\\'96\\'7b\\'8c\\'ea\n\\f1 \\\n\\f0 \\'82\\'a0\\'82\\'a2\\'82\\'a4\\'82\\'a6\\'82\\'a8\\\n\\'82\\'a9\\'82\\'ab\\'82\\'ad\\'82\\'af\\'82\\'b1\\\n\\f1...;}"
 
     testApplyConfig
       "Table.rtf"
@@ -1598,6 +1656,7 @@ spec =
                 , [1]
                 )
               ]
+          , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
           }
       )
       "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset128 HiraginoSans-W3;\\f1\\froman\\fcharset0 TimesNewRomanPSMT;}\n{\\colortbl;\\red255\\green255\\blue255;\\red191\\green191\\blue191;}\n{\\*\\expandedcolortbl;;\\csgray\\c79525;}\n\n{\\*\\listtable{\\list\\listtemplateid1\\listhybrid{\\listlevel\\levelnfc23\\levelnfcn23\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1\\levelspace360\\levelindent0{\\*\\levelmarker \\{disc\\}}{\\leveltext\\leveltemplateid1\\'01\\uc0\\u8226 ;}{\\levelnumbers;}\\fi-360\\li720\\lin720 }{\\listlevel\\levelnfc23\\levelnfcn23\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1\\levelspace360\\levelindent0{\\*\\levelmarker \\{hyphen\\}}{\\leveltext\\leveltemplateid2\\'01\\uc0\\u8259 ;}{\\levelnumbers;}\\fi-360\\li1440\\lin1440 }{\\listname ;}\\listid1}}{\\*\\listoverridetable{\\listoverride\\listid1\\listoverridecount0\\ls1}}{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \\\ntbble\\\n\\itap1\\trowd \\taflags1 \\trgaph108\\trleft-108 \\trbrdrt\\brdrnil \\trbrdrl\\brdrnil \\trbrdrr\\brdrnil \\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx2880\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx5760\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx8640\\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f1 \\cf0 \\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Column A\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Column B\\cell \\row\\itap1\\trowd \\taflags1 \\trgaph108\\trleft-108 \\trbrdrl\\brdrnil \\trbrdrr\\brdrnil \\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx2880\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx5760\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx8640\\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Row 1\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 1\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 2\\cell \\row\\itap1\\trowd \\taflags1 \\trgaph108\\trleft-108 \\trbrdrl\\brdrnil \\trbrdrt\\brdrnil \\trbrdrr\\brdrnil \\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx2880\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx5760\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx8640\\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Row 2\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 3\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 4\\cell \\lastrow\\row\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 \\\nlist\\\n\\pard\\tx220\\tx720\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li720\\fi-720\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl0\\cf0 {\\listtext\t\\uc0\\u8226 \t}item1\\\n\\pard\\tx940\\tx1440\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li1440\\fi-1440\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl1\\cf0 {\\listtext\t\\uc0\\u8259 \t}subitem 1b\\\n{\\listtext\t\\uc0\\u8259 \t}\\\n\\pard\\tx220\\tx720\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li720\\fi-720\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl0\\cf0 {\\listtext\t\\uc0\\u8226 \t}item2\\\n\\pard\\tx940\\tx1440\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li1440\\fi-1440\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl1\\cf0 {\\listtext\t\\uc0\\u8259 \t}subitem 2b\\\n{\\listtext\t\\uc0\\u8259 \t}\\\n}"
@@ -1622,6 +1681,7 @@ spec =
               , cfgTextMap =
                   [ TextMap "==============================================================" "*****************************************************************************"
                   ]
+              , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
               , cfgFontMap = [FontMap "HelveticaNeue" (FontMapFont FRoman "TimesNewRomanPSMT")]
               }
 
@@ -1653,54 +1713,6 @@ spec =
               "/Users/yuinishizawa/Projects/NotesFormatter"
               basePath
               [
-                ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/18/Cheatsheet- New Relic.rtf"
-                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_18_Cheatsheet- New Relic.rtf"
-                , ProcessResult
-                    { resultMapColor =
-                        [
-                          ( ColorMap
-                              { fromColor =
-                                  RTFColor
-                                    { red = Just 226
-                                    , green = Just 226
-                                    , blue = Just 226
-                                    }
-                              , toColor =
-                                  RTFColor
-                                    { red = Just 107
-                                    , green = Just 0
-                                    , blue = Just 108
-                                    }
-                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
-                              }
-                          , [5]
-                          )
-                        ]
-                    , resultMapText =
-                        [
-                          ( TextMap
-                              { pattern = "=============================================================="
-                              , replacement = "*****************************************************************************"
-                              }
-                          , 2
-                          )
-                        ]
-                    , resultMapFont =
-                        [
-                          ( FontMap
-                              { fromFontName = "HelveticaNeue"
-                              , toFont =
-                                  FontMapFont
-                                    { fmFamily = FRoman
-                                    , fmFontName = "TimesNewRomanPSMT"
-                                    }
-                              }
-                          , [0]
-                          )
-                        ]
-                    }
-                )
-              ,
                 ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/18/Cheatsheet- Node.js lib Express.rtf"
                 , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_18_Cheatsheet- Node.js lib Express.rtf"
                 , ProcessResult
@@ -1746,6 +1758,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 19)]
                     }
                 )
               ,
@@ -1794,6 +1807,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -1842,6 +1856,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -1890,6 +1905,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -1938,6 +1954,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 9)]
                     }
                 )
               ,
@@ -1986,6 +2003,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2034,6 +2052,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2082,6 +2101,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2130,6 +2150,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2178,6 +2199,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2226,6 +2248,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2274,6 +2297,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 2)]
                     }
                 )
               ,
@@ -2322,6 +2346,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2370,6 +2395,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2418,6 +2444,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2466,6 +2493,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2514,6 +2542,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2562,6 +2591,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2610,6 +2640,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 1)]
                     }
                 )
               ,
@@ -2658,6 +2689,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2706,6 +2738,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2754,6 +2787,7 @@ spec =
                           , [1]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2802,6 +2836,7 @@ spec =
                           , [1]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 2)]
                     }
                 )
               ,
@@ -2850,6 +2885,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 9)]
                     }
                 )
               ,
@@ -2898,6 +2934,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -2946,6 +2983,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 12)]
                     }
                 )
               ,
@@ -2994,6 +3032,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3042,6 +3081,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3090,6 +3130,7 @@ spec =
                           , [1]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3138,6 +3179,7 @@ spec =
                           , [1]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3186,6 +3228,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3234,54 +3277,7 @@ spec =
                           , [0]
                           )
                         ]
-                    }
-                )
-              ,
-                ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/2a/Svetlana Alexievich- Chernobyl prayer.rtf"
-                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_2a_Svetlana Alexievich- Chernobyl prayer.rtf"
-                , ProcessResult
-                    { resultMapColor =
-                        [
-                          ( ColorMap
-                              { fromColor =
-                                  RTFColor
-                                    { red = Just 226
-                                    , green = Just 226
-                                    , blue = Just 226
-                                    }
-                              , toColor =
-                                  RTFColor
-                                    { red = Just 107
-                                    , green = Just 0
-                                    , blue = Just 108
-                                    }
-                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
-                              }
-                          , []
-                          )
-                        ]
-                    , resultMapText =
-                        [
-                          ( TextMap
-                              { pattern = "=============================================================="
-                              , replacement = "*****************************************************************************"
-                              }
-                          , 0
-                          )
-                        ]
-                    , resultMapFont =
-                        [
-                          ( FontMap
-                              { fromFontName = "HelveticaNeue"
-                              , toFont =
-                                  FontMapFont
-                                    { fmFamily = FRoman
-                                    , fmFontName = "TimesNewRomanPSMT"
-                                    }
-                              }
-                          , [0]
-                          )
-                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3330,6 +3326,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3378,57 +3375,11 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
-                ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/Modules- testing - Hedgehog.rtf"
-                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_Modules- testing - Hedgehog.rtf"
-                , ProcessResult
-                    { resultMapColor =
-                        [
-                          ( ColorMap
-                              { fromColor =
-                                  RTFColor
-                                    { red = Just 226
-                                    , green = Just 226
-                                    , blue = Just 226
-                                    }
-                              , toColor =
-                                  RTFColor
-                                    { red = Just 107
-                                    , green = Just 0
-                                    , blue = Just 108
-                                    }
-                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
-                              }
-                          , [5, 6]
-                          )
-                        ]
-                    , resultMapText =
-                        [
-                          ( TextMap
-                              { pattern = "=============================================================="
-                              , replacement = "*****************************************************************************"
-                              }
-                          , 0
-                          )
-                        ]
-                    , resultMapFont =
-                        [
-                          ( FontMap
-                              { fromFontName = "HelveticaNeue"
-                              , toFont =
-                                  FontMapFont
-                                    { fmFamily = FRoman
-                                    , fmFontName = "TimesNewRomanPSMT"
-                                    }
-                              }
-                          , [0]
-                          )
-                        ]
-                    }
-                )
-              ,
+              
                 ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/TestCases.rtf"
                 , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_TestCases.rtf"
                 , ProcessResult
@@ -3474,6 +3425,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3522,6 +3474,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3570,6 +3523,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3618,54 +3572,7 @@ spec =
                           , [0]
                           )
                         ]
-                    }
-                )
-              ,
-                ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/b/Cheatsheet- R packages.rtf"
-                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_b_Cheatsheet- R packages.rtf"
-                , ProcessResult
-                    { resultMapColor =
-                        [
-                          ( ColorMap
-                              { fromColor =
-                                  RTFColor
-                                    { red = Just 226
-                                    , green = Just 226
-                                    , blue = Just 226
-                                    }
-                              , toColor =
-                                  RTFColor
-                                    { red = Just 107
-                                    , green = Just 0
-                                    , blue = Just 108
-                                    }
-                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
-                              }
-                          , []
-                          )
-                        ]
-                    , resultMapText =
-                        [
-                          ( TextMap
-                              { pattern = "=============================================================="
-                              , replacement = "*****************************************************************************"
-                              }
-                          , 9
-                          )
-                        ]
-                    , resultMapFont =
-                        [
-                          ( FontMap
-                              { fromFontName = "HelveticaNeue"
-                              , toFont =
-                                  FontMapFont
-                                    { fmFamily = FRoman
-                                    , fmFontName = "TimesNewRomanPSMT"
-                                    }
-                              }
-                          , [0]
-                          )
-                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3714,6 +3621,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3762,102 +3670,7 @@ spec =
                           , [0]
                           )
                         ]
-                    }
-                )
-              ,
-                ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/b/Cheatsheet- usage.rtf"
-                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_b_Cheatsheet- usage.rtf"
-                , ProcessResult
-                    { resultMapColor =
-                        [
-                          ( ColorMap
-                              { fromColor =
-                                  RTFColor
-                                    { red = Just 226
-                                    , green = Just 226
-                                    , blue = Just 226
-                                    }
-                              , toColor =
-                                  RTFColor
-                                    { red = Just 107
-                                    , green = Just 0
-                                    , blue = Just 108
-                                    }
-                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
-                              }
-                          , []
-                          )
-                        ]
-                    , resultMapText =
-                        [
-                          ( TextMap
-                              { pattern = "=============================================================="
-                              , replacement = "*****************************************************************************"
-                              }
-                          , 0
-                          )
-                        ]
-                    , resultMapFont =
-                        [
-                          ( FontMap
-                              { fromFontName = "HelveticaNeue"
-                              , toFont =
-                                  FontMapFont
-                                    { fmFamily = FRoman
-                                    , fmFontName = "TimesNewRomanPSMT"
-                                    }
-                              }
-                          , [0]
-                          )
-                        ]
-                    }
-                )
-              ,
-                ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/b/Command [bash]- directory stack.rtf"
-                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_b_Command [bash]- directory stack.rtf"
-                , ProcessResult
-                    { resultMapColor =
-                        [
-                          ( ColorMap
-                              { fromColor =
-                                  RTFColor
-                                    { red = Just 226
-                                    , green = Just 226
-                                    , blue = Just 226
-                                    }
-                              , toColor =
-                                  RTFColor
-                                    { red = Just 107
-                                    , green = Just 0
-                                    , blue = Just 108
-                                    }
-                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
-                              }
-                          , []
-                          )
-                        ]
-                    , resultMapText =
-                        [
-                          ( TextMap
-                              { pattern = "=============================================================="
-                              , replacement = "*****************************************************************************"
-                              }
-                          , 0
-                          )
-                        ]
-                    , resultMapFont =
-                        [
-                          ( FontMap
-                              { fromFontName = "HelveticaNeue"
-                              , toFont =
-                                  FontMapFont
-                                    { fmFamily = FRoman
-                                    , fmFontName = "TimesNewRomanPSMT"
-                                    }
-                              }
-                          , [1]
-                          )
-                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3906,6 +3719,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -3954,6 +3768,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -4002,6 +3817,7 @@ spec =
                           , [1]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -4050,6 +3866,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -4098,6 +3915,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 32)]
                     }
                 )
               ,
@@ -4146,6 +3964,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -4194,6 +4013,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -4242,6 +4062,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
                     }
                 )
               ,
@@ -4290,6 +4111,7 @@ spec =
                           , [0]
                           )
                         ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 1)]
                     }
                 )
               ]
@@ -4320,21 +4142,605 @@ spec =
               timestamp
               "/Users/yuinishizawa/Projects/NotesFormatter"
               basePath
-              [ (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1a/Notes- syslog.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1a_Notes- syslog.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [5])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 1)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1a/[Network]- Network Address Translation (NAT).rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1a_[Network]- Network Address Translation (NAT).rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 0)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1f/Cheatsheet- snort v3 pulledpork.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1f_Cheatsheet- snort v3 pulledpork.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [3])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 1)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1f/Concept- Numbers - Floating point.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1f_Concept- Numbers - Floating point.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [5])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 0)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Cheatsheet- TeX-LaTeX tricks.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Cheatsheet- TeX-LaTeX tricks.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 0)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Cheatsheet- basics - Template Haskell.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Cheatsheet- basics - Template Haskell.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [5, 6])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 5)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Cheatsheet- neovim LSP usage + troubleshooting.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Cheatsheet- neovim LSP usage + troubleshooting.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 2)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Notes- Redis - Redlock.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Notes- Redis - Redlock.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 0)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/[Security]- general.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_[Security]- general.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 0)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/Cheatsheet- gpg usage-1.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_Cheatsheet- gpg usage-1.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [5])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 4)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/c/Cheatsheet- tricks - editing.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_c_Cheatsheet- tricks - editing.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 0)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/c/Tool- Stack usage.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_c_Tool- Stack usage.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [4])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 1)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/c/[Distributed systems]- CAP theorem.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_c_[Distributed systems]- CAP theorem.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 0)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [1])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Cheatsheet- macOS usage - troubleshooting.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Cheatsheet- macOS usage - troubleshooting.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 1)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Command- ssh tricks + troubleshooting.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Command- ssh tricks + troubleshooting.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [4])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 1)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Food- Olive oil - Balasmic Vinegar.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Food- Olive oil - Balasmic Vinegar.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 1)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
-              , (RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Notes- SQL.rtfd", "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Notes- SQL.rtfd", ProcessResult{resultMapColor = [(ColorMap{fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}, toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}, toColorSpace = CSGenericRGB 41819 0 42431 Nothing}, [])], resultMapText = [(TextMap{pattern = "==============================================================", replacement = "*****************************************************************************"}, 5)], resultMapFont = [(FontMap{fromFontName = "HelveticaNeue", toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}}, [0])]})
+              [
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1a/Notes- syslog.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1a_Notes- syslog.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , [5]
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 1
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1a/[Network]- Network Address Translation (NAT).rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1a_[Network]- Network Address Translation (NAT).rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 0
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1f/Cheatsheet- snort v3 pulledpork.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1f_Cheatsheet- snort v3 pulledpork.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , [3]
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 1
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/1f/Concept- Numbers - Floating point.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_1f_Concept- Numbers - Floating point.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , [5]
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 0
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 2)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Cheatsheet- TeX-LaTeX tricks.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Cheatsheet- TeX-LaTeX tricks.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 0
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Cheatsheet- basics - Template Haskell.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Cheatsheet- basics - Template Haskell.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , [5, 6]
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 5
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Cheatsheet- neovim LSP usage + troubleshooting.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Cheatsheet- neovim LSP usage + troubleshooting.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 2
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 4)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/Notes- Redis - Redlock.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_Notes- Redis - Redlock.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 0
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/4/[Security]- general.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_4_[Security]- general.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 0
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/Cheatsheet- gpg usage-1.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_Cheatsheet- gpg usage-1.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , [5]
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 4
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/c/Cheatsheet- tricks - editing.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_c_Cheatsheet- tricks - editing.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 0
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 3)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/c/Tool- Stack usage.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_c_Tool- Stack usage.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , [4]
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 1
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/c/[Distributed systems]- CAP theorem.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_c_[Distributed systems]- CAP theorem.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 0
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [1]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Cheatsheet- macOS usage - troubleshooting.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Cheatsheet- macOS usage - troubleshooting.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 1
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Command- ssh tricks + troubleshooting.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Command- ssh tricks + troubleshooting.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , [4]
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 1
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Food- Olive oil - Balasmic Vinegar.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Food- Olive oil - Balasmic Vinegar.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor =
+                                  RTFColor
+                                    { red = Just 226
+                                    , green = Just 226
+                                    , blue = Just 226
+                                    }
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 1
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
+              ,
+                ( RTFDFile
+                    "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/data/e/Notes- SQL.rtfd"
+                , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTFD/bak/10012023_0637_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTFD_data_e_Notes- SQL.rtfd"
+                , ProcessResult
+                    { resultMapColor =
+                        [
+                          ( ColorMap
+                              { fromColor = RTFColor{red = Just 226, green = Just 226, blue = Just 226}
+                              , toColor = RTFColor{red = Just 107, green = Just 0, blue = Just 108}
+                              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
+                              }
+                          , []
+                          )
+                        ]
+                    , resultMapText =
+                        [
+                          ( TextMap
+                              { pattern = "=============================================================="
+                              , replacement = "*****************************************************************************"
+                              }
+                          , 5
+                          )
+                        ]
+                    , resultMapFont =
+                        [
+                          ( FontMap
+                              { fromFontName = "HelveticaNeue"
+                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              }
+                          , [0]
+                          )
+                        ]
+                    , resultMapContent = [(ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| []), 0)]
+                    }
+                )
               ]

@@ -42,6 +42,7 @@ runAppTest app = do
       , cfgTextMap =
           [ TextMap "==============================================================" "*****************************************************************************"
           ]
+      , cfgContentMap = [ ContentMap (ContentEscapedSequence 160 :| []) (ContentText "..." :| []) ]
       , cfgFontMap = []
       }
 

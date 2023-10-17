@@ -29,6 +29,7 @@ import Control.Monad.Trans.Control
 import Data.Foldable (traverse_)
 import Data.List (intercalate)
 import Data.List.Extra (trim)
+import Data.List.NonEmpty qualified as N
 import Data.Maybe (catMaybes)
 import Data.Text qualified as T
 import Data.Time
@@ -57,6 +58,7 @@ data AppOptions = AppOptions
 data ProcessResult = ProcessResult
   { resultMapColor :: [(ColorMap, [Int])]
   , resultMapText :: [(TextMap, Int)]
+  , resultMapContent :: [(ContentMap, Int)]
   , resultMapFont :: [(FontMap, [Int])]
   }
   deriving stock (Eq, Show)
@@ -71,12 +73,7 @@ emptyAppOptions = do
       , appPattern = Nothing
       , appInteractive = False
       , appTime = timestamp
-      , appConfig =
-          Config
-            { cfgColorMap = []
-            , cfgTextMap = []
-            , cfgFontMap = []
-            }
+      , appConfig = emptyConfig
       }
 
 runApp :: FilePath -> AppOptions -> App a -> IO a
@@ -204,18 +201,28 @@ applyConfig :: MonadCatch m => Config -> RTFDoc -> m (RTFDoc, ProcessResult)
 applyConfig Config{..} doc =
   let
     res :: Either ProcessError (RTFDoc, ProcessResult)
-    res = do 
+    res = do
       (doc', colorResult) <- pure $ mapAllColors doc
       (doc'', textResult) <- pure $ mapAllTexts doc'
-      (doc''', fontResult) <- pure $ mapAllFonts doc''
-      return (doc''', ProcessResult colorResult textResult fontResult)
+      (doc''', contentResult) <- pure $ mapAllContents doc''
+      (doc'''', fontResult) <- pure $ mapAllFonts doc'''
+      return
+        ( doc''''
+        , ProcessResult
+            { resultMapColor = colorResult
+            , resultMapText = textResult
+            , resultMapContent = contentResult
+            , resultMapFont = fontResult
+            }
+        )
    in
-    case res of 
+    case res of
       Right v -> return v
       Left e -> throwM e
  where
   mapAllColors d = foldr (\cfg (d', result) -> second (: result) (applyColorMap cfg d')) (d, []) cfgColorMap
   mapAllTexts d = foldr (\cfg (d', result) -> second (: result) (applyTextMap cfg d')) (d, []) cfgTextMap
+  mapAllContents d = foldr (\cfg (d', result) -> second (: result) (applyContentMap cfg d')) (d, []) cfgContentMap
   mapAllFonts d = foldr (\cfg (d', result) -> second (: result) (applyFontMap cfg d')) (d, []) cfgFontMap
 
 resultTable :: [(SomeRTFFile, FilePath, ProcessResult)] -> String
@@ -227,8 +234,9 @@ processResultColumns =
     [ headed "Source RTF" (views _1 (withSomeRTFFile rtfFilePath))
     , headed "Backup" (views _2 id)
     , headed "ColorMap" (views _3 columnTextColorMap)
-    , headed "FontMap" (views _3 columnTextFontMap)
+    , headed "ContentMap" (views _3 columnContentMap)
     , headed "TextMap" (views _3 columnTextTextMap)
+    , headed "FontMap" (views _3 columnTextFontMap)
     ]
 
 columnTextMany :: (a -> Maybe String) -> [a] -> String
@@ -248,6 +256,12 @@ columnTextTextMap :: ProcessResult -> String
 columnTextTextMap (ProcessResult{resultMapText}) = columnTextMany single resultMapText
  where
   single (TextMap{..}, count@((> 0) -> True)) = Just $ T.unpack $ pattern <> " -> " <> replacement <> " " <> showt count
+  single _ = Nothing
+
+columnContentMap :: ProcessResult -> String
+columnContentMap (ProcessResult{resultMapContent}) = columnTextMany single resultMapContent
+ where
+  single (ContentMap{..}, count@((> 0) -> True)) = Just $ T.unpack $ render (N.toList fromContents) <> " -> " <> render (N.toList toContents) <> " " <> showt count
   single _ = Nothing
 
 columnTextFontMap :: ProcessResult -> String

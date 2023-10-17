@@ -27,6 +27,8 @@ module Notes.Config (
   _toContents,
   _fromFontName,
   _toFont,
+  -- Re-export
+  NonEmpty (..),
 ) where
 
 import Control.Lens
@@ -46,12 +48,19 @@ import Text.Megaparsec (eof)
 data Config = Config
   { cfgColorMap :: [ColorMap]
   , cfgTextMap :: [TextMap]
+  , cfgContentMap :: [ContentMap]
   , cfgFontMap :: [FontMap]
   }
   deriving stock (Show, Eq, Generic)
 
 emptyConfig :: Config
-emptyConfig = Config [] [] []
+emptyConfig =
+  Config
+    { cfgColorMap = []
+    , cfgTextMap = []
+    , cfgContentMap = []
+    , cfgFontMap = []
+    }
 
 data ColorMap = ColorMap
   { fromColor :: RTFColor

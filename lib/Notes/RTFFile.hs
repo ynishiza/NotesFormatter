@@ -78,10 +78,14 @@ rtfFromPath filePath
   | otherwise = error $ "Not an RTF or RTFD file " <> filePath
 
 rtfFile :: FilePath -> RTFFile 'RTF
-rtfFile path = if isRTF path then RTFFile path else error ("Invalid RTF path:" <> path)
+rtfFile path
+  | isRTF path = RTFFile path
+  | otherwise = error ("Invalid RTF path:" <> path)
 
 rtfdFile :: FilePath -> RTFFile 'RTFD
-rtfdFile path = if isRTFD path then RTFDFile path else error ("Invalid RTFD path:" <> path)
+rtfdFile path
+  | isRTFD path = RTFDFile path
+  | otherwise = error ("Invalid RTFD path:" <> path)
 
 rtfFilePath :: forall filetype. RTFFile filetype -> FilePath
 rtfFilePath (RTFFile path) = path
