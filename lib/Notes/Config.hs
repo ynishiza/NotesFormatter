@@ -42,7 +42,7 @@ import Data.Scientific
 import Data.Text qualified as T
 import Data.Vector qualified as V
 import GHC.Exts (IsString)
-import Notes.RTFDoc hiding (Parser)
+import Notes.RTFDoc 
 import Text.Megaparsec (eof)
 
 data Config = Config

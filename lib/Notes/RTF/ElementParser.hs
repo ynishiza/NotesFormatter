@@ -14,12 +14,6 @@ module Notes.RTF.ElementParser (
   rtfControlWordValue,
   rtfControlWordValue_,
   rtfGroup,
-  Void,
-  -- lens
-  _stateInput,
-  _stateOffset,
-  _statePosState,
-  _stateParseErrors,
 ) where
 
 import Control.Lens
@@ -27,10 +21,9 @@ import Data.List (intercalate)
 import Data.List.NonEmpty qualified as N
 import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Void (Void)
 import Debug.Trace (trace)
 import Notes.ParserUtils
-import Notes.RTF.Convert
+import Notes.RTF.Parse
 import Text.Megaparsec
 
 data RTFParseError = RTFGroupError Int RTFElement (ParseErrorBundle [RTFElement] RTFParseError)
@@ -40,10 +33,6 @@ instance Ord RTFParseError where
   RTFGroupError n _ _ <= RTFGroupError m _ _ = n <= m
 
 type ElementParser = ParsecT RTFParseError [RTFElement] Identity
-
-$(makeLensesWith dataLensRules ''State)
-$(makeLensesWith dataLensRules ''SourcePos)
-$(makeLensesWith dataLensRules ''PosState)
 
 enableDebug :: Bool
 -- enableDebug = True

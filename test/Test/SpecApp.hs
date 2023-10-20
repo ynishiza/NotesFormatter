@@ -3379,7 +3379,6 @@ spec =
                     }
                 )
               ,
-              
                 ( RTFFile "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/data/TestCases.rtf"
                 , "/Users/yuinishizawa/Projects/NotesFormatter/test_workspace/processDirRTF/bak/10142023_0541_Users_yuinishizawa_Projects_NotesFormatter_test_workspace_processDirRTF_data_TestCases.rtf"
                 , ProcessResult

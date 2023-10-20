@@ -25,20 +25,19 @@ source-repository head
 
 library
   exposed-modules:
-      CPSParser.Combinator
-      CPSParser.Types
       Notes.App
       Notes.Config
       Notes.File.Base
       Notes.File.RTF
       Notes.ParserUtils
       Notes.Process
-      Notes.RTF.Convert
       Notes.RTF.ElementParser
+      Notes.RTF.Parse
+      Notes.RTF.Render
       Notes.RTF.Types
       Notes.RTFDoc
       Notes.RTFDoc.ExtensionTypes
-      Notes.RTFDoc.RawParse
+      Notes.RTFDoc.Old.Parseable
       Notes.RTFDoc.Render
       Notes.RTFDoc.ToRTFDoc
       Notes.RTFDoc.Types
@@ -207,20 +206,19 @@ test-suite main-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      CPSParser.Combinator
-      CPSParser.Types
       Notes.App
       Notes.Config
       Notes.File.Base
       Notes.File.RTF
       Notes.ParserUtils
       Notes.Process
-      Notes.RTF.Convert
       Notes.RTF.ElementParser
+      Notes.RTF.Parse
+      Notes.RTF.Render
       Notes.RTF.Types
       Notes.RTFDoc
       Notes.RTFDoc.ExtensionTypes
-      Notes.RTFDoc.RawParse
+      Notes.RTFDoc.Old.Parseable
       Notes.RTFDoc.Render
       Notes.RTFDoc.ToRTFDoc
       Notes.RTFDoc.Types

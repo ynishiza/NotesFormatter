@@ -10,15 +10,26 @@ module Notes.ParserUtils (
   notInClass,
   decimal,
   (<??>),
+  _stateInput,
+  _stateOffset,
+  _statePosState,
+  _stateParseErrors,
+  Void,
 ) where
 
 import Control.Monad
 import Data.List.NonEmpty qualified as N
 import Data.Text qualified as T
+import Data.Void (Void)
 import Notes.RTF.Types
+import Notes.Utils
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
+
+$(makeLensesWith dataLensRules ''State)
+$(makeLensesWith dataLensRules ''SourcePos)
+$(makeLensesWith dataLensRules ''PosState)
 
 (<??>) :: (Ord e, Stream s) => Parsec e s a -> Text -> Parsec e s a
 a <??> b = a <?> T.unpack b

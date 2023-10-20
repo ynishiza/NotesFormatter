@@ -7,7 +7,12 @@
   Apple's extensions: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/AttributedStrings/Tasks/RTFAndAttrStrings.html#//apple_ref/doc/uid/20000164-155922
 -}
 
-module Notes.RTFDoc.RawParse (
+{-|
+  Description: [OLD] old parser
+
+  Old parser prior to 'Notes.RTFDoc.ToRTFDoc'
+-}
+module Notes.RTFDoc.Old.Parseable (
   Parseable (..),
   module X,
 ) where
@@ -25,6 +30,17 @@ import Prelude hiding (takeWhile)
 
 type Parser = Parsec Void Text
 
+-- | Old parser
+--
+-- Parsed directly from a `Notes.RTFDoc.Types` type
+-- e.g.
+--
+--  `Text` -> `RTFHeader`
+--
+-- The current approach instead parses in 2 steps
+--
+--  `Text` -> `RTFElement` -> `RTFHeader`
+--
 class Generic c => Parseable c where
   parse :: Parser c
 

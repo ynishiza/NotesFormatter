@@ -20,8 +20,8 @@ import Data.List.NonEmpty qualified as N
 import Data.Set qualified as S
 import Data.Text qualified as T
 import Notes.ParserUtils
-import Notes.RTF.Convert
 import Notes.RTF.ElementParser
+import Notes.RTF.Parse
 import Notes.RTFDoc.Types
 import Text.Megaparsec
 

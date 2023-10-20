@@ -9,8 +9,9 @@ import GHC.Exts (fromString)
 import Hedgehog
 import Hedgehog.Gen qualified as G
 import Hedgehog.Range qualified as R
+import Notes.RTF.Parse
 import Notes.RTFDoc
-import Notes.RTFDoc.RawParse
+import Notes.RTFDoc.Old.Parseable
 import Test.GenRTFDoc
 import Text.Megaparsec qualified as M
 

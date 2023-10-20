@@ -9,6 +9,7 @@ import Data.Set qualified as S
 import Data.Text qualified as T
 import Notes.Process
 import Notes.RTF.ElementParser
+import Notes.RTF.Parse (Parser, parseRTFElements)
 import Notes.RTFDoc
 import Test.Hspec hiding (runIO)
 import Text.Megaparsec

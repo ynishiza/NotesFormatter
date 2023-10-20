@@ -7,7 +7,7 @@
 {- |
   See README for RTF specs
 -}
-module Notes.RTF.Convert (
+module Notes.RTF.Parse (
   charBlockEnd,
   ByteString,
   parseRTFControlWord,
@@ -15,8 +15,6 @@ module Notes.RTF.Convert (
   parseRTFGroupWith,
   parseRTFElement,
   parseRTFElements,
-  renderRTFGroup,
-  renderRTFElement,
   parseText,
   (<??>),
   module X,
@@ -29,7 +27,6 @@ import Data.ByteString (ByteString)
 import Data.Functor
 import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Void (Void)
 import Notes.ParserUtils
 import Notes.RTF.Types as X
 import Notes.Utils as X
@@ -38,27 +35,6 @@ import Text.Megaparsec.Char
 import Prelude hiding (takeWhile)
 
 type Parser = Parsec Void Text
-
-controlWith :: Text -> Text
-controlWith = (T.pack [charControl] <>)
-
-renderRTFElement :: RTFElement -> Text
-renderRTFElement (RTFControlSymbol symbol) = T.pack [charControl, symbol]
-renderRTFElement (RTFControlWord prefix name suffix) = renderPrefix prefix <> controlWith name <> renderSuffix suffix
-renderRTFElement (RTFGroup content) = renderRTFGroup $ T.intercalate "" $ renderRTFElement <$> content
-renderRTFElement (RTFText text) = text
-
-renderPrefix :: RTFControlPrefix -> Text
-renderPrefix NoPrefix = ""
-renderPrefix StarPrefix = controlWith "*"
-
-renderSuffix :: RTFControlSuffix -> Text
-renderSuffix NoSuffix = ""
-renderSuffix SpaceSuffix = " "
-renderSuffix (RTFControlParam n) = showt n
-
-renderRTFGroup :: Text -> Text
-renderRTFGroup t = "{" <> t <> "}"
 
 parseRTFElements :: Parser [RTFElement]
 parseRTFElements =

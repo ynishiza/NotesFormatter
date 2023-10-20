@@ -10,7 +10,7 @@ import Data.Text qualified as T
 import GHC.Exts (fromString)
 import Hedgehog
 import Notes.RTFDoc
-import Notes.RTFDoc.RawParse
+import Notes.RTFDoc.Old.Parseable
 import Test.GenRTFDoc
 import Text.Megaparsec qualified as M
 
