@@ -205,8 +205,8 @@ applyConfig Config{..} doc =
       (doc', colorResult) <- pure $ mapAllColors doc
       (doc'', textResult) <- mapAllTexts doc'
       (doc''', contentResult) <- pure $ mapAllContents doc''
-      (doc'''', fontResult) <- pure $ mapAllFonts doc'''
-      return 
+      (doc'''', fontResult) <- mapAllFonts doc'''
+      return
         ( doc''''
         , ProcessResult
             { resultMapColor = colorResult
@@ -223,14 +223,21 @@ applyConfig Config{..} doc =
   mapAllColors d = foldr (\cfg (d', result) -> second (: result) (applyColorMap cfg d')) (d, []) cfgColorMap
   mapAllTexts d =
     foldr
-      ( \cfg x -> do
-          (d', result) <- x
+      ( \cfg aggr -> do
+          (d', result) <- aggr
           second (: result) <$> applyTextMap cfg d'
       )
       (Right (d, []))
       cfgTextMap
   mapAllContents d = foldr (\cfg (d', result) -> second (: result) (applyContentMap cfg d')) (d, []) cfgContentMap
-  mapAllFonts d = foldr (\cfg (d', result) -> second (: result) (applyFontMap cfg d')) (d, []) cfgFontMap
+  mapAllFonts d =
+    foldr
+      ( \cfg aggr -> do
+          (d', result) <- aggr
+          second (: result) <$> applyFontMap cfg d'
+      )
+      (Right (d, []))
+      cfgFontMap
 
 resultTable :: [(SomeRTFFile, FilePath, ProcessResult)] -> String
 resultTable = ascii processResultColumns

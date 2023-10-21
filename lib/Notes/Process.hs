@@ -18,6 +18,7 @@ import Control.Arrow (second)
 import Control.Exception (Exception)
 import Control.Lens (view)
 import Control.Monad.Reader
+import Data.Either (fromRight)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
 import Data.List.NonEmpty qualified as N
@@ -27,7 +28,9 @@ import Notes.File.RTF
 import Notes.RTFDoc.Render
 import Notes.RTFDoc.Types as X
 
-data ProcessError = TextMapError String
+data ProcessError
+  = TextMapError String
+  | FontMapError String
   deriving stock (Eq, Show, Generic)
   deriving anyclass (Exception)
 
@@ -40,13 +43,13 @@ applyTextMap t@TextMap{..} = (second (t,) <$>) . mapPlainText pattern replacemen
 applyContentMap :: ContentMap -> RTFDoc -> (RTFDoc, (ContentMap, Int))
 applyContentMap m@ContentMap{..} = second (m,) . mapContents fromContents toContents
 
-applyFontMap :: FontMap -> RTFDoc -> (RTFDoc, (FontMap, [Int]))
-applyFontMap t@FontMap{..} = second (t,) . mapFontName fromFontName toFont
+applyFontMap :: FontMap -> RTFDoc -> Either ProcessError (RTFDoc, (FontMap, [Int]))
+applyFontMap t@FontMap{..} = (second (t,) <$>) . mapFontName fromFontName toFont
 
 mapColor :: RTFColor -> (RTFColor, Maybe ColorSpace) -> RTFDoc -> (RTFDoc, [Int])
 mapColor colorToMatch newColorSpec doc@(RTFDoc{..}) = (doc{rtfDocHeader = rtfDocHeader{rtfColors = newColors}}, replacedColorIndexes)
  where
-  (newColors, replacedColorIndexes) = mapMatches' f (rtfColors rtfDocHeader)
+  (newColors, replacedColorIndexes) = extractMatchIndexes $ mapMatches f (rtfColors rtfDocHeader)
    where
     f (color, _)
       | color == colorToMatch = Just newColorSpec
@@ -76,33 +79,57 @@ mapContents (x :| xs) toContents doc@RTFDoc{..} =
  where
   sp = splitOn (x : xs) rtfDocContent
 
-mapFontName :: Text -> FontMapFont -> RTFDoc -> (RTFDoc, [Int])
-mapFontName oldName (FontMapFont{..}) doc@(RTFDoc{..}) =
-  ( doc{rtfDocHeader = rtfDocHeader{rtfFontTbl = FontTbl newFonts}}
-  , mappedIndexes
-  )
+mapFontName :: Text -> FontMapFont -> RTFDoc -> Either ProcessError (RTFDoc, [Int])
+mapFontName oldName cfg@(FontMapFont{..}) doc@(RTFDoc{..}) = do
+  (newFonts, mappedIndexes) <- result
+  return
+    ( doc{rtfDocHeader = rtfDocHeader{rtfFontTbl = FontTbl newFonts}}
+    , mappedIndexes
+    )
  where
-  (newFonts, mappedIndexes) = mapMatches' f (view (_rtfDocHeader . _rtfFontTbl . _FontTbl) doc)
+  result = extractMatchIndexes <$> mapMatchesBase match (view (_rtfDocHeader . _rtfFontTbl . _FontTbl) doc)
    where
-    f Nothing = Nothing
-    f (Just fontInfo) =
-      if fontName fontInfo == oldName
-        then Just $ Just fontInfo{fontFamily = fmFamily, fontName = fmFontName}
-        else Nothing
+    match :: Maybe FontInfo -> Either ProcessError (Maybe (Maybe FontInfo))
+    match Nothing = Right Nothing
+    match (Just fontInfo)
+      -- case: charsets MUST match.
+      -- Different charsets have different encoding schemes for escaped symbols
+      -- e.g.
+      --      charset = 128    RTF = \'82\'a0      character あ
+      --      charset = 0      RTF = \'82\'a0      meaningless?
+      --
+      -- Hence the mapping shouldn't change the charset.
+      | fontName fontInfo == oldName && fontCharset fontInfo /= fmCharset =
+          Left $
+            FontMapError $
+              "Charset mismatch. Expected map "
+                <> show cfg
+                <> " but found "
+                <> show fontInfo
+                <> "\n Changing the charset is not allowed since this may break encoding of special symbols"
+      | fontName fontInfo == oldName && fontCharset fontInfo == fmCharset =
+          Right $ Just $ Just fontInfo{fontFamily = fmFamily, fontName = fmFontName}
+      | otherwise = Right Nothing
 
-mapMatches' :: (a -> Maybe a) -> [a] -> ([a], [Int])
-mapMatches' f list = (snd <$> result, indexes)
+-- [Int] = indexes where the value was True
+extractMatchIndexes :: [(Bool, a)] -> ([a], [Int])
+extractMatchIndexes list = (snd <$> list, indexes)
  where
-  result = mapMatches f list
   indexes =
-    zip [0 ..] (fst <$> result)
+    zip [0 ..] (fst <$> list)
       & filter ((== True) . snd)
       & (fst <$>)
 
 mapMatches :: (a -> Maybe a) -> [a] -> [(Bool, a)]
-mapMatches _ [] = []
-mapMatches f (v : rest) =
-  let result = case f v of
-        Just v' -> (True, v')
-        Nothing -> (False, v)
-   in result : mapMatches f rest
+mapMatches f = fromRight [] . mapMatchesBase (Right . f)
+
+mapMatchesBase :: (a -> Either e (Maybe a)) -> [a] -> Either e [(Bool, a)]
+mapMatchesBase _ [] = Right []
+mapMatchesBase f (v : rest) =
+  case f v of
+    Right v' ->
+      let result = case v' of
+            Just v'' -> (True, v'')
+            Nothing -> (False, v)
+       in (result :) <$> mapMatchesBase f rest
+    Left e -> Left e

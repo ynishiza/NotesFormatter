@@ -58,7 +58,7 @@ spec =
               { cfgColorMap = [ColorMap (RTFColor (Just 226) (Just 226) (Just 226)) (RTFColor (Just 230) (Just 230) (Just 230)) (CSSRGB 1 2 3 Nothing)]
               , cfgTextMap = [TextMap "a" "b"]
               , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
-              , cfgFontMap = [FontMap "HelveticaNeue" (FontMapFont FRoman "TimesNewRomanPSMT")]
+              , cfgFontMap = [FontMap "HelveticaNeue" (FontMapFont FRoman (Just 0) "TimesNewRomanPSMT")]
               }
           )
     let
@@ -275,6 +275,7 @@ spec =
                     , toFont =
                         FontMapFont
                           { fmFamily = FRoman
+                          , fmCharset = Just 0
                           , fmFontName = "TimesNewRomanPSMT"
                           }
                     }
@@ -415,6 +416,7 @@ spec =
                     , toFont =
                         FontMapFont
                           { fmFamily = FRoman
+                          , fmCharset = Just 0
                           , fmFontName = "TimesNewRomanPSMT"
                           }
                     }
@@ -729,6 +731,7 @@ spec =
                     , toFont =
                         FontMapFont
                           { fmFamily = FRoman
+                          , fmCharset = Just 0
                           , fmFontName = "TimesNewRomanPSMT"
                           }
                     }
@@ -891,6 +894,7 @@ spec =
                     , toFont =
                         FontMapFont
                           { fmFamily = FRoman
+                          , fmCharset = Just 0
                           , fmFontName = "TimesNewRomanPSMT"
                           }
                     }
@@ -1650,6 +1654,7 @@ spec =
                     , toFont =
                         FontMapFont
                           { fmFamily = FRoman
+                          , fmCharset = Just 0
                           , fmFontName = "TimesNewRomanPSMT"
                           }
                     }
@@ -1661,11 +1666,34 @@ spec =
       )
       "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2639\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset128 HiraginoSans-W3;\\f1\\froman\\fcharset0 TimesNewRomanPSMT;}\n{\\colortbl;\\red255\\green255\\blue255;\\red191\\green191\\blue191;}\n{\\*\\expandedcolortbl;;\\csgray\\c79525;}\n\n{\\*\\listtable{\\list\\listtemplateid1\\listhybrid{\\listlevel\\levelnfc23\\levelnfcn23\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1\\levelspace360\\levelindent0{\\*\\levelmarker \\{disc\\}}{\\leveltext\\leveltemplateid1\\'01\\uc0\\u8226 ;}{\\levelnumbers;}\\fi-360\\li720\\lin720 }{\\listlevel\\levelnfc23\\levelnfcn23\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1\\levelspace360\\levelindent0{\\*\\levelmarker \\{hyphen\\}}{\\leveltext\\leveltemplateid2\\'01\\uc0\\u8259 ;}{\\levelnumbers;}\\fi-360\\li1440\\lin1440 }{\\listname ;}\\listid1}}{\\*\\listoverridetable{\\listoverride\\listid1\\listoverridecount0\\ls1}}{\\info{\\author Yui Nishizawa}}\\vieww11520\\viewh8400\\viewkind0\\deftab720\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f0\\fs28 \\cf0 \\\ntbble\\\n\\itap1\\trowd \\taflags1 \\trgaph108\\trleft-108 \\trbrdrt\\brdrnil \\trbrdrl\\brdrnil \\trbrdrr\\brdrnil \\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx2880\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx5760\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx8640\\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\f1 \\cf0 \\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Column A\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Column B\\cell \\row\\itap1\\trowd \\taflags1 \\trgaph108\\trleft-108 \\trbrdrl\\brdrnil \\trbrdrr\\brdrnil \\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx2880\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx5760\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx8640\\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Row 1\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 1\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 2\\cell \\row\\itap1\\trowd \\taflags1 \\trgaph108\\trleft-108 \\trbrdrl\\brdrnil \\trbrdrt\\brdrnil \\trbrdrr\\brdrnil \\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx2880\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx5760\\clvertalc \\clshdrawnil \\clbrdrt\\brdrs\\brdrw20\\brdrcf2 \\clbrdrl\\brdrs\\brdrw20\\brdrcf2 \\clbrdrb\\brdrs\\brdrw20\\brdrcf2 \\clbrdrr\\brdrs\\brdrw20\\brdrcf2 \\clpadl100 \\clpadr100 \\gaph\\cellx8640\\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 Row 2\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 3\\cell \\pard\\intbl\\itap1\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 4\\cell \\lastrow\\row\\pard\\tx566\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\slleading24\\pardirnatural\\partightenfactor0\\cf0 \\\nlist\\\n\\pard\\tx220\\tx720\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li720\\fi-720\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl0\\cf0 {\\listtext\t\\uc0\\u8226 \t}item1\\\n\\pard\\tx940\\tx1440\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li1440\\fi-1440\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl1\\cf0 {\\listtext\t\\uc0\\u8259 \t}subitem 1b\\\n{\\listtext\t\\uc0\\u8259 \t}\\\n\\pard\\tx220\\tx720\\tx1133\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li720\\fi-720\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl0\\cf0 {\\listtext\t\\uc0\\u8226 \t}item2\\\n\\pard\\tx940\\tx1440\\tx1700\\tx2267\\tx2834\\tx3401\\tx3968\\tx4535\\tx5102\\tx5669\\tx6236\\tx6803\\pardeftab720\\li1440\\fi-1440\\slleading24\\pardirnatural\\partightenfactor0\\ls1\\ilvl1\\cf0 {\\listtext\t\\uc0\\u8259 \t}subitem 2b\\\n{\\listtext\t\\uc0\\u8259 \t}\\\n}"
 
-    it "[error] throws an error if text is empty" $ do
+    it "[error] throws an error if the TextMap pattern is empty" $ do
       bytes <- T.readFile $ rtfPath </> "Font.rtf"
       parsed <- expectToRTFDocSuccess @RTFDoc bytes
       applyConfig (config{cfgTextMap = [TextMap "" ""]}) parsed
-        `shouldThrow` (\(TextMapError msg) -> msg == "Text map pattern cannot be empty")
+        `shouldThrow` ( \case
+                          (TextMapError msg) -> msg == "Text map pattern cannot be empty"
+                          _ -> False
+                      )
+
+    it "[error] throws an error if the FontMap charsets do not match" $ do
+      let badFontMap =
+            FontMap
+              { fromFontName = "HelveticaNeue"
+              , toFont =
+                  FontMapFont
+                    { fmFamily = FRoman
+                    , -- BAD. Should be 0
+                      fmCharset = Just 1
+                    , fmFontName = "TimesNewRomanPSMT"
+                    }
+              }
+      bytes <- T.readFile $ rtfPath </> "Font.rtf"
+      parsed <- expectToRTFDocSuccess @RTFDoc bytes
+      applyConfig (config{cfgFontMap = [badFontMap]}) parsed
+        `shouldThrow` ( \case
+                          (FontMapError msg) -> msg == "Charset mismatch. Expected map FontMapFont {fmFamily = FRoman, fmCharset = Just 1, fmFontName = \"TimesNewRomanPSMT\"} but found FontInfo {fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = \"HelveticaNeue\"}\n Changing the charset is not allowed since this may break encoding of special symbols"
+                          _ -> False
+                      )
 
     when dataBaseExists
       $ beforeAll_
@@ -1688,7 +1716,7 @@ spec =
                   [ TextMap "==============================================================" "*****************************************************************************"
                   ]
               , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
-              , cfgFontMap = [FontMap "HelveticaNeue" (FontMapFont FRoman "TimesNewRomanPSMT")]
+              , cfgFontMap = [FontMap "HelveticaNeue" (FontMapFont FRoman (Just 0) "TimesNewRomanPSMT")]
               }
 
         it "[processDirRTF]" $ do
@@ -1758,6 +1786,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -1807,6 +1836,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -1856,6 +1886,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -1905,6 +1936,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -1954,6 +1986,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2003,6 +2036,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2052,6 +2086,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2101,6 +2136,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2150,6 +2186,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2199,6 +2236,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2248,6 +2286,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2297,6 +2336,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2346,6 +2386,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2395,6 +2436,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2444,6 +2486,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2493,6 +2536,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2542,6 +2586,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2591,6 +2636,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2640,6 +2686,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2689,6 +2736,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2738,6 +2786,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2787,6 +2836,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2836,6 +2886,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2885,6 +2936,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2934,6 +2986,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -2983,6 +3036,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3032,6 +3086,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3081,6 +3136,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3130,6 +3186,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3179,6 +3236,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3228,6 +3286,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3277,6 +3336,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3326,6 +3386,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3375,6 +3436,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3424,6 +3486,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3473,6 +3536,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3522,6 +3586,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3571,6 +3636,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3620,6 +3686,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3669,6 +3736,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3718,6 +3786,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3767,6 +3836,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3816,6 +3886,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3865,6 +3936,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3914,6 +3986,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -3963,6 +4036,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -4012,6 +4086,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -4061,6 +4136,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -4110,6 +4186,7 @@ spec =
                               , toFont =
                                   FontMapFont
                                     { fmFamily = FRoman
+                                    , fmCharset = Just 0
                                     , fmFontName = "TimesNewRomanPSMT"
                                     }
                               }
@@ -4174,7 +4251,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4209,7 +4286,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4244,7 +4321,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4279,7 +4356,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4314,7 +4391,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4349,7 +4426,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4384,7 +4461,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4419,7 +4496,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4454,7 +4531,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4489,7 +4566,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4524,7 +4601,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4559,7 +4636,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4594,7 +4671,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [1]
                           )
@@ -4629,7 +4706,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4664,7 +4741,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4704,7 +4781,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )
@@ -4740,7 +4817,7 @@ spec =
                         [
                           ( FontMap
                               { fromFontName = "HelveticaNeue"
-                              , toFont = FontMapFont{fmFamily = FRoman, fmFontName = "TimesNewRomanPSMT"}
+                              , toFont = FontMapFont{fmFamily = FRoman, fmCharset = Just 0, fmFontName = "TimesNewRomanPSMT"}
                               }
                           , [0]
                           )

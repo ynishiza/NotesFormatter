@@ -111,8 +111,8 @@ escapedSequenceReadHex text =
     then case readHex @Word8 (T.unpack hexText) of
       [(n, "")] -> Just (n, rest)
       _ -> Nothing
-    -- case: too short. Must be exactly two digits
-    else Nothing
+    else -- case: too short. Must be exactly two digits
+      Nothing
  where
   (hexText, rest) = T.splitAt 2 text
 

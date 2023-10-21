@@ -35,7 +35,7 @@ configSpec =
             { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3 Nothing)]
             , cfgTextMap = [TextMap "====" "****"]
             , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
-            , cfgFontMap = [FontMap "" (FontMapFont FNil "Papyrus")]
+            , cfgFontMap = [FontMap "" (FontMapFont FNil Nothing "Papyrus")]
             }
         )
         [multiline|
@@ -59,7 +59,7 @@ configSpec =
             { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3 Nothing)]
             , cfgTextMap = [TextMap "====" "****"]
             , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
-            , cfgFontMap = [FontMap "" (FontMapFont FNil "Papyrus")]
+            , cfgFontMap = [FontMap "" (FontMapFont FNil Nothing "Papyrus")]
             }
         )
         [multiline|
@@ -119,6 +119,25 @@ configSpec =
         testJSONParseFail @ColorMap "Error in $.to.colorSpace.csgenericrgb: Failed to parse array for CSGenericRGB:Expected [r,g,b] but found [Number 1.0,Number 2.0,Number 3.0,Number 4.0]" [multiline|{ "from": { "color": [null, 0, 255] }, "to":  { "color": [1, 2, 3], "colorSpace": { "csgenericrgb": [1,2,3,4] } } } |]
 
     describe "FontMap" $ do
+      it "should parse FontMap" $ do
+        testJSONParse
+          ( FontMapFont
+              { fmFamily = FNil
+              , fmCharset = Nothing
+              , fmFontName = "HelveticaNeue"
+              }
+          )
+          [multiline| { "family": "nil", "fontName": "HelveticaNeue" } |]
+
+        testJSONParse
+          ( FontMapFont
+              { fmFamily = FNil
+              , fmCharset = Just 0
+              , fmFontName = "HelveticaNeue"
+              }
+          )
+          [multiline| { "family": "nil", "charset": 0, "fontName": "HelveticaNeue" } |]
+
       it "should parse FontFamily" $ do
         testJSONParse FNil "\"nil\""
         testJSONParse FRoman "\"roman\""

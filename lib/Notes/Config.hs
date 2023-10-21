@@ -73,8 +73,6 @@ data ColorMap = ColorMap
   }
   deriving stock (Show, Eq, Generic)
 
--- TODO: replace symbol
--- e.g.  \'85 = …
 data TextMap = TextMap
   { pattern :: Text
   , replacement :: Text
@@ -87,10 +85,9 @@ data ContentMap = ContentMap
   }
   deriving stock (Show, Eq, Generic)
 
-{- |
-  -}
 data FontMapFont = FontMapFont
   { fmFamily :: FontFamily
+  , fmCharset :: Maybe Int
   , fmFontName :: Text
   }
   deriving stock (Show, Eq, Generic)
