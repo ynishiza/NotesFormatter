@@ -16,7 +16,7 @@ import Text.Megaparsec
 
 spec :: Spec
 spec = describe "RTF Parsers" $ do
-  let testError :: ElementParser p -> Text -> Text -> Expectation
+  let testError :: HasCallStack => ElementParser p -> Text -> Text -> Expectation
       testError p b expected = case parseDoc_ p b of
         Left e -> do
           T.strip (T.pack e) `shouldBe` T.strip expected
@@ -557,7 +557,7 @@ specConvert :: Spec
 specConvert = describe "Notes.RTF.Convert" $ do
   let
     parser = parseRTFElements <* eof
-    testError :: Parser a -> Text -> Text -> Expectation
+    testError :: HasCallStack => Parser a -> Text -> Text -> Expectation
     testError p text expected = case runParser p "" text of
       Left e -> T.strip (T.pack $ errorBundlePretty e) `shouldBe` T.strip expected
       Right _ -> expectationFailure "Expected failure"

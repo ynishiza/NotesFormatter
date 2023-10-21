@@ -34,8 +34,8 @@ data ProcessError = TextMapError String
 applyColorMap :: ColorMap -> RTFDoc -> (RTFDoc, (ColorMap, [Int]))
 applyColorMap c@ColorMap{..} = second (c,) . mapColor fromColor (toColor, Just toColorSpace)
 
-applyTextMap :: TextMap -> RTFDoc -> (RTFDoc, (TextMap, Int))
-applyTextMap t@TextMap{..} = second (t,) . mapPlainText pattern replacement
+applyTextMap :: TextMap -> RTFDoc -> Either ProcessError (RTFDoc, (TextMap, Int))
+applyTextMap t@TextMap{..} = (second (t,) <$>) . mapPlainText pattern replacement
 
 applyContentMap :: ContentMap -> RTFDoc -> (RTFDoc, (ContentMap, Int))
 applyContentMap m@ContentMap{..} = second (m,) . mapContents fromContents toContents
@@ -52,8 +52,9 @@ mapColor colorToMatch newColorSpec doc@(RTFDoc{..}) = (doc{rtfDocHeader = rtfDoc
       | color == colorToMatch = Just newColorSpec
       | otherwise = Nothing
 
-mapPlainText :: Text -> Text -> RTFDoc -> (RTFDoc, Int)
-mapPlainText pattern replacement doc@(RTFDoc{..}) = (doc{rtfDocContent = newContent}, mappedCount)
+mapPlainText :: Text -> Text -> RTFDoc -> Either ProcessError (RTFDoc, Int)
+mapPlainText "" _ _ = Left $ TextMapError "Text map pattern cannot be empty"
+mapPlainText pattern replacement doc@(RTFDoc{..}) = Right (doc{rtfDocContent = newContent}, mappedCount)
  where
   (mappedCount, newContent) = mapContent (0, rtfDocContent)
   mapContent :: (Int, [RTFDocContent]) -> (Int, [RTFDocContent])

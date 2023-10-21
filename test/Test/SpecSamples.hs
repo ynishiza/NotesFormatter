@@ -47,7 +47,7 @@ spec :: SpecWith ()
 spec =
   when dataBaseExists $
     describe "Samples" $ do
-      let testWith :: IO Text -> IO ()
+      let testWith :: HasCallStack => IO Text -> IO ()
           testWith readContent = do
             src <- readContent
             parsed <- expectToRTFDocSuccess @RTFDoc src
@@ -65,7 +65,7 @@ spec =
 
       describe "RTF" $ do
         let
-          testRTFSampleFile :: FilePath -> Spec
+          testRTFSampleFile :: HasCallStack => FilePath -> Spec
           testRTFSampleFile path = it ("RTF sample: " <> path) $ testWith (readRTFFile $ rtfFile path)
         it "Tests RTF samples" $ do
           length rtfFilePaths `shouldBe` expectedRTFFiles
@@ -74,7 +74,7 @@ spec =
 
       describe "RTFD" $ do
         let
-          testRTFDSampleFile :: FilePath -> Spec
+          testRTFDSampleFile :: HasCallStack => FilePath -> Spec
           testRTFDSampleFile path = it ("RTFD sample: " <> path) $ testWith (readRTFFile $ rtfdFile path)
 
         it "Tests RTFD samples" $ do

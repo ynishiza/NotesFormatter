@@ -203,10 +203,10 @@ applyConfig Config{..} doc =
     res :: Either ProcessError (RTFDoc, ProcessResult)
     res = do
       (doc', colorResult) <- pure $ mapAllColors doc
-      (doc'', textResult) <- pure $ mapAllTexts doc'
+      (doc'', textResult) <- mapAllTexts doc'
       (doc''', contentResult) <- pure $ mapAllContents doc''
       (doc'''', fontResult) <- pure $ mapAllFonts doc'''
-      return
+      return 
         ( doc''''
         , ProcessResult
             { resultMapColor = colorResult
@@ -221,7 +221,14 @@ applyConfig Config{..} doc =
       Left e -> throwM e
  where
   mapAllColors d = foldr (\cfg (d', result) -> second (: result) (applyColorMap cfg d')) (d, []) cfgColorMap
-  mapAllTexts d = foldr (\cfg (d', result) -> second (: result) (applyTextMap cfg d')) (d, []) cfgTextMap
+  mapAllTexts d =
+    foldr
+      ( \cfg x -> do
+          (d', result) <- x
+          second (: result) <$> applyTextMap cfg d'
+      )
+      (Right (d, []))
+      cfgTextMap
   mapAllContents d = foldr (\cfg (d', result) -> second (: result) (applyContentMap cfg d')) (d, []) cfgContentMap
   mapAllFonts d = foldr (\cfg (d', result) -> second (: result) (applyFontMap cfg d')) (d, []) cfgFontMap
 

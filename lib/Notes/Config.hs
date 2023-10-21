@@ -34,6 +34,7 @@ module Notes.Config (
 import Control.Lens
 import Control.Monad.Combinators (many)
 import Data.Aeson
+import Data.Aeson.KeyMap (KeyMap, keys)
 import Data.Aeson.Types
 import Data.Char (toLower)
 import Data.List (intercalate)
@@ -42,8 +43,11 @@ import Data.Scientific
 import Data.Text qualified as T
 import Data.Vector qualified as V
 import GHC.Exts (IsString)
-import Notes.RTFDoc 
+import Notes.RTFDoc
 import Text.Megaparsec (eof)
+
+notesKey :: Key
+notesKey = "notes"
 
 data Config = Config
   { cfgColorMap :: [ColorMap]
@@ -83,6 +87,8 @@ data ContentMap = ContentMap
   }
   deriving stock (Show, Eq, Generic)
 
+{- |
+  -}
 data FontMapFont = FontMapFont
   { fmFamily :: FontFamily
   , fmFontName :: Text
@@ -110,34 +116,48 @@ instance FromJSON Config where
       defaultOptions
         { fieldLabelModifier = \case
             ('c' : 'f' : 'g' : c : rest) -> toLower c : rest
-            _ -> undefined
+            s -> fail $ "Unknown property: " <> s
+        , rejectUnknownFields = True
         }
 
 instance FromJSON ColorMap where
   parseJSON = withObject "ColorMap" $ \obj -> do
-    fromColor <- (obj .: "from") >>= inPath (Key "from") colorObj
-    toObj <- obj .: "to"
+    validateKeys [fromKey, toKey] obj
+    fromColor <- (obj .: fromKey) >>= inPath (Key fromKey) colorObj
+    toObj <- obj .: toKey
+
+    withObject "" (validateKeys [colorKey, colorSpaceKey]) toObj <?> Key toKey
     ( ColorMap fromColor
         <$> colorObj toObj
         <*> colorspaceObj toObj
       )
-      <?> Key "to"
+      <?> Key toKey
    where
-    colorspaceObj = withObject "ColorSpace obj" (\obj -> obj .: "colorSpace" >>= inPath (Key "colorSpace") colorspace)
-    colorObj = withObject "RTFColor obj" (\obj -> obj .: "color" >>= inPath (Key "color") rtfColor)
+    fromKey = "from"
+    toKey = "to"
+    csgrayKey = "csgray"
+    cssrgbKey = "cssrgb"
+    csgenericrgbKey = "csgenericrgb"
+    colorSpaceKey = "colorSpace"
+    colorKey = "color"
+    colorspaceObj =
+      withObject "ColorSpace obj" (\obj -> obj .: colorSpaceKey >>= inPath (Key colorSpaceKey) colorspace)
+    colorObj =
+      withObject "RTFColor obj" (\obj -> obj .: colorKey >>= inPath (Key colorKey) rtfColor)
     colorspace =
       withObject
         "colorSpace"
         ( \obj -> do
-            vgray <- obj .:? "csgray"
-            vsrgb <- obj .:? "cssrgb"
-            vgeneric <- obj .:? "csgenericrgb"
+            validateKeys [csgrayKey, cssrgbKey, csgenericrgbKey] obj
+            vgray <- obj .:? csgrayKey
+            vsrgb <- obj .:? cssrgbKey
+            vgeneric <- obj .:? csgenericrgbKey
             case vgray of
-              Just x -> csgray x <?> Key "csgray"
+              Just x -> csgray x <?> Key csgrayKey
               Nothing -> case vsrgb of
-                Just x -> cssrgb x <?> Key "cssrgb"
+                Just x -> cssrgb x <?> Key cssrgbKey
                 Nothing -> case vgeneric of
-                  Just x -> csgeneric x <?> Key "csgenericrgb"
+                  Just x -> csgeneric x <?> Key csgenericrgbKey
                   Nothing -> fail "colorspace"
         )
     rtfColor =
@@ -145,12 +165,12 @@ instance FromJSON ColorMap where
         "RTFColor"
         ( \case
             [r, g, b] ->
-              Just $
+              Right $
                 RTFColor
                   <$> (nullOrIntegral (parseIntegral "red") r <?> Index 0)
                   <*> (nullOrIntegral (parseIntegral "green") g <?> Index 1)
                   <*> (nullOrIntegral (parseIntegral "blue") b <?> Index 2)
-            _ -> Nothing
+            values -> Left $ "Expected [r,g,b] but found " <> show values
         )
     csgray v = CSGray <$> (parseIntegral "CSGray" v <?> Index 0)
     cssrgb =
@@ -158,39 +178,45 @@ instance FromJSON ColorMap where
         "CSSRGB"
         ( \case
             [r, g, b] ->
-              Just $
+              Right $
                 CSSRGB
                   <$> (parseIntegral "c" r <?> Index 0)
                   <*> (parseIntegral "c" g <?> Index 1)
                   <*> (parseIntegral "c" b <?> Index 2)
                   <*> pure Nothing
-            _ -> Nothing
+            values -> Left $ "Expected [r,g,b] but found " <> show values
         )
     csgeneric =
       parseList
         "CSGenericRGB"
         ( \case
             [r, g, b] ->
-              Just $
+              Right $
                 CSGenericRGB
                   <$> (parseIntegral "c" r <?> Index 0)
                   <*> (parseIntegral "c" g <?> Index 1)
                   <*> (parseIntegral "c" b <?> Index 2)
                   <*> pure Nothing
-            _ -> Nothing
+            values -> Left $ "Expected [r,g,b] but found " <> show values
         )
     nullOrIntegral :: (Value -> Parser a) -> Value -> Parser (Maybe a)
     nullOrIntegral _ Null = return Nothing
     nullOrIntegral p v = Just <$> p v
 
-instance FromJSON TextMap
+instance FromJSON TextMap where
+  parseJSON = withObject "" $ \obj -> do
+    validateKeys [notesKey, "pattern", "replacement"] obj
+    genericParseJSON defaultOptions (Object obj)
 
 instance FromJSON ContentMap where
   parseJSON = withObject "" $ \obj -> do
+    validateKeys [fromContentsKey, toContentsKey, notesKey] obj
     ContentMap
-      <$> (((obj .: "fromContents") >>= f) <?> Key "fromContents")
-      <*> (((obj .: "toContents") >>= f) <?> Key "toContents")
+      <$> (((obj .: fromContentsKey) >>= f) <?> Key fromContentsKey)
+      <*> (((obj .: toContentsKey) >>= f) <?> Key toContentsKey)
    where
+    fromContentsKey = "fromContents" :: Key
+    toContentsKey = "toContents" :: Key
     f :: Value -> Parser (NonEmpty RTFDocContent)
     f = withText "" $ \text -> case parseDoc_ (many (toRTFDoc @RTFDocContent) <* eof) text of
       Right (v : rest) -> return $ v :| rest
@@ -219,7 +245,10 @@ instance FromJSON FontMapFont where
     unCap "" = ""
     unCap (a : as) = toLower a : as
 
-instance FromJSON FontMap
+instance FromJSON FontMap where
+  parseJSON = withObject "" $ \obj -> do
+    validateKeys [notesKey, "fromFontName", "toFont"] obj
+    genericParseJSON defaultOptions (Object obj)
 
 inPath :: JSONPathElement -> (Value -> Parser a) -> Value -> Parser a
 inPath path p = (<?> path) . p
@@ -229,7 +258,16 @@ parseIntegral name = withScientific name $ \v -> case floatingOrInteger @Double 
   Right i -> return i
   Left x -> fail $ "[" <> name <> "] not an integer" <> show x
 
-parseList :: String -> ([Value] -> Maybe (Parser a)) -> Value -> Parser a
+parseList :: String -> ([Value] -> Either String (Parser a)) -> Value -> Parser a
 parseList name f = withArray name $ \arr -> case f (V.toList arr) of
-  Just p -> p
-  Nothing -> fail $ "Failed to parse array for " <> name
+  Right p -> p
+  Left msg -> fail $ "Failed to parse array for " <> name <> ":" <> msg
+
+validateKeys :: MonadFail m => [Key] -> KeyMap v -> m ()
+validateKeys expectedKeys obj
+  | not (null unknownKeys) = fail $ "Unsupported keys: " <> show unknownKeys
+  | otherwise = pure ()
+ where
+  unknownKeys =
+    keys obj
+      & filter (`notElem` expectedKeys)
