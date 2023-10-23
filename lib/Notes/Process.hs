@@ -80,7 +80,7 @@ mapContents (x :| xs) toContents doc@RTFDoc{..} =
   sp = splitOn (x : xs) rtfDocContent
 
 mapFontName :: Text -> FontMapFont -> RTFDoc -> Either ProcessError (RTFDoc, [Int])
-mapFontName oldName cfg@(FontMapFont{..}) doc@(RTFDoc{..}) = do
+mapFontName oldName mapping@(FontMapFont{..}) doc@(RTFDoc{..}) = do
   (newFonts, mappedIndexes) <- result
   return
     ( doc{rtfDocHeader = rtfDocHeader{rtfFontTbl = FontTbl newFonts}}
@@ -102,11 +102,11 @@ mapFontName oldName cfg@(FontMapFont{..}) doc@(RTFDoc{..}) = do
       | fontName fontInfo == oldName && fontCharset fontInfo /= fmCharset =
           Left $
             FontMapError $
-              "Charset mismatch. Expected map "
-                <> show cfg
-                <> " but found "
+              "Charset mismatch mapping "
                 <> show fontInfo
-                <> "\n Changing the charset is not allowed since this may break encoding of special symbols"
+                <> " to "
+                <> show mapping
+                <> ".\n Changing the charset is not allowed since this may break encoding of special symbols"
       | fontName fontInfo == oldName && fontCharset fontInfo == fmCharset =
           Right $ Just $ Just fontInfo{fontFamily = fmFamily, fontName = fmFontName}
       | otherwise = Right Nothing

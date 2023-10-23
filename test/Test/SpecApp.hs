@@ -1691,7 +1691,7 @@ spec =
       parsed <- expectToRTFDocSuccess @RTFDoc bytes
       applyConfig (config{cfgFontMap = [badFontMap]}) parsed
         `shouldThrow` ( \case
-                          (FontMapError msg) -> msg == "Charset mismatch. Expected map FontMapFont {fmFamily = FRoman, fmCharset = Just 1, fmFontName = \"TimesNewRomanPSMT\"} but found FontInfo {fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = \"HelveticaNeue\"}\n Changing the charset is not allowed since this may break encoding of special symbols"
+                          (FontMapError msg) -> msg == "Charset mismatch mapping FontInfo {fontNum = 0, fontFamily = FNil, fontCharset = Just 0, fontName = \"HelveticaNeue\"} to FontMapFont {fmFamily = FRoman, fmCharset = Just 1, fmFontName = \"TimesNewRomanPSMT\"}.\n Changing the charset is not allowed since this may break encoding of special symbols"
                           _ -> False
                       )
 
