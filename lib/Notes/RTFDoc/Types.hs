@@ -96,6 +96,12 @@ data RTFDocContent
   | ContentControlWord RTFControlPrefix Text RTFControlSuffix
   | ContentGroup [RTFDocContent]
   | ContentText Text
+  -- | Escaped hex sequence
+  --
+  -- e.g. if fcharset128 (Shift JS)
+  --
+  --   \'82\'a0      あ  
+  --
   | ContentEscapedSequence Word8
   deriving stock (Eq, Show, Generic)
 

@@ -117,7 +117,7 @@ extractMatchIndexes list = (snd <$> list, indexes)
  where
   indexes =
     zip [0 ..] (fst <$> list)
-      & filter ((== True) . snd)
+      & filter snd
       & (fst <$>)
 
 mapMatches :: (a -> Maybe a) -> [a] -> [(Bool, a)]

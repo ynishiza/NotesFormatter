@@ -30,7 +30,7 @@ import Data.Foldable (traverse_)
 import Data.List (intercalate)
 import Data.List.Extra (trim)
 import Data.List.NonEmpty qualified as N
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, mapMaybe)
 import Data.Text qualified as T
 import Data.Time
 import Notes.File.RTF
@@ -255,9 +255,7 @@ processResultColumns =
 
 columnTextMany :: (a -> Maybe String) -> [a] -> String
 columnTextMany f list =
-  list
-    <&> f
-    & catMaybes
+  mapMaybe f list
     & intercalate ":"
 
 columnTextColorMap :: ProcessResult -> String

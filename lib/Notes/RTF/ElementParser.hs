@@ -1,9 +1,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Notes.RTF.ElementParser (
+  -- * ElementParser
   ElementParser,
   RTFParseError (..),
-  --
+  -- ** Parser utils
   rtfText,
   rtfText_,
   rtfSymbol,
