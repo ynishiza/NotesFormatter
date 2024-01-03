@@ -4,7 +4,6 @@
 module Notes.Process (
   mapColor,
   mapPlainText,
-  mapContents,
   mapFontName,
   applyTextMap,
   applyColorMap,
@@ -22,6 +21,7 @@ import Data.Either (fromRight)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
 import Data.List.NonEmpty qualified as N
+import Data.Maybe
 import Data.Text qualified as T
 import Notes.Config as X
 import Notes.File.RTF
@@ -40,8 +40,15 @@ applyColorMap c@ColorMap{..} = second (c,) . mapColor fromColor (toColor, Just t
 applyTextMap :: TextMap -> RTFDoc -> Either ProcessError (RTFDoc, (TextMap, Int))
 applyTextMap t@TextMap{..} = (second (t,) <$>) . mapPlainText pattern replacement
 
-applyContentMap :: ContentMap -> RTFDoc -> (RTFDoc, (ContentMap, Int))
-applyContentMap m@ContentMap{..} = second (m,) . mapContents fromContents toContents
+applyContentMap :: ContentMap -> RTFDoc -> Either ProcessError (RTFDoc, (ContentMap, Int))
+applyContentMap m@ContentMap{..} d@RTFDoc{..} = case annotateWithContext rtfDocHeader emptyContext rtfDocContent of
+  Left e -> Left e
+  Right contents' ->
+    let
+      (result, c) = mapContentsForCharset contentCharset fromContents toContents contents'
+      d' = d{rtfDocContent = snd <$> result}
+     in
+      Right (d', (m, c))
 
 applyFontMap :: FontMap -> RTFDoc -> Either ProcessError (RTFDoc, (FontMap, [Int]))
 applyFontMap t@FontMap{..} = (second (t,) <$>) . mapFontName fromFontName toFont
@@ -71,13 +78,24 @@ mapPlainText pattern replacement doc@(RTFDoc{..}) = Right (doc{rtfDocContent = n
   mapContent (count, x : rest) = second (x :) $ mapContent (count, rest)
   mapContent (count, []) = (count, [])
 
-mapContents :: NonEmpty RTFDocContent -> NonEmpty RTFDocContent -> RTFDoc -> (RTFDoc, Int)
-mapContents (x :| xs) toContents doc@RTFDoc{..} =
-  ( doc{rtfDocContent = intercalate (N.toList toContents) sp}
+mapContentsForCharset :: Int -> NonEmpty RTFDocContent -> NonEmpty RTFDocContent -> [(DocContext, RTFDocContent)] -> ([(DocContext, RTFDocContent)], Int)
+mapContentsForCharset _ _ _ [] = ([], 0)
+mapContentsForCharset charset fromContents toContents contents = (skipped ++ zip (fst <$> toMap) mapped ++ rest, c + c')
+ where
+  isMatchingCharset (Just FontInfo{..}) = fromMaybe 0 fontCharset == charset
+  isMatchingCharset _ = charset == 0
+  (skipped, contents') = break (isMatchingCharset . ctxFontInfo . fst) contents
+  (toMap, contents'') = span (isMatchingCharset . ctxFontInfo . fst) contents'
+  (mapped, c) = mapContentsRaw fromContents toContents (snd <$> toMap)
+  (rest, c') = mapContentsForCharset charset fromContents toContents contents''
+
+mapContentsRaw :: NonEmpty RTFDocContent -> NonEmpty RTFDocContent -> [RTFDocContent] -> ([RTFDocContent], Int)
+mapContentsRaw (x :| xs) toContents contents =
+  ( intercalate (N.toList toContents) sp
   , length sp - 1
   )
  where
-  sp = splitOn (x : xs) rtfDocContent
+  sp = splitOn (x : xs) contents
 
 mapFontName :: Text -> FontMapFont -> RTFDoc -> Either ProcessError (RTFDoc, [Int])
 mapFontName oldName mapping@(FontMapFont{..}) doc@(RTFDoc{..}) = do
@@ -100,13 +118,13 @@ mapFontName oldName mapping@(FontMapFont{..}) doc@(RTFDoc{..}) = do
       --
       -- Hence the mapping shouldn't change the charset.
       | fontName fontInfo == oldName && fontCharset fontInfo /= fmCharset =
-          Left $
-            FontMapError $
-              "Charset mismatch mapping "
-                <> show fontInfo
-                <> " to "
-                <> show mapping
-                <> ".\n Changing the charset is not allowed since this may break encoding of special symbols"
+          Left
+            $ FontMapError
+            $ "Charset mismatch mapping "
+            <> show fontInfo
+            <> " to "
+            <> show mapping
+            <> ".\n Changing the charset is not allowed since this may break encoding of special symbols"
       | fontName fontInfo == oldName && fontCharset fontInfo == fmCharset =
           Right $ Just $ Just fontInfo{fontFamily = fmFamily, fontName = fmFontName}
       | otherwise = Right Nothing
@@ -133,3 +151,19 @@ mapMatchesBase f (v : rest) =
             Nothing -> (False, v)
        in (result :) <$> mapMatchesBase f rest
     Left e -> Left e
+
+data DocContext = DocContext
+  { ctxFontInfo :: Maybe FontInfo
+  }
+
+emptyContext :: DocContext
+emptyContext = DocContext Nothing
+
+annotateWithContext :: RTFHeader -> DocContext -> [RTFDocContent] -> Either ProcessError [(DocContext, RTFDocContent)]
+annotateWithContext _ _ [] = Right []
+annotateWithContext header@RTFHeader{..} ctx (c@(ContentControlWord NoPrefix "f" (RTFControlParam p)) : rest) = ((ctx', c) :) <$> annotateWithContext header ctx' rest
+ where
+  FontTbl infos = rtfFontTbl
+  fontInfo = infos !! p
+  ctx' = ctx{ctxFontInfo = fontInfo}
+annotateWithContext header ctx (c : rest) = ((ctx, c) :) <$> annotateWithContext header ctx rest

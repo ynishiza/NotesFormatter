@@ -80,7 +80,15 @@ data TextMap = TextMap
   deriving stock (Show, Eq, Generic)
 
 data ContentMap = ContentMap
-  { fromContents :: NonEmpty RTFDocContent
+  { contentCharset :: Int
+  -- ^ Need to specify charset since the meaning of some content depend on the charset
+  --
+  -- e.g.
+  -- @
+  --  \\'85\\'a5        ...¥        in charset 0 (ASCII)
+  --  \\'85\\'a5        II          in charset 128 (Shift JIS)
+  -- @
+  , fromContents :: NonEmpty RTFDocContent
   , toContents :: NonEmpty RTFDocContent
   }
   deriving stock (Show, Eq, Generic)
@@ -162,11 +170,11 @@ instance FromJSON ColorMap where
         "RTFColor"
         ( \case
             [r, g, b] ->
-              Right $
-                RTFColor
-                  <$> (nullOrIntegral (parseIntegral "red") r <?> Index 0)
-                  <*> (nullOrIntegral (parseIntegral "green") g <?> Index 1)
-                  <*> (nullOrIntegral (parseIntegral "blue") b <?> Index 2)
+              Right
+                $ RTFColor
+                <$> (nullOrIntegral (parseIntegral "red") r <?> Index 0)
+                <*> (nullOrIntegral (parseIntegral "green") g <?> Index 1)
+                <*> (nullOrIntegral (parseIntegral "blue") b <?> Index 2)
             values -> Left $ "Expected [r,g,b] but found " <> show values
         )
     csgray v = CSGray <$> (parseIntegral "CSGray" v <?> Index 0)
@@ -175,12 +183,12 @@ instance FromJSON ColorMap where
         "CSSRGB"
         ( \case
             [r, g, b] ->
-              Right $
-                CSSRGB
-                  <$> (parseIntegral "c" r <?> Index 0)
-                  <*> (parseIntegral "c" g <?> Index 1)
-                  <*> (parseIntegral "c" b <?> Index 2)
-                  <*> pure Nothing
+              Right
+                $ CSSRGB
+                <$> (parseIntegral "c" r <?> Index 0)
+                <*> (parseIntegral "c" g <?> Index 1)
+                <*> (parseIntegral "c" b <?> Index 2)
+                <*> pure Nothing
             values -> Left $ "Expected [r,g,b] but found " <> show values
         )
     csgeneric =
@@ -188,12 +196,12 @@ instance FromJSON ColorMap where
         "CSGenericRGB"
         ( \case
             [r, g, b] ->
-              Right $
-                CSGenericRGB
-                  <$> (parseIntegral "c" r <?> Index 0)
-                  <*> (parseIntegral "c" g <?> Index 1)
-                  <*> (parseIntegral "c" b <?> Index 2)
-                  <*> pure Nothing
+              Right
+                $ CSGenericRGB
+                <$> (parseIntegral "c" r <?> Index 0)
+                <*> (parseIntegral "c" g <?> Index 1)
+                <*> (parseIntegral "c" b <?> Index 2)
+                <*> pure Nothing
             values -> Left $ "Expected [r,g,b] but found " <> show values
         )
     nullOrIntegral :: (Value -> Parser a) -> Value -> Parser (Maybe a)
@@ -207,13 +215,15 @@ instance FromJSON TextMap where
 
 instance FromJSON ContentMap where
   parseJSON = withObject "" $ \obj -> do
-    validateKeys [fromContentsKey, toContentsKey, notesKey] obj
+    validateKeys [fromContentsKey, toContentsKey, charsetKey, notesKey] obj
     ContentMap
-      <$> (((obj .: fromContentsKey) >>= f) <?> Key fromContentsKey)
+      <$> ((obj .: charsetKey) <?> Key charsetKey)
+      <*> (((obj .: fromContentsKey) >>= f) <?> Key fromContentsKey)
       <*> (((obj .: toContentsKey) >>= f) <?> Key toContentsKey)
    where
     fromContentsKey = "fromContents" :: Key
     toContentsKey = "toContents" :: Key
+    charsetKey = "contentCharset" :: Key
     f :: Value -> Parser (NonEmpty RTFDocContent)
     f = withText "" $ \text -> case parseDoc_ (many (toRTFDoc @RTFDocContent) <* eof) text of
       Right (v : rest) -> return $ v :| rest
@@ -225,7 +235,7 @@ instance FromJSON FontFamily where
     Just v -> return v
     Nothing -> fail $ "Unknown font family " <> T.unpack str <> ". Should be one of " <> intercalate "," (show <$> allFontFamilies)
 
-showFontMapFamily :: IsString s => FontFamily -> s
+showFontMapFamily :: (IsString s) => FontFamily -> s
 showFontMapFamily FNil = "nil"
 showFontMapFamily FRoman = "roman"
 showFontMapFamily FSwiss = "swiss"
@@ -250,7 +260,7 @@ instance FromJSON FontMap where
 inPath :: JSONPathElement -> (Value -> Parser a) -> Value -> Parser a
 inPath path p = (<?> path) . p
 
-parseIntegral :: Integral a => String -> Value -> Parser a
+parseIntegral :: (Integral a) => String -> Value -> Parser a
 parseIntegral name = withScientific name $ \v -> case floatingOrInteger @Double v of
   Right i -> return i
   Left x -> fail $ "[" <> name <> "] not an integer" <> show x
@@ -260,7 +270,7 @@ parseList name f = withArray name $ \arr -> case f (V.toList arr) of
   Right p -> p
   Left msg -> fail $ "Failed to parse array for " <> name <> ":" <> msg
 
-validateKeys :: MonadFail m => [Key] -> KeyMap v -> m ()
+validateKeys :: (MonadFail m) => [Key] -> KeyMap v -> m ()
 validateKeys expectedKeys obj
   | not (null unknownKeys) = fail $ "Unsupported keys: " <> show unknownKeys
   | otherwise = pure ()

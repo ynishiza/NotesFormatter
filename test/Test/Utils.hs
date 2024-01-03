@@ -2,7 +2,6 @@ module Test.Utils (
   rtfPath,
   normalizeRTFForTest,
   expectToRTFDocSuccess,
-  runAppTest,
   dataPath,
   dataBasePath,
   dataBaseExists,
@@ -20,31 +19,6 @@ import Notes.RTFFile
 import System.Directory
 import System.FilePath
 import Test.Hspec hiding (runIO)
-
-runAppTest :: App a -> IO a
-runAppTest app = do
-  appConfig <-
-    emptyAppOptions
-      <&> \opts -> opts{appLogLevel = LevelDebug, appBackupDir = backupPath, appConfig = testConfig}
-  runApp logPath appConfig app
- where
-  logPath = "testlog.txt"
-  backupPath = "testbak"
-  testConfig =
-    Config
-      { cfgColorMap =
-          [ ColorMap
-              { fromColor = RTFColor (Just 226) (Just 226) (Just 226)
-              , toColor = RTFColor (Just 107) (Just 0) (Just 108)
-              , toColorSpace = CSGenericRGB 41819 0 42431 Nothing
-              }
-          ]
-      , cfgTextMap =
-          [ TextMap "==============================================================" "*****************************************************************************"
-          ]
-      , cfgContentMap = [ContentMap (ContentEscapedSequence 160 :| []) (ContentText "..." :| [])]
-      , cfgFontMap = []
-      }
 
 prependToFileName :: String -> FilePath -> FilePath
 prependToFileName timestamp path = joinPath [takeDirectory path, newFileName]

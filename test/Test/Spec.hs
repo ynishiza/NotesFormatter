@@ -34,7 +34,7 @@ configSpec =
         ( Config
             { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3 Nothing)]
             , cfgTextMap = [TextMap "====" "****"]
-            , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
+            , cfgContentMap = [ContentMap  0 (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
             , cfgFontMap = [FontMap "" (FontMapFont FNil Nothing "Papyrus")]
             }
         )
@@ -47,7 +47,7 @@ configSpec =
     { "pattern": "====", "replacement": "****" }
   ],
   "contentMap": [
-    { "fromContents": "\\'85", "toContents": "..." }
+    { "contentCharset": 0, "fromContents": "\\'85", "toContents": "..." }
   ],
   "fontMap": [{ "fromFontName": "", "toFont": {"family": "nil", "fontName": "Papyrus"}}]
 }
@@ -58,7 +58,7 @@ configSpec =
         ( Config
             { cfgColorMap = [ColorMap (RTFColor Nothing (Just 1) (Just 0)) (RTFColor (Just 0) (Just 0) (Just 0)) (CSSRGB 1 2 3 Nothing)]
             , cfgTextMap = [TextMap "====" "****"]
-            , cfgContentMap = [ContentMap (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
+            , cfgContentMap = [ContentMap 0 (ContentEscapedSequence 133 :| []) (ContentText "..." :| [])]
             , cfgFontMap = [FontMap "" (FontMapFont FNil Nothing "Papyrus")]
             }
         )
@@ -71,7 +71,7 @@ configSpec =
     { "pattern": "====", "replacement": "****", "notes": "abc"  }
   ],
   "contentMap": [
-    { "fromContents": "\\'85", "toContents": "...", "notes": "abc"  }
+    { "contentCharset": 0, "fromContents": "\\'85", "toContents": "...", "notes": "abc"  }
   ],
   "fontMap": [{ "fromFontName": "", "toFont": {"family": "nil", "fontName": "Papyrus"}}]
 }
@@ -165,15 +165,17 @@ configSpec =
       it "should parse ContentMap" $ do
         testJSONParse
           ( ContentMap
-              { fromContents = ContentText "abc" :| []
+              { 
+                contentCharset = 0,
+                fromContents = ContentText "abc" :| []
               , toContents = ContentText "def" :| []
               }
           )
-          [multiline|{ "fromContents": "abc", "toContents": "def" } |]
+          [multiline|{ "contentCharset": 0, "fromContents": "abc", "toContents": "def" } |]
 
         testJSONParse
           ( ContentMap
-              { fromContents =
+            { contentCharset = 0, fromContents =
                   ContentEscapedSequence 130
                     :| [ ContentEscapedSequence 160
                        , ContentEscapedSequence 130
@@ -200,17 +202,17 @@ configSpec =
               }
           )
           -- あいうえお   -->     かきくけこ
-          [multiline|{ "fromContents": "\\'82\\'a0\\'82\\'a2\\'82\\'a4\\'82\\'a6\\'82\\'a8", "toContents": "\\'82\\'a9\\'82\\'ab\\'82\\'ad\\'82\\'af\\'82\\'b1" } |]
+          [multiline|{ "contentCharset": 0, "fromContents": "\\'82\\'a0\\'82\\'a2\\'82\\'a4\\'82\\'a6\\'82\\'a8", "toContents": "\\'82\\'a9\\'82\\'ab\\'82\\'ad\\'82\\'af\\'82\\'b1" } |]
 
       it "[error message] ContentMap" $ do
-        testJSONParseFail @ContentMap "Error in $.fromContents: key \"fromContents\" not found" [multiline|{} |]
-        testJSONParseFail @ContentMap "Error in $.toContents: key \"toContents\" not found" [multiline|{ "fromContents": "a" } |]
-        testJSONParseFail @ContentMap "Error in $: Unsupported keys: [\"a\"]" [multiline|{ "fromContents": "a", "toContents": "a", "a": {}  } |]
+        testJSONParseFail @ContentMap "Error in $.contentCharset: key \"contentCharset\" not found" [multiline|{} |]
+        testJSONParseFail @ContentMap "Error in $.toContents: key \"toContents\" not found" [multiline|{ "contentCharset": 0, "fromContents": "a" } |]
+        testJSONParseFail @ContentMap "Error in $: Unsupported keys: [\"a\"]" [multiline|{ "contentCharset": 0, "fromContents": "a", "toContents": "a", "a": {}  } |]
 
       it "[error message] ContentMap invalid RTF" $ do
-        testJSONParseFail @ContentMap "Error in $.fromContents: Empty" [multiline|{ "fromContents": "", "toContents": ""  } |]
-        testJSONParseFail @ContentMap "Error in $.toContents: Empty" [multiline|{ "fromContents": "a", "toContents": ""  } |]
-        testJSONParseFail @ContentMap "Error in $.fromContents: RTFElement:1:4:\n  |\n1 | {\\a\n  |    ^\nunexpected end of input\nexpecting '}', RTFControlParam, RTFElement, SpaceSuffix, name character, or newline\n" [multiline|{ "fromContents": "{\\a", "toContents": ""  } |]
+        testJSONParseFail @ContentMap "Error in $.fromContents: Empty" [multiline|{ "contentCharset": 0, "fromContents": "", "toContents": ""  } |]
+        testJSONParseFail @ContentMap "Error in $.toContents: Empty" [multiline|{ "contentCharset": 0, "fromContents": "a", "toContents": ""  } |]
+        testJSONParseFail @ContentMap "Error in $.fromContents: RTFElement:1:4:\n  |\n1 | {\\a\n  |    ^\nunexpected end of input\nexpecting '}', RTFControlParam, RTFElement, SpaceSuffix, name character, or newline\n" [multiline|{ "fromContents": "{\\a", "contentCharset": 0, "toContents": ""  } |]
 
 rtfSpec :: Spec
 rtfSpec = describe "ToRTFDoc" $ do

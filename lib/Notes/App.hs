@@ -66,8 +66,8 @@ data ProcessResult = ProcessResult
 emptyAppOptions :: IO AppOptions
 emptyAppOptions = do
   timestamp <- getZonedTime
-  return $
-    AppOptions
+  return
+    $ AppOptions
       { appLogLevel = LevelInfo
       , appBackupDir = ""
       , appPattern = Nothing
@@ -82,30 +82,30 @@ runApp logPath appOptions@(AppOptions{..}) p = do
   runAppLogger appLogLevel logPath p
     & flip runReaderT appOptions
 
-processDirAll :: Env m => FilePath -> m [(SomeRTFFile, FilePath, ProcessResult)]
+processDirAll :: (Env m) => FilePath -> m [(SomeRTFFile, FilePath, ProcessResult)]
 processDirAll dirPath = do
   rtfdResults <- over (traverse . _1) SomeRTFFile <$> processDirRTFD dirPath
   rtfResults <- over (traverse . _1) SomeRTFFile <$> processDirRTF dirPath
   return $ rtfResults <> rtfdResults
 
-processDirRTF :: Env m => FilePath -> m [(RTFFile 'RTF, FilePath, ProcessResult)]
+processDirRTF :: (Env m) => FilePath -> m [(RTFFile 'RTF, FilePath, ProcessResult)]
 processDirRTF dirPath = do
   paths <- listFilesRecursive (const . isRTF) (not . isRTFD) dirPath
   $(logDebug) $ T.pack $ "Files: " <> intercalate "," paths
   traverse (processRTFFileMaybe . rtfFile) paths
     <&> catMaybes
 
-processDirRTFD :: Env m => FilePath -> m [(RTFFile 'RTFD, FilePath, ProcessResult)]
+processDirRTFD :: (Env m) => FilePath -> m [(RTFFile 'RTFD, FilePath, ProcessResult)]
 processDirRTFD dirPath = do
   paths <- listFilesRecursive (const . isRTFD) (const True) dirPath
   $(logDebug) $ T.pack $ "Files: " <> intercalate "," paths
   traverse (processRTFFileMaybe . rtfdFile) paths
     <&> catMaybes
 
-processSomeRTFFile :: Env m => SomeRTFFile -> m (SomeRTFFile, FilePath, ProcessResult)
+processSomeRTFFile :: (Env m) => SomeRTFFile -> m (SomeRTFFile, FilePath, ProcessResult)
 processSomeRTFFile (SomeRTFFile f) = over _1 SomeRTFFile <$> processRTFFile f
 
-processRTFFileMaybe :: Env m => RTFFile filetype -> m (Maybe (RTFFile filetype, FilePath, ProcessResult))
+processRTFFileMaybe :: (Env m) => RTFFile filetype -> m (Maybe (RTFFile filetype, FilePath, ProcessResult))
 processRTFFileMaybe file@(AnyRTFFile srcPath) = do
   isInteractive <- asks appInteractive
   pattern <- asks appPattern
@@ -123,7 +123,7 @@ processRTFFileMaybe file@(AnyRTFFile srcPath) = do
     $(logDebug) (T.pack message)
     return Nothing
 
-processRTFFile :: Env m => RTFFile filetype -> m (RTFFile filetype, FilePath, ProcessResult)
+processRTFFile :: (Env m) => RTFFile filetype -> m (RTFFile filetype, FilePath, ProcessResult)
 processRTFFile file@(AnyRTFFile srcPath) = do
   validateFileExist srcPath
   backupPath <- createBackup file
@@ -133,7 +133,7 @@ processRTFFile file@(AnyRTFFile srcPath) = do
   writeRTFFile file (render doc)
   return (file, backupPath, result)
 
-createBackup :: Env m => RTFFile filetype -> m FilePath
+createBackup :: (Env m) => RTFFile filetype -> m FilePath
 createBackup file@(AnyRTFFile srcPath) = do
   backupDir <- asks appBackupDir
   backupTime <- asks (formatTimestamp . appTime)
@@ -152,25 +152,25 @@ createBackup file@(AnyRTFFile srcPath) = do
   copyRTFFile file backupPath
   return backupPath
 
-processFile_ :: forall m filetype. Env m => RTFFile filetype -> m (RTFDoc, ProcessResult)
+processFile_ :: forall m filetype. (Env m) => RTFFile filetype -> m (RTFDoc, ProcessResult)
 processFile_ r@(AnyRTFFile path) = do
   content <- readRTFFile r
   processDocFromData (T.pack path) content
 
-processDocFromData :: forall m. Env m => Text -> Text -> m (RTFDoc, ProcessResult)
+processDocFromData :: forall m. (Env m) => Text -> Text -> m (RTFDoc, ProcessResult)
 processDocFromData name x = do
   case parseDoc_ (toRTFDoc @RTFDoc) x of
     Left e -> throwM $ userError e
     Right v -> processDoc name v
 
-processDoc :: Env m => Text -> RTFDoc -> m (RTFDoc, ProcessResult)
+processDoc :: (Env m) => Text -> RTFDoc -> m (RTFDoc, ProcessResult)
 processDoc name doc = do
   config <- asks appConfig
   (doc', result) <- applyConfig config doc
   logResult name result
   return (doc', result)
 
-logResult :: forall m. Env m => Text -> ProcessResult -> m ()
+logResult :: forall m. (Env m) => Text -> ProcessResult -> m ()
 logResult name ProcessResult{..} = do
   traverse_ logColorMap resultMapColor
   traverse_ logTextMap resultMapText
@@ -182,29 +182,29 @@ logResult name ProcessResult{..} = do
   logTextMap :: (TextMap, Int) -> m ()
   logTextMap (TextMap{..}, num) = logCounts "TextMap" (T.unpack pattern) (T.unpack replacement) num
   logFontMap (FontMap{..}, num) = logCounts "FontMap" (T.unpack fromFontName) (T.unpack $ fmFontName toFont) num
-  logCounts :: Show a => String -> String -> String -> a -> m ()
+  logCounts :: (Show a) => String -> String -> String -> a -> m ()
   logCounts configName fromValue toProperty count =
-    $(logDebug) $
-      nameTag
-        <> T.pack
-          ( "["
-              <> configName
-              <> "] "
-              <> fromValue
-              <> " -> "
-              <> toProperty
-              <> "\t\tcount:"
-              <> show count
-          )
+    $(logDebug)
+      $ nameTag
+      <> T.pack
+        ( "["
+            <> configName
+            <> "] "
+            <> fromValue
+            <> " -> "
+            <> toProperty
+            <> "\t\tcount:"
+            <> show count
+        )
 
-applyConfig :: MonadCatch m => Config -> RTFDoc -> m (RTFDoc, ProcessResult)
+applyConfig :: (MonadCatch m) => Config -> RTFDoc -> m (RTFDoc, ProcessResult)
 applyConfig Config{..} doc =
   let
     res :: Either ProcessError (RTFDoc, ProcessResult)
     res = do
       (doc', colorResult) <- pure $ mapAllColors doc
       (doc'', textResult) <- mapAllTexts doc'
-      (doc''', contentResult) <- pure $ mapAllContents doc''
+      (doc''', contentResult) <- mapAllContents doc''
       (doc'''', fontResult) <- mapAllFonts doc'''
       return
         ( doc''''
@@ -229,7 +229,14 @@ applyConfig Config{..} doc =
       )
       (Right (d, []))
       cfgTextMap
-  mapAllContents d = foldr (\cfg (d', result) -> second (: result) (applyContentMap cfg d')) (d, []) cfgContentMap
+  mapAllContents d =
+    foldr
+      ( \cfg aggr -> do
+          (d', result) <- aggr
+          second (: result) <$> applyContentMap cfg d'
+      )
+      (Right (d, []))
+      cfgContentMap
   mapAllFonts d =
     foldr
       ( \cfg aggr -> do

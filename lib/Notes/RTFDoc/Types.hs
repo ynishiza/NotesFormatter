@@ -10,6 +10,8 @@ module Notes.RTFDoc.Types (
   RTFDocContent (..),
   rtfElementToDocContent,
   rtfElementToDocContent_,
+  contentEscapedSequence,
+  contentEscapedSequence',
   escapedSequenceChar,
   escapedSequenceRenderHex,
   escapedSequenceReadHex,
@@ -42,8 +44,10 @@ module Notes.RTFDoc.Types (
 ) where
 
 import Data.Char (toLower)
+import Data.Maybe (fromJust)
 import Data.Text qualified as T
 import Data.Word
+import GHC.Stack (HasCallStack)
 import Notes.RTF.Types as X
 import Notes.RTFDoc.ExtensionTypes as X
 import Notes.Utils as X
@@ -96,14 +100,23 @@ data RTFDocContent
   | ContentControlWord RTFControlPrefix Text RTFControlSuffix
   | ContentGroup [RTFDocContent]
   | ContentText Text
-  -- | Escaped hex sequence
-  --
-  -- e.g. if fcharset128 (Shift JS)
-  --
-  --   \'82\'a0      あ  
-  --
-  | ContentEscapedSequence Word8
+  | -- | Escaped hex sequence
+    --
+    -- e.g. if @fcharset128@ (Shift JIS)
+    --
+    -- @
+    --   \\'82\\'a0      あ
+    -- @
+    ContentEscapedSequence Word8
   deriving stock (Eq, Show, Generic)
+
+contentEscapedSequence' :: (HasCallStack) => Text -> RTFDocContent
+contentEscapedSequence' = fromJust . contentEscapedSequence
+
+contentEscapedSequence :: Text -> Maybe RTFDocContent
+contentEscapedSequence t = case escapedSequenceReadHex t of
+  Just (w, _) -> Just $ ContentEscapedSequence w
+  Nothing -> Nothing
 
 escapedSequenceChar :: Char
 escapedSequenceChar = '\''
