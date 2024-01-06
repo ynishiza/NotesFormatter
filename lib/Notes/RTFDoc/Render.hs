@@ -13,8 +13,8 @@ import Control.Monad
 import Data.Functor
 import Data.Text qualified as T
 import GHC.Exts (IsString)
-import Notes.ParserUtils
-import Notes.RTF.Render as X
+import RTF.ParserUtils
+import RTF.Render as X
 import Notes.RTFDoc.Types as X
 import Prelude hiding (takeWhile)
 

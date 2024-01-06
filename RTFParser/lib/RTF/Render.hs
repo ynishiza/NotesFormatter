@@ -1,11 +1,11 @@
-module Notes.RTF.Render (
+module RTF.Render (
   renderRTFElement,
   renderRTFGroup,
   module X,
 ) where
 
 import Data.Text qualified as T
-import Notes.RTF.Types as X
+import RTF.Types as X
 import TextShow
 
 controlWith :: Text -> Text

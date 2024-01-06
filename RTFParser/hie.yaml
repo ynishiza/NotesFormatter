@@ -1,0 +1,6 @@
+cradle:
+  stack:
+    - path: "./lib/"
+      component: rtfparser:lib
+    - path: "./test/"
+      component: rtfparser:test:main-test

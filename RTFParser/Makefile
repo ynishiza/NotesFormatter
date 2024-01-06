@@ -2,7 +2,7 @@ SHELL=/usr/bin/env bash
 map=$(foreach value,$(2),$(call $(1),$(value)))
 get_source_in_directory=$(wildcard $(value)/*.hs)
 
-PROJECTNAME=NotesFormatter
+PROJECTNAME=RTFParser
 DOCUMENTATION_DIR=docs
 
 default: help
@@ -31,11 +31,10 @@ benchmark: ## Run benchmark
 
 test: ## Run tests
 	@echo "Tests"
-	@stack test --test-arguments="+RTS -N" NotesFormatter:test:main-test
+	@stack test --test-arguments="+RTS -N"
 
 ide: ## Check IDE setup
 	haskell-language-server-wrapper ./lib/
-	haskell-language-server-wrapper ./src/
 	haskell-language-server-wrapper ./test/
 
 debug: ## Print variables

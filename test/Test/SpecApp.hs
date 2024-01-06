@@ -24,11 +24,11 @@ logDebug str = when debugMode $ putStrLn str
 testWorkspaceDir :: FilePath
 testWorkspaceDir = basePath </> "test_workspace"
 
--- Note: the result contains data that may be system/run dependent
-
--- * paths are absolute: need to make relative
-
--- * backup file name contains a timestamp
+{-
+Note: the result contains data that may be system/run dependent
+\* paths are absolute: need to make relative
+\* backup file name contains a timestamp
+-}
 formatResultForTest :: String -> FilePath -> FilePath -> [(RTFFile filetype, FilePath, ProcessResult)] -> [(RTFFile filetype, FilePath, ProcessResult)]
 formatResultForTest timestamp oldBase newBase result =
   result

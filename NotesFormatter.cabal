@@ -29,12 +29,7 @@ library
       Notes.Config
       Notes.File.Base
       Notes.File.RTF
-      Notes.ParserUtils
       Notes.Process
-      Notes.RTF.ElementParser
-      Notes.RTF.Parse
-      Notes.RTF.Render
-      Notes.RTF.Types
       Notes.RTFDoc
       Notes.RTFDoc.ExtensionTypes
       Notes.RTFDoc.Old.Parseable
@@ -105,6 +100,7 @@ library
     , optparse-applicative >=0.17 && <0.20
     , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
+    , rtfparser
     , safe-exceptions >0.1.6 && <0.2
     , scientific
     , shelly >1 && <2
@@ -186,6 +182,7 @@ executable notesFormatter
     , optparse-applicative >=0.17 && <0.20
     , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
+    , rtfparser
     , safe-exceptions >0.1.6 && <0.2
     , scientific
     , shelly >1 && <2
@@ -210,12 +207,7 @@ test-suite main-test
       Notes.Config
       Notes.File.Base
       Notes.File.RTF
-      Notes.ParserUtils
       Notes.Process
-      Notes.RTF.ElementParser
-      Notes.RTF.Parse
-      Notes.RTF.Render
-      Notes.RTF.Types
       Notes.RTFDoc
       Notes.RTFDoc.ExtensionTypes
       Notes.RTFDoc.Old.Parseable
@@ -295,6 +287,7 @@ test-suite main-test
     , optparse-applicative >=0.17 && <0.20
     , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
+    , rtfparser
     , safe-exceptions >0.1.6 && <0.2
     , scientific
     , shelly >1 && <2

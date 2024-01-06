@@ -1,9 +1,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Notes.RTF.ElementParser (
+module RTF.ElementParser (
   -- * ElementParser
   ElementParser,
   RTFParseError (..),
+
   -- ** Parser utils
   rtfText,
   rtfText_,
@@ -23,8 +24,8 @@ import Data.List.NonEmpty qualified as N
 import Data.Set qualified as S
 import Data.Text qualified as T
 import Debug.Trace (trace)
-import Notes.ParserUtils
-import Notes.RTF.Parse
+import RTF.Parse
+import RTF.ParserUtils
 import Text.Megaparsec
 
 data RTFParseError = RTFGroupError Int RTFElement (ParseErrorBundle [RTFElement] RTFParseError)

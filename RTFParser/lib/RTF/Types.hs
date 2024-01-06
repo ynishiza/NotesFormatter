@@ -1,7 +1,7 @@
 {- |
   See README for references
 -}
-module Notes.RTF.Types (
+module RTF.Types (
   rtfControlSymbol,
   getRtfControlSymbol,
   _SpaceSuffix,
@@ -28,7 +28,8 @@ module Notes.RTF.Types (
 ) where
 
 import Data.Word
-import Notes.Utils
+import GHC.Generics
+import RTF.Utils
 
 charControl :: Char
 charControl = '\\'

@@ -1,4 +1,4 @@
-module Notes.ParserUtils (
+module RTF.ParserUtils (
   errorLabelString,
   errorLabelText,
   errorToken,
@@ -21,8 +21,8 @@ import Control.Monad
 import Data.List.NonEmpty qualified as N
 import Data.Text qualified as T
 import Data.Void (Void)
-import Notes.RTF.Types
-import Notes.Utils
+import RTF.Types
+import RTF.Utils
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L

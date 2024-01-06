@@ -7,7 +7,7 @@
 {- |
   See README for RTF specs
 -}
-module Notes.RTF.Parse (
+module RTF.Parse (
   charBlockEnd,
   ByteString,
   parseRTFControlWord,
@@ -27,9 +27,9 @@ import Data.ByteString (ByteString)
 import Data.Functor
 import Data.Set qualified as S
 import Data.Text qualified as T
-import Notes.ParserUtils
-import Notes.RTF.Types as X
-import Notes.Utils as X
+import RTF.ParserUtils
+import RTF.Types as X
+import RTF.Utils as X
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Prelude hiding (takeWhile)
@@ -38,9 +38,11 @@ type Parser = Parsec Void Text
 
 parseRTFElements :: Parser [RTFElement]
 parseRTFElements =
-  trimNewLines $
+  trimNewLines
+    $
     -- Note: newline is ignored in RTF
-    filter notNewLine <$> many (trimNewLines parseRTFElement)
+    filter notNewLine
+    <$> many (trimNewLines parseRTFElement)
 
 notNewLine :: RTFElement -> Bool
 notNewLine (RTFText "\n") = False
@@ -70,7 +72,8 @@ parseRTFElement =
     takeWhile1P (Just "name character") (inClass charExtendedControlName)
       <?> "RTFControlWord"
   group =
-    RTFGroup <$> parseRTFGroupWith parseRTFElements
+    RTFGroup
+      <$> parseRTFGroupWith parseRTFElements
       <?> "RTFGroup"
   text =
     RTFText
@@ -116,7 +119,8 @@ parseRTFControlWordBase name =
       <?> "RTFControlPrefix"
   wordName = parseControl name <?> "RTFControlWord name"
   trailingSpace =
-    char ' ' >> return SpaceSuffix
+    char ' '
+      >> return SpaceSuffix
       <?> "SpaceSuffix"
 
 -- Note: need to backtrack (i.e. try) on failure since

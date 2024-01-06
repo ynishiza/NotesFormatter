@@ -22,7 +22,7 @@ import Control.Monad
 import Data.Functor
 import Data.Text qualified as T
 import Data.Void
-import Notes.ParserUtils
+import RTF.ParserUtils
 import Notes.RTFDoc.Types as X
 import Text.Megaparsec hiding (parse)
 import Text.Megaparsec.Char

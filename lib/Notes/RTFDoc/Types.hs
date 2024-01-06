@@ -48,7 +48,7 @@ import Data.Maybe (fromJust)
 import Data.Text qualified as T
 import Data.Word
 import GHC.Stack (HasCallStack)
-import Notes.RTF.Types as X
+import RTF.Types as X
 import Notes.RTFDoc.ExtensionTypes as X
 import Notes.Utils as X
 import Numeric (readHex)
