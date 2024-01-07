@@ -22,7 +22,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - aeson >= 2 && <3
 - async >= 2.2 && < 3
-- rtfparser
+- rtfelementparser
 # - attoparsec > 0.10 && < 0.20
 - base >= 4.14 && < 5
 - bytestring >=0.10 && <0.12

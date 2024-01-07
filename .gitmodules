@@ -1,0 +1,3 @@
+[submodule "RTFElementParser"]
+	path = RTFElementParser
+	url = git@github.com:ynishiza/RTFElementParser.git

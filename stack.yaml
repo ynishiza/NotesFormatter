@@ -3,7 +3,7 @@ resolver: lts-21.17
 
 packages:
 - .
-- ./RTFParser
+- ./RTFElementParser
 
 allow-newer: true
 

@@ -100,7 +100,7 @@ library
     , optparse-applicative >=0.17 && <0.20
     , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
-    , rtfparser
+    , rtfelementparser
     , safe-exceptions >0.1.6 && <0.2
     , scientific
     , shelly >1 && <2
@@ -182,7 +182,7 @@ executable notesFormatter
     , optparse-applicative >=0.17 && <0.20
     , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
-    , rtfparser
+    , rtfelementparser
     , safe-exceptions >0.1.6 && <0.2
     , scientific
     , shelly >1 && <2
@@ -287,7 +287,7 @@ test-suite main-test
     , optparse-applicative >=0.17 && <0.20
     , parser-combinators ==1.*
     , regex-tdfa >=1 && <2.0
-    , rtfparser
+    , rtfelementparser
     , safe-exceptions >0.1.6 && <0.2
     , scientific
     , shelly >1 && <2

@@ -10,6 +10,9 @@ jobs:
       - run: set
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          submodules: true
+
       - uses: haskell/actions/setup@v2
         with:
           ghc-version: '9.4.7'
@@ -25,24 +28,12 @@ jobs:
             ${{ runner.os }}-stack-global-
 
       - uses: actions/cache@v3
-        name: Cache RTFParser .stack-work
-        with:
-          path: ./RTFParser/.stack-work
-          key: ${{ runner.os }}-stack-work-notes
-          restore-keys: |
-            ${{ runner.os }}-stack-work-
-
-      - uses: actions/cache@v3
         name: Cache .stack-work
         with:
           path: ./.stack-work
           key: ${{ runner.os }}-stack-work-notes
           restore-keys: |
             ${{ runner.os }}-stack-work-
-
-      - name: Test RTF Parser
-        working-directory: ./RTFParser
-        run: make test
 
       - name: Test Notes
         run: make test
