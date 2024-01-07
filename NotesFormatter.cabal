@@ -216,6 +216,11 @@ test-suite main-test
       Notes.RTFDoc.Types
       Notes.RTFFile
       Notes.Utils
+      Test.Data.ColorRTF
+      Test.Data.FontRTF
+      Test.Data.SpecialCharactersRTF
+      Test.Data.StyleRTF
+      Test.Data.TableRTF
       Test.GenRTFDoc
       Test.PropertiesRawParse
       Test.PropertiesToRTFDoc
