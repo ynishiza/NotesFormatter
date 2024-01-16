@@ -19,10 +19,8 @@ module Notes.RTFFile (
   copyRTFFile,
   RTFSym0,
   RTFDSym0,
-  _RTFFileBase,
 ) where
 
-import Control.Lens
 import Control.Monad.IO.Class
 import Data.Kind (Type)
 import Data.Singletons.TH
@@ -37,9 +35,6 @@ genSingletons [''FileType]
 type RTFFile :: FileType -> Type
 data RTFFile filetype where
   RTFFileBase :: SFileType filetype -> FilePath -> RTFFile filetype
-
-$(makePrisms ''RTFFile)
-$(makeLensesWith dataLensRules ''RTFFile)
 
 pattern RTFFile :: () => (filetype ~ 'RTF) => FilePath -> RTFFile filetype
 pattern RTFFile path = RTFFileBase SRTF path
@@ -91,19 +86,19 @@ rtfFilePath :: forall filetype. RTFFile filetype -> FilePath
 rtfFilePath (RTFFile path) = path
 rtfFilePath (RTFDFile path) = path </> fileRTFDTXT
 
-readRTFFile :: forall m filetype. MonadIO m => RTFFile filetype -> m Text
+readRTFFile :: forall m filetype. (MonadIO m) => RTFFile filetype -> m Text
 readRTFFile (RTFFile path) = readRTF path
 readRTFFile (RTFDFile path) = do
   validateFile path extensionRTFD
   readRTF $ path </> fileRTFDTXT
 
-writeRTFFile :: forall m filetype. MonadIO m => RTFFile filetype -> Text -> m ()
+writeRTFFile :: forall m filetype. (MonadIO m) => RTFFile filetype -> Text -> m ()
 writeRTFFile (RTFFileBase SRTF path) text = writeRTF path text
 writeRTFFile (RTFDFile path) text = do
   validateFilePath path extensionRTFD
   let rtfPath = path </> fileRTFDTXT
   writeRTF rtfPath text
 
-copyRTFFile :: forall m filetype. MonadIO m => RTFFile filetype -> FilePath -> m ()
+copyRTFFile :: forall m filetype. (MonadIO m) => RTFFile filetype -> FilePath -> m ()
 copyRTFFile (RTFFile path) dstPath = liftIO $ copyFile path dstPath
 copyRTFFile (RTFDFile path) dstPath = liftIO $ copyFilesRecursive path dstPath

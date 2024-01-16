@@ -13,6 +13,7 @@ import RTF.Parse
 import Notes.RTFDoc
 import Notes.RTFDoc.Old.Parseable
 import Test.GenRTFDoc
+import Test.Utils
 import Text.Megaparsec qualified as M
 
 testCount :: TestLimit

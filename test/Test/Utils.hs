@@ -9,6 +9,14 @@ module Test.Utils (
   changePathBase,
   changeRTFFilePathBase,
   module X,
+  -- Lens
+  _RTFControlWord,
+  _RTFControlSymbol,
+  _RTFGroup,
+  _RTFText,
+  _SpaceSuffix,
+  _RTFControlParam,
+  _NoSuffix,
 ) where
 
 import Data.Text qualified as T
@@ -86,7 +94,7 @@ normalizeRTFForTest text =
   newlinePlaceholder = "😄"
   backslashPlaceholder = "😅"
 
-expectToRTFDocSuccess :: ToRTFDoc a => Text -> IO a
+expectToRTFDocSuccess :: (ToRTFDoc a) => Text -> IO a
 expectToRTFDocSuccess d = do
   let result = parseDoc_ toRTFDoc d
   case result of
@@ -94,3 +102,6 @@ expectToRTFDocSuccess d = do
       expectationFailure $ show msg
       fail $ show msg
     Right v -> return v
+
+$(makePrisms ''RTFElement)
+$(makePrisms ''RTFControlSuffix)

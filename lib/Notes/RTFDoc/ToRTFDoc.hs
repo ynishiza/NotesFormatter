@@ -13,16 +13,15 @@ module Notes.RTFDoc.ToRTFDoc (
   errorBundlePretty,
 ) where
 
-import Control.Lens
 import Control.Monad
 import Data.List (intersperse)
 import Data.List.NonEmpty qualified as N
 import Data.Set qualified as S
 import Data.Text qualified as T
-import RTF.ParserUtils
+import Notes.RTFDoc.Types
 import RTF.ElementParser
 import RTF.Parse
-import Notes.RTFDoc.Types
+import RTF.ParserUtils
 import Text.Megaparsec
 
 data ContentParseResult a
@@ -44,7 +43,7 @@ parseDoc p d = case runParser parseRTFElements "RTFElement" d of
     Left e -> ContentParseError e
     Right doc -> Success doc
 
-parseDocTest :: Show c => ElementParser c -> Text -> IO ()
+parseDocTest :: (Show c) => ElementParser c -> Text -> IO ()
 parseDocTest p d = case parseDoc_ p d of
   Left e -> putStrLn e
   Right doc -> print doc
@@ -187,7 +186,7 @@ fontFamilyText = T.toLower . T.pack . show
 
 rtfGroupWithDelims :: Text -> ElementParser c -> ElementParser c
 rtfGroupWithDelims msg p =
-  updateParserState (over _stateInput prepareGroup) >> rtfGroup msg p
+  updateParserState (\s -> s{stateInput = prepareGroup (stateInput s)}) >> rtfGroup msg p
  where
   prepareGroup (RTFGroup c : rest) = RTFGroup (separateDelimitedGroupItems ";" c) : rest
   prepareGroup x = x

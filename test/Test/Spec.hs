@@ -212,7 +212,7 @@ configSpec =
       it "[error message] ContentMap invalid RTF" $ do
         testJSONParseFail @ContentMap "Error in $.fromContents: Empty" [multiline|{ "contentCharset": 0, "fromContents": "", "toContents": ""  } |]
         testJSONParseFail @ContentMap "Error in $.toContents: Empty" [multiline|{ "contentCharset": 0, "fromContents": "a", "toContents": ""  } |]
-        testJSONParseFail @ContentMap "Error in $.fromContents: RTFElement:1:4:\n  |\n1 | {\\a\n  |    ^\nunexpected end of input\nexpecting '}', RTFControlParam, RTFElement, SpaceSuffix, name character, or newline\n" [multiline|{ "fromContents": "{\\a", "contentCharset": 0, "toContents": ""  } |]
+        testJSONParseFail @ContentMap "Error in $.fromContents: RTFElement:1:4:\n  |\n1 | {\\a\n  |    ^\nunexpected end of input\nexpecting '}', RTFControlParam, RTFControlWord name, RTFElement, SpaceSuffix, or newline\n" [multiline|{ "fromContents": "{\\a", "contentCharset": 0, "toContents": ""  } |]
 
 rtfSpec :: Spec
 rtfSpec = describe "ToRTFDoc" $ do
